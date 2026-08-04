@@ -8,6 +8,7 @@ import LogisticsDashboard from './components/LogisticsDashboard';
 import CompostOperatorDashboard from './components/CompostOperatorDashboard';
 import QALabDashboard from './components/QALabDashboard';
 import MarketplaceDashboard from './components/MarketplaceDashboard';
+import WasteCollectorDashboard from './components/WasteCollectorDashboard';
 
 /**
  * GreenGoldOS Core Root Component
@@ -38,6 +39,14 @@ export default function App() {
   const [batchesAwaitingCert, setBatchesAwaitingCert] = useState(dbClone(MOCK_DATA.batchesAwaitingCert)); // Soil-attested compost batches
   const [collectedWasteQueue, setCollectedWasteQueue] = useState(dbClone(MOCK_DATA.collectedWasteQueue)); // Emptying events needing logistics
   const [logs, setLogs] = useState(dbClone(MOCK_DATA.logs)); // Executed admin action audit logs
+
+  // =========================================================================
+  // WASTE COLLECTOR PORTAL REACTIVE DATABASE STATE
+  // =========================================================================
+  const [collectorTasks, setCollectorTasks] = useState(dbClone(MOCK_DATA.collectorTasks));
+  const [collectorNotifications, setCollectorNotifications] = useState(dbClone(MOCK_DATA.collectorNotifications));
+  const [collectorPerformance, setCollectorPerformance] = useState(dbClone(MOCK_DATA.collectorPerformance));
+  const [collectorShift, setCollectorShift] = useState(dbClone(MOCK_DATA.collectorShift));
 
   // =========================================================================
   // 3. FACTORY REPORTS FILTER STATE
@@ -245,6 +254,125 @@ export default function App() {
   };
 
   // =========================================================================
+  // 8B. WASTE COLLECTOR OPERATIONS HANDLERS
+  // =========================================================================
+
+  const handleUpdateCollectorTaskStatus = (taskId, newStatus) => {
+    setCollectorTasks(prev => prev.map(t => 
+      t.id === taskId ? { ...t, status: newStatus } : t
+    ));
+    
+    const task = collectorTasks.find(t => t.id === taskId);
+    const locationName = task ? task.collectionPoint : taskId;
+    logActivity('Logistics', `Driver E-04 updated status for ${locationName} (${taskId}) to '${newStatus}'.`);
+  };
+
+  const handleCompleteCollectorCollection = (taskId, completionData) => {
+    // 1. Update task details in task list
+    setCollectorTasks(prev => prev.map(t => 
+      t.id === taskId ? { 
+        ...t, 
+        status: 'Completed', 
+        actualQuantity: completionData.actualQuantity,
+        notes: completionData.notes,
+        binStatus: 'Normal',
+        fillLevel: 0
+      } : t
+    ));
+
+    const task = collectorTasks.find(t => t.id === taskId);
+    const locationName = task ? task.collectionPoint : taskId;
+    const qty = completionData.actualQuantity;
+    const carbonCredits = parseFloat((qty * 0.000912).toFixed(4));
+
+    // 2. Increment stats globally
+    setStats(prev => ({
+      ...prev,
+      totalWasteDivertedKg: prev.totalWasteDivertedKg + qty,
+      pendingCarbonCreditsMt: parseFloat((prev.pendingCarbonCreditsMt + carbonCredits).toFixed(3))
+    }));
+
+    // 3. Update collector performance state
+    setCollectorPerformance(prev => {
+      const newCompleted = prev.tasksCompletedToday + 1;
+      const totalToday = prev.totalAssignedToday;
+      const newCompletionRate = totalToday > 0 ? parseFloat(((newCompleted / totalToday) * 100).toFixed(1)) : prev.completionRate;
+      return {
+        ...prev,
+        tasksCompletedToday: newCompleted,
+        weeklyCollectionsKg: prev.weeklyCollectionsKg + qty,
+        completionRate: newCompletionRate,
+        weeklyTasksCompleted: prev.weeklyTasksCompleted + 1
+      };
+    });
+
+    logActivity('Logistics', `Driver E-04 COMPLETED collection at ${locationName}. Diverted: ${qty} kg. Carbon offset logged: ${carbonCredits} MT.`);
+
+    // 4. Trigger alert if driver flagged a placement issue
+    if (completionData.reportedIssue) {
+      setCollectorNotifications(prev => [
+        {
+          id: `NOTIF-${Date.now()}`,
+          message: `Issue reported during collection at ${locationName}: ${completionData.reportedIssue}`,
+          time: "Just now",
+          type: "alert",
+          read: false
+        },
+        ...prev
+      ]);
+    }
+  };
+
+  const handleReportCollectorIssue = (taskId, issueData) => {
+    // 1. Update task status in task list
+    setCollectorTasks(prev => prev.map(t => 
+      t.id === taskId ? { 
+        ...t, 
+        status: 'Reported Issue',
+        binStatus: issueData.issueType === 'Bin damaged' ? 'Damaged' : issueData.issueType === 'Bin overflowing' ? 'Overflowing' : t.binStatus
+      } : t
+    ));
+
+    const task = collectorTasks.find(t => t.id === taskId);
+    const locationName = task ? task.collectionPoint : taskId;
+
+    // 2. Increment collector performance issue count
+    setCollectorPerformance(prev => ({
+      ...prev,
+      reportedIssuesCount: prev.reportedIssuesCount + 1
+    }));
+
+    // 3. Add to notifications
+    setCollectorNotifications(prev => [
+      {
+        id: `NOTIF-${Date.now()}`,
+        message: `New field issue reported for ${locationName}: ${issueData.issueType} (${issueData.priority} Priority).`,
+        time: "Just now",
+        type: "alert",
+        read: false
+      },
+      ...prev
+    ]);
+
+    logActivity('System', `Driver E-04 flagged ISSUE at ${locationName}: ${issueData.issueType} - "${issueData.description}" (${issueData.priority} urgency).`);
+  };
+
+  const handleToggleCollectorShiftStatus = (newStatus) => {
+    setCollectorShift(prev => ({
+      ...prev,
+      availabilityStatus: newStatus
+    }));
+
+    logActivity('System', `Driver E-04 shift status updated to '${newStatus}'.`);
+  };
+
+  const handleClearCollectorNotification = (notifId) => {
+    setCollectorNotifications(prev => prev.map(n => 
+      n.id === notifId ? { ...n, read: true } : n
+    ));
+  };
+
+  // =========================================================================
   // 9. DYNAMIC ROUTING RENDER PATTERNS (SPA CONTROLLER)
   // =========================================================================
   switch (role) {
@@ -280,6 +408,23 @@ export default function App() {
       );
     
     // Developer Hooks: Placeholders for client-facing dashboards
+    case 'collector':
+      return (
+        <WasteCollectorDashboard
+          username={username}
+          onLogout={handleBackToLogin}
+          tasks={collectorTasks}
+          notifications={collectorNotifications}
+          performance={collectorPerformance}
+          shift={collectorShift}
+          onUpdateTaskStatus={handleUpdateCollectorTaskStatus}
+          onCompleteCollection={handleCompleteCollectorCollection}
+          onReportIssue={handleReportCollectorIssue}
+          onToggleShiftStatus={handleToggleCollectorShiftStatus}
+          onClearNotification={handleClearCollectorNotification}
+        />
+      );
+
     case 'generator':
       return <UserDashboard onLogout={handleBackToLogin} />;
     

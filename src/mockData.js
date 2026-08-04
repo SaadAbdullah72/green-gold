@@ -167,7 +167,165 @@ export const MOCK_DATA = {
     { timestamp: "2026-08-04 09:40", category: "Audit", message: "System General Manager accessed the Carbon Credit Verification dashboard." },
     { timestamp: "2026-08-04 08:30", category: "Logistics", message: "Driver John Doe submitted route compliance log for Sector 7 pickups." },
     { timestamp: "2026-08-03 17:15", category: "QA", message: "Batch BATCH-401 certified by Dr. Sarah Lin with a QA Score of 94/100." }
-  ]
+  ],
+
+  // Waste Collector Staff Data
+  collectorTasks: [
+    {
+      id: "TASK-201",
+      collectionPoint: "Hotel Marriott (Kitchen)",
+      location: "Main Banquet Kitchen - Ground Floor",
+      binId: "BIN-101",
+      wasteType: "Organic Food Waste",
+      scheduledTime: "08:30 AM",
+      priority: "High",
+      status: "Completed",
+      estQuantity: 180,
+      actualQuantity: 195,
+      fillLevel: 95,
+      binStatus: "Normal",
+      notes: "Clean pickup, no contamination observed.",
+      specialInstructions: "Enter through back alley gate, ring bell for kitchen staff.",
+      lastCollection: "2026-08-03 08:45 AM by Driver E-04",
+      stopNumber: 1
+    },
+    {
+      id: "TASK-202",
+      collectionPoint: "Sector 7 Residential Gate",
+      location: "Disposal Yard near Gate 2",
+      binId: "BIN-102",
+      wasteType: "Organic Food Waste",
+      scheduledTime: "09:45 AM",
+      priority: "Medium",
+      status: "Assigned",
+      estQuantity: 220,
+      actualQuantity: null,
+      fillLevel: 85,
+      binStatus: "Nearly Full",
+      notes: "",
+      specialInstructions: "Use RFID badge for gate access. Keep gate closed after leaving.",
+      lastCollection: "2026-08-03 09:50 AM by Driver E-04",
+      stopNumber: 2
+    },
+    {
+      id: "TASK-203",
+      collectionPoint: "City College Cafeteria",
+      location: "Block C Cafeteria Yard",
+      binId: "BIN-103",
+      wasteType: "Organic Food Waste",
+      scheduledTime: "11:00 AM",
+      priority: "High",
+      status: "Assigned",
+      estQuantity: 150,
+      actualQuantity: null,
+      fillLevel: 100,
+      binStatus: "Full",
+      notes: "",
+      specialInstructions: "Pickup before lunchtime rush starts at 11:30 AM.",
+      lastCollection: "2026-08-03 11:15 AM by Driver E-03",
+      stopNumber: 3
+    },
+    {
+      id: "TASK-204",
+      collectionPoint: "Downtown Office Hub",
+      location: "Loading Dock B - Basement Level",
+      binId: "BIN-104",
+      wasteType: "Recyclables (Plastics/Paper)",
+      scheduledTime: "12:15 PM",
+      priority: "Low",
+      status: "Assigned",
+      estQuantity: 120,
+      actualQuantity: null,
+      fillLevel: 70,
+      binStatus: "Normal",
+      notes: "",
+      specialInstructions: "Contact Security Officer at dock entry for access.",
+      lastCollection: "2026-08-02 12:30 PM by Driver E-04",
+      stopNumber: 4
+    },
+    {
+      id: "TASK-205",
+      collectionPoint: "Grand Hyatt Hotel",
+      location: "South Kitchen Garbage Room",
+      binId: "BIN-105",
+      wasteType: "Organic Food Waste",
+      scheduledTime: "01:30 PM",
+      priority: "High",
+      status: "Assigned",
+      estQuantity: 300,
+      actualQuantity: null,
+      fillLevel: 110,
+      binStatus: "Overflowing",
+      notes: "",
+      specialInstructions: "Composter bin has high liquid content. Handle carefully.",
+      lastCollection: "2026-08-03 01:45 PM by Driver E-04",
+      stopNumber: 5
+    },
+    {
+      id: "TASK-206",
+      collectionPoint: "Sector 4 Residential Block",
+      location: "Main Waste Segregation Shed",
+      binId: "BIN-106",
+      wasteType: "Organic Food Waste",
+      scheduledTime: "02:15 PM",
+      priority: "Medium",
+      status: "Assigned",
+      estQuantity: 280,
+      actualQuantity: null,
+      fillLevel: 105,
+      binStatus: "Overflowing",
+      notes: "",
+      specialInstructions: "Report any plastic contamination inside composting bins.",
+      lastCollection: "2026-08-03 02:00 PM by Driver E-03",
+      stopNumber: 6
+    }
+  ],
+
+  collectorNotifications: [
+    {
+      id: "NOTIF-01",
+      message: "High priority collection added at Grand Hyatt Hotel (TASK-205). Fill level reported at 110%.",
+      time: "10 mins ago",
+      type: "alert",
+      read: false
+    },
+    {
+      id: "NOTIF-02",
+      message: "Route updated by dispatch: Sector 4 Residential Block added at stop #6.",
+      time: "1 hour ago",
+      type: "info",
+      read: false
+    },
+    {
+      id: "NOTIF-03",
+      message: "Shift started: Morning Shift (06:00 AM - 02:00 PM). Drive safe!",
+      time: "3 hours ago",
+      type: "system",
+      read: true
+    }
+  ],
+
+  collectorPerformance: {
+    tasksCompletedToday: 1,
+    totalAssignedToday: 6,
+    weeklyCollectionsKg: 1240,
+    completionRate: 94.5,
+    avgTimePerStopMin: 14.2,
+    reportedIssuesCount: 3,
+    weeklyTasksCompleted: 34,
+    weeklyTasksSkipped: 2
+  },
+
+  collectorShift: {
+    driverName: "Driver E-04",
+    staffId: "GG-COLL-409",
+    role: "Senior Waste Collector & Hauler",
+    shiftName: "Morning Shift (06:00 AM - 02:00 PM)",
+    assignedZone: "Downtown Sector Alpha",
+    vehicleId: "EcoTruck Heavy E-04 (Electric)",
+    availabilityStatus: "On Duty",
+    contactNo: "+1 (555) 019-8800"
+  }
 };
 
 // Technical Crews available for assignment
