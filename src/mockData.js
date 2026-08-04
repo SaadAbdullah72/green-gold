@@ -198,3 +198,38 @@ export const FACTORY_REPORTS = {
     { id: "FAC-03", name: "South Delta Compost Plant", recycledKg: 6400, carbonSavedMt: 5.83, plasticRecoveredKg: 710, rating: 4.9 }
   ]
 };
+
+export const TECHNICAL_STAFF_DATA = {
+  jobs: [
+    { id: "JOB-201", org: "Grand Hyatt Hotel", priority: "High", binId: "BIN-501", gps: "12.9702, 77.5946", schedule: "Today · 09:30", status: "Assigned", workflow: "Installation", description: "Install hardware, sensors, and QR/RFID tags for a banquet kitchen deployment.", lastAction: "Accept" },
+    { id: "JOB-202", org: "Sector 4 Residential Block", priority: "Medium", binId: "BIN-502", gps: "12.9610, 77.6024", schedule: "Today · 13:15", status: "In Progress", workflow: "Calibration", description: "Validate telemetry calibration and network connectivity.", lastAction: "Start" },
+    { id: "JOB-203", org: "City College Cafeteria", priority: "High", binId: "BIN-503", gps: "12.9765, 77.5902", schedule: "Tomorrow · 08:00", status: "Pending", workflow: "Maintenance", description: "Replace battery and inspect sensor module after a low-power alert.", lastAction: "Pause" }
+  ],
+  inventory: [
+    { id: "BIN-501", qr: "QR-501", rfid: "RFID-501", organization: "Grand Hyatt Hotel", facility: "Banquet Kitchen", gps: "12.9702, 77.5946", status: "Online", battery: 88, signal: 78, health: "Stable", connectivity: "Strong", firmware: "v3.4.1" },
+    { id: "BIN-502", qr: "QR-502", rfid: "RFID-502", organization: "Sector 4 Residential Block", facility: "Gate 2 Yard", gps: "12.9610, 77.6024", status: "Online", battery: 72, signal: 65, health: "Stable", connectivity: "Stable", firmware: "v3.3.8" },
+    { id: "BIN-503", qr: "QR-503", rfid: "RFID-503", organization: "City College Cafeteria", facility: "North Patio", gps: "12.9765, 77.5902", status: "Offline", battery: 21, signal: 24, health: "Critical", connectivity: "Offline", firmware: "v3.2.6" }
+  ],
+  installRequests: [
+    { id: "INS-901", org: "North Gate Campus", workflow: "Request → Accept → Navigate → Install", schedule: "Tomorrow · 08:00", status: "Pending" },
+    { id: "INS-902", org: "Green Sprout Nursery", workflow: "Configure Connectivity → Calibrate → Diagnostic", schedule: "Tomorrow · 12:00", status: "Accepted" }
+  ],
+  maintenanceTasks: [
+    { id: "MT-110", binId: "BIN-503", issue: "Low battery / signal degradation", schedule: "Today · 10:30", status: "Pending" },
+    { id: "MT-111", binId: "BIN-501", issue: "Humidity sensor drift", schedule: "Today · 15:10", status: "In Progress" }
+  ],
+  workOrders: [
+    { id: "WO-301", date: "2026-08-03", tech: "Alex Mercer", issue: "Offline bin after install", action: "Replaced battery", parts: "Battery 12V", duration: "45 min", status: "Completed" },
+    { id: "WO-302", date: "2026-08-04", tech: "Ben Stark", issue: "RFID read failure", action: "Repaired antenna", parts: "Antenna module", duration: "30 min", status: "Completed" }
+  ],
+  parts: [
+    { id: "PART-01", name: "Battery 12V", stock: 12, location: "Crate A", status: "Healthy" },
+    { id: "PART-02", name: "RFID Antenna", stock: 4, location: "Crate B", status: "Low Stock" },
+    { id: "PART-03", name: "Humidity Sensor", stock: 8, location: "Cabinet 2", status: "Healthy" }
+  ],
+  notifications: [
+    { id: "N-01", title: "New installation assigned", detail: "BIN-501 needs hardware, QR and RFID mapping before noon.", severity: "high" },
+    { id: "N-02", title: "Critical low battery", detail: "BIN-503 dropped below 25% battery with weak signal.", severity: "critical" },
+    { id: "N-03", title: "Firmware update available", detail: "Schedule a field update before next maintenance cycle.", severity: "medium" }
+  ]
+};
