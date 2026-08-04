@@ -742,3 +742,96 @@ h1, h2, h3, h4, h5, h6 {
 .mgmt-sub-view {
   animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* MOBILE & TABLET RESPONSIVE OVERRIDES */
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .sidebar-left {
+    height: auto !important;
+    position: relative !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 20px !important;
+  }
+  
+  .sidebar-left .menu-list {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .sidebar-left .menu-btn {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  .sidebar-left .menu-label {
+    margin: 10px 0 5px 5px !important;
+  }
+
+  .sidebar-left .app-logo {
+    margin-bottom: 15px !important;
+  }
+
+  .sidebar-left .sidebar-footer {
+    margin-top: 15px !important;
+    padding-top: 15px !important;
+  }
+
+  .main-content {
+    padding: 20px !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+
+  .view-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 15px !important;
+    margin-bottom: 25px !important;
+    padding-bottom: 15px !important;
+  }
+
+  .view-header h2 {
+    font-size: 24px !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+    margin-bottom: 25px !important;
+  }
+
+  .mgmt-grid-2col {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .glass-panel {
+    padding: 20px !important;
+  }
+
+  .table-panel {
+    padding: 20px 15px !important;
+  }
+
+  .admin-table th, .admin-table td {
+    padding: 12px 10px !important;
+    font-size: 13px !important;
+  }
+
+  .table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .chart-sim-wrapper {
+    gap: 10px !important;
+    padding: 15px !important;
+  }
+}
