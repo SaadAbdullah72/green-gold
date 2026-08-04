@@ -5,7 +5,7 @@ import ManagementDashboard from './components/ManagementDashboard';
 import UserDashboard from './components/UserDashboard';
 import TechnicianDashboard from './components/TechnicianDashboard';
 import LogisticsDashboard from './components/LogisticsDashboard';
-import CompostOperatorDashboard from './components/CompostOperatorDashboard';
+import ProcessingPlantDashboard from './components/ProcessingPlantDashboard'; // 👈 Updated Dashboard Import
 import QALabDashboard from './components/QALabDashboard';
 import MarketplaceDashboard from './components/MarketplaceDashboard';
 import WasteCollectorDashboard from './components/WasteCollectorDashboard';
@@ -93,7 +93,7 @@ export default function App() {
       setUsername('Driver E-04');
     } else if (selectedRole === 'composition' || selectedRole === 'processor') {
       targetRole = 'processor';
-      setUsername('Yard Supervisor');
+      setUsername('Plant Supervisor');
     } else if (selectedRole === 'qa') {
       targetRole = 'qa';
       setUsername('QA Specialist');
@@ -315,8 +315,9 @@ export default function App() {
     return <LogisticsDashboard username={username} onLogout={handleBackToLogin} />;
   }
 
+  // 👈 Route to ProcessingPlantDashboard
   if (role === 'processor') {
-    return <CompostOperatorDashboard username={username} onLogout={handleBackToLogin} />;
+    return <ProcessingPlantDashboard username={username} onLogout={handleBackToLogin} />;
   }
 
   if (role === 'qa') {
