@@ -6,106 +6,132 @@ export default function UserDashboard({ username, userData, onLogout }) {
   // Dynamic User Info
   const displayName = userData?.organizationName || userData?.fullName || username || 'Marriott Manager';
   const userCity = userData?.city || 'Islamabad Capital Territory';
+  const userPhone = userData?.phone || '+92 300 1234567';
   const wasteEstimate = userData?.wasteEstimate || '20–50 kg';
-
-  // Sample Data States
-  const [wasteLogs, setWasteLogs] = useState([
-    { id: 'LOG-8801', date: '2026-08-03', weightKg: 42, type: 'Food Scraps', binId: 'BIN-SG-01', status: 'Collected' },
-    { id: 'LOG-8802', date: '2026-08-02', weightKg: 28, type: 'Coffee Grounds', binId: 'BIN-SG-02', status: 'Collected' },
-    { id: 'LOG-8803', date: '2026-08-01', weightKg: 65, type: 'Kitchen Waste', binId: 'BIN-SG-01', status: 'Collected' },
-  ]);
-
-  const [pickupForm, setPickupForm] = useState({
-    wasteType: 'Mixed Organic',
-    estimatedWeightKg: '25',
-    preferredTime: 'Morning (09:00 AM - 12:00 PM)',
-    notes: ''
-  });
-
-  const [depositForm, setDepositForm] = useState({ binId: 'BIN-SG-01', weight: '', category: 'Kitchen Waste' });
-  const [pickupSuccessMsg, setPickupSuccessMsg] = useState(false);
-  const [depositSuccessMsg, setDepositSuccessMsg] = useState(false);
 
   // Dynamic Bin Request Form State
   const [binRequestForm, setBinRequestForm] = useState({
     locationName: '',
     category: 'Commercial Unit',
-    contactNumber: userData?.phone || '',
+    contactNumber: userPhone,
     fullAddress: '',
     binsNeeded: '1',
     binCategory: 'Organic Waste Bin',
     specialInstructions: ''
   });
 
-  // Modal / Pop-up State
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [submittedRequestDetails, setSubmittedRequestDetails] = useState(null);
+  // Modal States
+  const [showBinModal, setShowBinModal] = useState(false);
+  const [showPickupFormModal, setShowPickupFormModal] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [pickupReason, setPickupReason] = useState('Bin Full');
+  const [pickupNotes, setPickupNotes] = useState('');
 
-  // Profile Form State
-  const [profileData, setProfileData] = useState({
-    orgName: displayName,
-    city: userCity,
-    email: userData?.email || 'manager@marriott.com.pk',
-    phone: userData?.phone || '+92 300 1234567',
-    binCount: '2 Active Smart Bins',
-    notificationsEnabled: true
-  });
-  const [profileSavedMsg, setProfileSavedMsg] = useState(false);
+  // Sustainability & ESG Detailed View State
+  const [esgDetailView, setEsgDetailView] = useState(null);
 
-  // Left Sidebar Menu Items
-  const menuItems = [
-    { id: 'overview', label: '📊 Dashboard Overview' },
-    { id: 'request_bin', label: '➕ Request Smart Bin' },
-    { id: 'deposit', label: '♻️ Deposit Waste' },
-    { id: 'history', label: '📜 Waste History' },
-    { id: 'tracking', label: '🚛 Pickup Tracking' },
-    { id: 'bins', label: '🗑️ Smart Bins Status' },
-    { id: 'compost', label: '🌱 Compost Tracking' },
-    { id: 'certificates', label: '📄 Digital Certificates' },
-    { id: 'impact', label: '🌍 Carbon Impact' },
-    { id: 'reports', label: '📊 ESG Reports' },
-    { id: 'rewards', label: '🏆 Green Rewards' },
-    { id: 'notifications', label: '🔔 Notifications' },
-    { id: 'profile', label: '👤 Profile & Settings' },
+  // 3 Smart Bins Telemetry State
+  const [smartBins] = useState([
+    { id: 'BIN-SG-01', location: 'Main Kitchen', status: 'Full / Ready for Pickup', fillPercent: 100, airQuality: 'Poor (High VOCs)', moisture: '68%', odor: '42%' },
+    { id: 'BIN-SG-02', location: 'Cafeteria Floor', status: 'Active (Online)', fillPercent: 45, airQuality: 'Good', moisture: '34%', odor: '12%' },
+    { id: 'BIN-SG-03', location: 'Banquet Hall Prep', status: 'Active (Online)', fillPercent: 62, airQuality: 'Moderate', moisture: '48%', odor: '22%' },
+  ]);
+
+  // Active Pickup Requests & History Combined
+  const [pickupRequests] = useState([
+    {
+      requestId: 'REQ-9941',
+      date: '2026-08-05',
+      reason: 'Bin Full (BIN-SG-01)',
+      status: 'Vehicle On The Way',
+      currentStepIndex: 2,
+      collectorName: 'Muhammad Ali',
+      vehicleNumber: 'ICT-GRN-9912',
+      eta: '18 mins',
+      weight: '42 kg',
+      notes: 'Urgent pickup needed before evening banquet.'
+    },
+    {
+      requestId: 'REQ-8820',
+      date: '2026-08-03',
+      reason: 'Bad Odor / VOC Spike',
+      status: 'Processing Started',
+      currentStepIndex: 6,
+      collectorName: 'Tariq Mehmood',
+      vehicleNumber: 'ICT-GRN-4421',
+      eta: 'Completed',
+      weight: '28 kg',
+      notes: 'Coffee grounds fermentation managed.'
+    },
+    {
+      requestId: 'REQ-7612',
+      date: '2026-07-29',
+      reason: 'Emergency Overflow Risk',
+      status: 'Delivered to Compost Plant',
+      currentStepIndex: 5,
+      collectorName: 'Aslam Khan',
+      vehicleNumber: 'ICT-GRN-1109',
+      eta: 'Completed',
+      weight: '55 kg',
+      notes: 'Standard scheduled full bin clearance.'
+    }
+  ]);
+
+  const trackingSteps = [
+    'Request Submitted',
+    'Collector Assigned',
+    'Vehicle On The Way',
+    'Arrived',
+    'Waste Collected',
+    'Delivered to Compost Plant',
+    'Processing Started'
   ];
 
-  const handlePickupSubmit = (e) => {
+  // Sidebar Menu Structure
+  const menuSections = [
+    {
+      title: "DASHBOARD & OVERVIEW",
+      items: [
+        { id: 'overview', label: '📊 Dashboard Overview' },
+      ]
+    },
+    {
+      title: "BIN MANAGEMENT",
+      items: [
+        { id: 'request_bin', label: '➕ Request Smart Bin' },
+        { id: 'bins', label: '🗑️ My Bins Status' },
+      ]
+    },
+    {
+      title: "PICKUP & LOGISTICS",
+      items: [
+        { id: 'filled_bin_pickup', label: '🚛 Filled Bin Pickup Request' },
+      ]
+    },
+    {
+      title: "SUSTAINABILITY & ESG",
+      items: [
+        { id: 'sustainability_esg', label: '🌱 Sustainability & ESG' },
+      ]
+    },
+    {
+      title: "ACCOUNT & SETTINGS",
+      items: [
+        { id: 'notifications', label: '🔔 Notifications' },
+        { id: 'profile', label: '👤 Profile & Settings' },
+      ]
+    }
+  ];
+
+  const handlePickupFormSubmit = (e) => {
     e.preventDefault();
-    const newLog = {
-      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toISOString().split('T')[0],
-      weightKg: parseFloat(pickupForm.estimatedWeightKg) || 20,
-      type: pickupForm.wasteType,
-      binId: 'BIN-SG-01',
-      status: 'Scheduled'
-    };
-    
-    setWasteLogs([newLog, ...wasteLogs]);
-    setPickupSuccessMsg(true);
-    setTimeout(() => setPickupSuccessMsg(false), 4000);
-    setPickupForm({ wasteType: 'Mixed Organic', estimatedWeightKg: '25', preferredTime: 'Morning (09:00 AM - 12:00 PM)', notes: '' });
+    setShowPickupFormModal(false);
+    setPickupNotes('');
+    setShowApprovalModal(true);
   };
 
-  const handleDepositSubmit = (e) => {
-    e.preventDefault();
-    const newLog = {
-      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toISOString().split('T')[0],
-      weightKg: parseFloat(depositForm.weight) || 10,
-      type: depositForm.category,
-      binId: depositForm.binId,
-      status: 'Deposited'
-    };
-    setWasteLogs([newLog, ...wasteLogs]);
-    setDepositSuccessMsg(true);
-    setTimeout(() => setDepositSuccessMsg(false), 4000);
-    setDepositForm({ binId: 'BIN-SG-01', weight: '', category: 'Kitchen Waste' });
-  };
-
-  // Direct Submission with Pop-Up Trigger
   const handleBinRequestSubmit = (e) => {
     e.preventDefault();
-    
     const newManagementRequest = {
       requestId: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
       locationName: binRequestForm.locationName,
@@ -118,20 +144,13 @@ export default function UserDashboard({ username, userData, onLogout }) {
       status: 'Pending Management Review',
       timestamp: new Date().toLocaleString()
     };
-
-    // Store in LocalStorage for Management Portal
     const existingRequests = JSON.parse(localStorage.getItem('management_bin_requests') || '[]');
     localStorage.setItem('management_bin_requests', JSON.stringify([newManagementRequest, ...existingRequests]));
-
-    // Trigger Pop-up Modal
-    setSubmittedRequestDetails(newManagementRequest);
-    setShowRequestModal(true);
-
-    // Reset Form
+    setShowBinModal(true);
     setBinRequestForm({
       locationName: '',
       category: 'Commercial Unit',
-      contactNumber: userData?.phone || '',
+      contactNumber: userPhone,
       fullAddress: '',
       binsNeeded: '1',
       binCategory: 'Organic Waste Bin',
@@ -139,108 +158,111 @@ export default function UserDashboard({ username, userData, onLogout }) {
     });
   };
 
-  const handleProfileSave = (e) => {
-    e.preventDefault();
-    setProfileSavedMsg(true);
-    setTimeout(() => setProfileSavedMsg(false), 3000);
-  };
-
   return (
     <div className="dashboard-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
-      {/* POP-UP MODAL ON SUBMIT */}
-      {showRequestModal && (
+      {/* MANAGEMENT APPROVAL POPUP MODAL */}
+      {showApprovalModal && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.82)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.82)', backdropFilter: 'blur(8px)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
         }}>
           <div style={{
             background: 'linear-gradient(135deg, #091a12 0%, #050f0a 100%)',
-            border: '1px solid rgba(251, 191, 36, 0.4)',
-            borderRadius: '16px',
-            padding: '30px',
-            maxWidth: '500px',
-            width: '100%',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
-            textAlign: 'center',
-            position: 'relative'
+            border: '1px solid rgba(251, 191, 36, 0.4)', borderRadius: '16px',
+            padding: '30px', maxWidth: '450px', width: '100%',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8)', textAlign: 'center'
           }}>
             <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              background: 'rgba(251, 191, 36, 0.15)',
-              color: 'var(--gold-light, #fbbf24)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px',
-              margin: '0 auto 16px auto',
-              border: '1px solid #fbbf24'
+              width: '60px', height: '60px', borderRadius: '50%',
+              background: 'rgba(234, 179, 8, 0.15)', color: '#facc15',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px',
+              margin: '0 auto 16px auto', border: '1px solid #facc15'
+            }}>
+              ⏳
+            </div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', color: '#fff', fontWeight: '700' }}>
+              Request is passed to management, wait for approval
+            </h3>
+            <p style={{ margin: '0 0 24px 0', fontSize: '13px', color: '#9ca3af', lineHeight: '1.5' }}>
+              Your pickup request has been successfully registered and sent to management for review.
+            </p>
+            <button onClick={() => setShowApprovalModal(false)} className="login-btn" style={{ width: '100%', padding: '12px' }}>
+              Acknowledge & Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PICKUP REQUEST FORM MODAL */}
+      {showPickupFormModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.82)', backdropFilter: 'blur(8px)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #091a12 0%, #050f0a 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '16px',
+            padding: '30px', maxWidth: '500px', width: '100%',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>🚛 Filled Bin Pickup Request Form</h3>
+              <button onClick={() => setShowPickupFormModal(false)} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <form onSubmit={handlePickupFormSubmit}>
+              <div className="login-form-group">
+                <label>Pickup Reason</label>
+                <select value={pickupReason} onChange={(e) => setPickupReason(e.target.value)} className="login-input">
+                  <option value="Bin Full" style={{ background: '#08100c' }}>Bin Full (100% Capacity)</option>
+                  <option value="Bad Odor" style={{ background: '#08100c' }}>Bad Odor / VOC Spike</option>
+                  <option value="Emergency" style={{ background: '#08100c' }}>Emergency Overflow Risk</option>
+                  <option value="Other" style={{ background: '#08100c' }}>Other Scheduled Reason</option>
+                </select>
+              </div>
+              <div className="login-form-group">
+                <label>Notes (Optional)</label>
+                <textarea rows="3" placeholder="Add specific gate entry or timing notes..." value={pickupNotes} onChange={(e) => setPickupNotes(e.target.value)} className="login-input" style={{ resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="submit" className="login-btn" style={{ flex: 1, margin: 0 }}>Submit Pickup Request</button>
+                <button type="button" onClick={() => setShowPickupFormModal(false)} className="guest-bypass-btn" style={{ margin: 0 }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BIN ALLOTMENT POPUP MODAL */}
+      {showBinModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.82)', backdropFilter: 'blur(8px)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #091a12 0%, #050f0a 100%)',
+            border: '1px solid rgba(251, 191, 36, 0.4)', borderRadius: '16px',
+            padding: '30px', maxWidth: '500px', width: '100%',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8)', textAlign: 'center'
+          }}>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '50%',
+              background: 'rgba(251, 191, 36, 0.15)', color: 'var(--gold-light, #fbbf24)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px',
+              margin: '0 auto 16px auto', border: '1px solid #fbbf24'
             }}>
               📩
             </div>
-
             <h3 style={{ margin: '0 0 8px 0', fontSize: '22px', color: '#fff', fontWeight: '700' }}>
               Request Sent to Management!
             </h3>
-            
             <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#9ca3af', lineHeight: '1.5' }}>
               A request is sent to Management. Your application is currently under review.
             </p>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '10px',
-              padding: '16px',
-              textAlign: 'left',
-              fontSize: '13px',
-              marginBottom: '24px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: '#9ca3af' }}>Request ID:</span>
-                <span style={{ color: '#fbbf24', fontWeight: '700' }}>{submittedRequestDetails?.requestId}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: '#9ca3af' }}>Location:</span>
-                <span style={{ color: '#fff' }}>{submittedRequestDetails?.locationName}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: '#9ca3af' }}>Category:</span>
-                <span style={{ color: '#fff' }}>{submittedRequestDetails?.category}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px', marginTop: '8px' }}>
-                <span style={{ color: '#9ca3af' }}>Status:</span>
-                <span style={{ 
-                  background: 'rgba(234, 179, 8, 0.15)', 
-                  color: '#facc15', 
-                  padding: '4px 10px', 
-                  borderRadius: '12px', 
-                  fontSize: '11px', 
-                  fontWeight: '700',
-                  border: '1px solid rgba(234, 179, 8, 0.3)'
-                }}>
-                  ⏳ {submittedRequestDetails?.status}
-                </span>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setShowRequestModal(false)}
-              className="login-btn"
-              style={{ width: '100%', padding: '12px' }}
-            >
+            <button onClick={() => setShowBinModal(false)} className="login-btn" style={{ width: '100%', padding: '12px' }}>
               Acknowledge & Close
             </button>
           </div>
@@ -251,16 +273,13 @@ export default function UserDashboard({ username, userData, onLogout }) {
       <header className="dashboard-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(5, 15, 10, 0.85)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div className="login-logo-icon" style={{ width: '38px', height: '38px' }}>
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', fontWeight: '700', letterSpacing: '0.5px' }}>GreenGoldOS</h2>
             <span style={{ fontSize: '11px', color: 'var(--gold-light, #fbbf24)', fontWeight: '600' }}>WASTE GENERATOR PORTAL</span>
           </div>
         </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>{displayName}</div>
@@ -279,125 +298,177 @@ export default function UserDashboard({ username, userData, onLogout }) {
       {/* BODY LAYOUT: LEFT SIDEBAR + MAIN CONTENT */}
       <div style={{ display: 'flex', flex: 1, maxWidth: '1400px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         
-        {/* LEFT SIDEBAR MENU */}
+        {/* LEFT SIDEBAR */}
         <aside style={{ 
-          width: '260px', 
-          background: 'rgba(5, 15, 10, 0.65)', 
-          backdropFilter: 'blur(8px)', 
-          borderRight: '1px solid rgba(255,255,255,0.08)', 
-          padding: '20px 12px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-          overflowY: 'auto',
-          maxHeight: 'calc(100vh - 71px)',
-          position: 'sticky',
-          top: '71px'
+          width: '270px', background: 'rgba(5, 15, 10, 0.65)', backdropFilter: 'blur(8px)', 
+          borderRight: '1px solid rgba(255,255,255,0.08)', padding: '20px 12px',
+          display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto',
+          maxHeight: 'calc(100vh - 71px)', position: 'sticky', top: '71px'
         }}>
-          <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted, #9ca3af)', paddingLeft: '12px', marginBottom: '8px', letterSpacing: '0.5px' }}>
-            NAVIGATION MENU
-          </div>
-          {menuItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === item.id ? 'rgba(251, 191, 36, 0.15)' : 'transparent',
-                color: activeTab === item.id ? 'var(--gold-light, #fbbf24)' : '#d1d5db',
-                fontWeight: activeTab === item.id ? '700' : '500',
-                fontSize: '13px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s ease',
-                borderLeft: activeTab === item.id ? '3px solid var(--gold-light, #fbbf24)' : '3px solid transparent'
-              }}
-            >
-              {item.label}
-            </button>
+          {menuSections.map((sec, idx) => (
+            <div key={idx}>
+              <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--gold-light, #fbbf24)', paddingLeft: '8px', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                {sec.title}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {sec.items.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setActiveTab(item.id); setEsgDetailView(null); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', width: '100%', padding: '10px 12px',
+                      borderRadius: '8px', border: 'none',
+                      background: activeTab === item.id ? 'rgba(251, 191, 36, 0.15)' : 'transparent',
+                      color: activeTab === item.id ? 'var(--gold-light, #fbbf24)' : '#d1d5db',
+                      fontWeight: activeTab === item.id ? '700' : '500', fontSize: '13px',
+                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease',
+                      borderLeft: activeTab === item.id ? '3px solid var(--gold-light, #fbbf24)' : '3px solid transparent'
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </aside>
 
         {/* MAIN CONTENT AREA */}
         <main style={{ flex: 1, padding: '24px', boxSizing: 'border-box', overflowY: 'auto' }}>
           
-          {/* 1. DASHBOARD OVERVIEW */}
+          {/* 1. CLEAN & PROFESSIONAL DASHBOARD OVERVIEW */}
           {activeTab === 'overview' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
-                
-                <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.5px' }}>ORGANIC DIVERTED</span>
-                  <h2 style={{ fontSize: '32px', color: '#10b981', margin: '10px 0 4px 0', fontWeight: '800' }}>135 kg</h2>
-                  <span style={{ fontSize: '12px', color: 'var(--text-dark, #6b7280)' }}>Daily target: {wasteEstimate}</span>
-                </div>
-
-                <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.5px' }}>MINTED CARBON CREDITS</span>
-                  <h2 style={{ fontSize: '32px', color: 'var(--gold-light, #fbbf24)', margin: '10px 0 4px 0', fontWeight: '800' }}>0.123 MT</h2>
-                  <span style={{ fontSize: '12px', color: '#34d399' }}>Equivalent to 5 trees planted</span>
-                </div>
-
-                <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.5px' }}>ACTIVE SMART BINS</span>
-                  <h2 style={{ fontSize: '32px', color: '#60a5fa', margin: '10px 0 4px 0', fontWeight: '800' }}>2 Bins</h2>
-                  <span style={{ fontSize: '12px', color: '#34d399' }}>● Smart Monitoring Active</span>
-                </div>
-
-                <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.5px' }}>SORT ACCURACY</span>
-                  <h2 style={{ fontSize: '32px', color: '#a78bfa', margin: '10px 0 4px 0', fontWeight: '800' }}>98.5%</h2>
-                  <span style={{ fontSize: '12px', color: '#34d399' }}>Grade A Compliant</span>
-                </div>
-
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+              
+              {/* Welcome Banner */}
+              <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '28px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 15, 10, 0.85) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#34d399', letterSpacing: '0.5px' }}>GENERATOR PORTAL CONTROL DECK</span>
+                <h2 style={{ fontSize: '26px', color: '#fff', margin: '6px 0 8px 0', fontWeight: '800' }}>Welcome back, {displayName}</h2>
+                <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0, maxWidth: '700px', lineHeight: '1.5' }}>
+                  Monitor real-time waste diversion telemetry, manage smart bin requests, and access your sustainability metrics seamlessly through the quick category navigation hubs below.
+                </p>
               </div>
 
-              <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', color: '#34d399', fontWeight: '700' }}>Request Smart Bins for Your Unit</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted, #9ca3af)' }}>Direct request form for additional or new smart bin setup sent directly to Management.</p>
+              {/* Category Quick Navigation Hub (Professional Grid Layout with 1 Link Button per Category) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '16px', fontWeight: '700', letterSpacing: '0.5px' }}>
+                  📂 MAIN CATEGORY NAVIGATION
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  
+                  {/* Category 1: Bin Management */}
+                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>BIN MANAGEMENT</div>
+                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Smart Bins & Allotments</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Request new IoT waste bins or monitor real-time fill capacities and sensor metrics.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => setActiveTab('request_bin')} 
+                        className="login-btn" 
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      >
+                        Request Smart Bin ➔
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('bins')} 
+                        className="guest-bypass-btn" 
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      >
+                        My Bins Status ➔
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Category 2: Pickup & Logistics */}
+                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>PICKUP & LOGISTICS</div>
+                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Dispatches & Live Tracking</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Initiate filled bin pickup requests and track assigned transport vehicles in real-time.</p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab('filled_bin_pickup')} 
+                      className="login-btn" 
+                      style={{ width: '100%', margin: 0, padding: '10px', fontSize: '12px' }}
+                    >
+                      Open Pickup & Logistics Hub ➔
+                    </button>
+                  </div>
+
+                  {/* Category 3: Sustainability & ESG */}
+                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>SUSTAINABILITY & ESG</div>
+                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Carbon & Impact Reports</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Inspect verified carbon credits, waste diversion totals, ESG ratings, and audit certificates.</p>
+                    </div>
+                    <button 
+                      onClick={() => { setActiveTab('sustainability_esg'); setEsgDetailView(null); }} 
+                      className="login-btn" 
+                      style={{ width: '100%', margin: 0, padding: '10px', fontSize: '12px' }}
+                    >
+                      Open ESG Hub ➔
+                    </button>
+                  </div>
+
+                  {/* Category 4: Account & Settings */}
+                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>ACCOUNT & SETTINGS</div>
+                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Facility Profile & Alerts</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Manage organization credentials, contact details, and review system notifications.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => setActiveTab('notifications')} 
+                        className="guest-bypass-btn" 
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      >
+                        Notifications ➔
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('profile')} 
+                        className="login-btn" 
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      >
+                        Profile Settings ➔
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
-                <button onClick={() => setActiveTab('request_bin')} className="login-btn" style={{ width: 'auto', padding: '10px 24px', margin: 0 }}>
-                  Request New Bin ➔
-                </button>
               </div>
+
             </div>
           )}
 
-          {/* 2. SMART BIN REQUEST FORM */}
+          {/* 2. REQUEST SMART BIN (Proper Form) */}
           {activeTab === 'request_bin' && (
-            <div className="login-card mgmt-sub-view" style={{ margin: '0 auto', maxWidth: '650px', padding: '28px' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '8px', fontSize: '20px', color: 'var(--gold-light, #fbbf24)', textAlign: 'center' }}>
-                ➕ Request Smart Bin Allotment
+            <div className="login-card mgmt-sub-view" style={{ margin: '0 auto', maxWidth: '700px', padding: '28px' }}>
+              <h3 style={{ marginTop: 0, marginBottom: '6px', fontSize: '20px', color: 'var(--gold-light, #fbbf24)', textAlign: 'center' }}>
+                ➕ Request Smart Bin Allotment Form
               </h3>
-              <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '13px', marginBottom: '24px' }}>
-                Submit details below. This request will be routed directly to GreenGoldOS Management.
+              <p style={{ textAlign: 'center', fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
+                Fill out the complete details below to request additional IoT-enabled organic waste bins.
               </p>
-
               <form onSubmit={handleBinRequestSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  
-                  {/* LOCATION NAME */}
                   <div className="login-form-group">
-                    <label>Location Name</label>
+                    <label>Location / Department Name *</label>
                     <input 
                       type="text" 
                       required 
-                      placeholder="e.g. Main Market G-11, Block B, Mall Floor 2" 
+                      placeholder="e.g. Main Kitchen, Floor 2" 
                       value={binRequestForm.locationName} 
                       onChange={(e) => setBinRequestForm({...binRequestForm, locationName: e.target.value})} 
                       className="login-input" 
                     />
                   </div>
-
-                  {/* SELECTABLE CATEGORY */}
                   <div className="login-form-group">
-                    <label>Select Category</label>
+                    <label>Facility Category *</label>
                     <select 
                       value={binRequestForm.category} 
                       onChange={(e) => setBinRequestForm({...binRequestForm, category: e.target.value})} 
@@ -405,411 +476,499 @@ export default function UserDashboard({ username, userData, onLogout }) {
                     >
                       <option value="Commercial Unit" style={{ background: '#08100c' }}>Commercial / Plaza / Retail</option>
                       <option value="Restaurant / Cafe / Hotel" style={{ background: '#08100c' }}>Restaurant / Cafe / Hotel</option>
-                      <option value="Educational Institute" style={{ background: '#08100c' }}>School / College / University</option>
-                      <option value="Residential Society / Flat" style={{ background: '#08100c' }}>Residential Society / Apartment</option>
-                      <option value="Household / Personal" style={{ background: '#08100c' }}>Individual Household</option>
-                      <option value="Industrial / Factory" style={{ background: '#08100c' }}>Industrial / Manufacturing Facility</option>
-                      <option value="Other / General Area" style={{ background: '#08100c' }}>Other General Location</option>
+                      <option value="Institutional / Cafeteria" style={{ background: '#08100c' }}>Institutional / Cafeteria</option>
                     </select>
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="login-form-group">
-                    <label>Contact Phone Number</label>
+                    <label>Contact Number *</label>
                     <input 
-                      type="text" 
+                      type="tel" 
                       required 
-                      placeholder="+92 300 0000000" 
+                      placeholder="+92 300 1234567" 
                       value={binRequestForm.contactNumber} 
                       onChange={(e) => setBinRequestForm({...binRequestForm, contactNumber: e.target.value})} 
                       className="login-input" 
                     />
                   </div>
-
                   <div className="login-form-group">
-                    <label>Number of Bins Requested</label>
+                    <label>Bins Quantity Needed *</label>
                     <select 
                       value={binRequestForm.binsNeeded} 
                       onChange={(e) => setBinRequestForm({...binRequestForm, binsNeeded: e.target.value})} 
                       className="login-input"
                     >
-                      <option value="1" style={{ background: '#08100c' }}>1 Smart Bin</option>
-                      <option value="2" style={{ background: '#08100c' }}>2 Smart Bins</option>
-                      <option value="3" style={{ background: '#08100c' }}>3 Smart Bins</option>
-                      <option value="4" style={{ background: '#08100c' }}>4 Smart Bins</option>
-                      <option value="5+" style={{ background: '#08100c' }}>Bulk Allotment (5+ Bins)</option>
+                      <option value="1" style={{ background: '#08100c' }}>1 Unit</option>
+                      <option value="2" style={{ background: '#08100c' }}>2 Units</option>
+                      <option value="3" style={{ background: '#08100c' }}>3 Units</option>
+                      <option value="5" style={{ background: '#08100c' }}>5+ Units</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="login-form-group">
-                  <label>Complete Delivery / Exact Address</label>
+                  <label>Complete Street Address / Placement Instructions *</label>
                   <textarea 
-                    rows="2" 
+                    rows="3" 
                     required 
-                    placeholder="Enter full street address, shop/house number, nearest landmark..." 
+                    placeholder="Enter precise street address, building block, or floor level..." 
                     value={binRequestForm.fullAddress} 
                     onChange={(e) => setBinRequestForm({...binRequestForm, fullAddress: e.target.value})} 
                     className="login-input" 
-                    style={{ resize: 'vertical' }}
+                    style={{ resize: 'vertical' }} 
                   />
                 </div>
 
                 <div className="login-form-group">
-                  <label>Bin Type Specification</label>
-                  <select 
-                    value={binRequestForm.binCategory} 
-                    onChange={(e) => setBinRequestForm({...binRequestForm, binCategory: e.target.value})} 
-                    className="login-input"
-                  >
-                    <option value="Organic Waste Bin" style={{ background: '#08100c' }}>Standard Organic Waste Bin</option>
-                    <option value="Heavy Kitchen Scraps" style={{ background: '#08100c' }}>Heavy Duty Kitchen Scrap Unit</option>
-                    <option value="Liquid / Coffee Grounds" style={{ background: '#08100c' }}>Liquid & Coffee Scraps Dedicated Unit</option>
-                  </select>
-                </div>
-
-                <div className="login-form-group">
-                  <label>Additional Instructions / Notes (Optional)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Any specific delivery instructions for Management..." 
+                  <label>Special Deployment Notes (Optional)</label>
+                  <textarea 
+                    rows="2" 
+                    placeholder="Mention specific sensor requirements or delivery timings..." 
                     value={binRequestForm.specialInstructions} 
                     onChange={(e) => setBinRequestForm({...binRequestForm, specialInstructions: e.target.value})} 
                     className="login-input" 
+                    style={{ resize: 'vertical' }} 
                   />
                 </div>
 
-                <button type="submit" className="login-btn" style={{ marginTop: '10px' }}>
-                  📩 Submit Request to Management
+                <button type="submit" className="login-btn" style={{ marginTop: '10px', width: '100%', padding: '12px' }}>
+                  📩 Submit Smart Bin Allotment Request
                 </button>
               </form>
             </div>
           )}
 
-          {/* 3. DEPOSIT WASTE */}
-          {activeTab === 'deposit' && (
-            <div className="login-card mgmt-sub-view" style={{ margin: '0 auto', maxWidth: '600px', padding: '28px' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', color: 'var(--gold-light, #fbbf24)', textAlign: 'center' }}>
-                ♻️ Self-Deposit Waste Entry
-              </h3>
-              {depositSuccessMsg && (
-                <div style={{ padding: '12px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#34d399', marginBottom: '20px', fontSize: '13px' }}>
-                  ✓ Waste entry logged successfully into smart bin registry!
+          {/* 3. MY BINS STATUS */}
+          {activeTab === 'bins' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="login-card mgmt-sub-view" style={{ padding: '20px', margin: 0 }}>
+                <h3 style={{ marginTop: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>🗑️ My Smart Bins Real-Time Telemetry</h3>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                {smartBins.map((bin, index) => (
+                  <div key={index} className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px', border: bin.fillPercent === 100 ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>{bin.id}</h4>
+                      <span style={{ fontSize: '11px', background: bin.fillPercent === 100 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', color: bin.fillPercent === 100 ? '#f87171' : '#34d399', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>
+                        {bin.status}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>Location: <strong style={{ color: '#fff' }}>{bin.location}</strong></p>
+                    <div style={{ marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                        <span style={{ color: '#9ca3af' }}>Capacity Filled:</span>
+                        <span style={{ color: '#fff', fontWeight: '700' }}>{bin.fillPercent}%</span>
+                      </div>
+                      <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${bin.fillPercent}%`, height: '100%', background: bin.fillPercent === 100 ? '#ef4444' : 'var(--gold-light, #fbbf24)' }}></div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', textAlign: 'center', marginBottom: '14px' }}>
+                      <div><span style={{ fontSize: '10px', color: '#9ca3af', display: 'block' }}>Air Quality</span><strong style={{ fontSize: '11px', color: '#60a5fa' }}>{bin.airQuality}</strong></div>
+                      <div><span style={{ fontSize: '10px', color: '#9ca3af', display: 'block' }}>Moisture</span><strong style={{ fontSize: '12px', color: '#34d399' }}>{bin.moisture}</strong></div>
+                      <div><span style={{ fontSize: '10px', color: '#9ca3af', display: 'block' }}>Odor Level</span><strong style={{ fontSize: '12px', color: '#facc15' }}>{bin.odor}</strong></div>
+                    </div>
+                    {bin.fillPercent === 100 && (
+                      <button onClick={() => setShowPickupFormModal(true)} className="login-btn" style={{ width: '100%', padding: '8px', fontSize: '12px', background: '#ef4444', margin: 0 }}>
+                        🚨 Request Filled Bin Pickup
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 4. FILLED BIN PICKUP & LIVE TRACKING */}
+          {activeTab === 'filled_bin_pickup' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <h3 style={{ marginTop: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '20px', marginBottom: '4px' }}>
+                    🚛 Filled Bin Pickup & Live Tracking
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>
+                    Request dispatches for full bins and monitor active vehicle tracking below.
+                  </p>
+                </div>
+                <div>
+                  <button onClick={() => setShowPickupFormModal(true)} className="login-btn" style={{ width: 'auto', padding: '10px 18px', margin: 0 }}>
+                    + Request Pickup
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Tracking Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <h4 style={{ color: '#fff', fontSize: '16px', margin: 0 }}>Active Dispatches & Tracking</h4>
+                {pickupRequests.slice(0, 1).map((req, idx) => (
+                  <div key={idx} className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                      <div>
+                        <span style={{ fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>{req.requestId}</span>
+                        <h4 style={{ margin: '4px 0 0 0', color: '#fff', fontSize: '16px' }}>Reason: {req.reason}</h4>
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#34d399', fontWeight: '700', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 10px', borderRadius: '8px' }}>{req.status}</span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                      <div><span style={{ fontSize: '11px', color: '#9ca3af', display: 'block' }}>Collector Name</span><strong style={{ fontSize: '13px', color: '#fff' }}>{req.collectorName}</strong></div>
+                      <div><span style={{ fontSize: '11px', color: '#9ca3af', display: 'block' }}>Vehicle Number</span><strong style={{ fontSize: '13px', color: '#60a5fa' }}>{req.vehicleNumber}</strong></div>
+                      <div><span style={{ fontSize: '11px', color: '#9ca3af', display: 'block' }}>Estimated Arrival (ETA)</span><strong style={{ fontSize: '13px', color: '#facc15' }}>{req.eta}</strong></div>
+                    </div>
+
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', marginBottom: '10px' }}>Live Tracking Progress:</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {trackingSteps.map((step, sIdx) => {
+                        const isCompleted = sIdx <= req.currentStepIndex;
+                        const isCurrent = sIdx === req.currentStepIndex;
+                        return (
+                          <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: isCompleted ? (isCurrent ? '#fbbf24' : '#10b981') : 'rgba(255,255,255,0.1)', color: '#050f0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
+                              {isCompleted ? '✓' : ''}
+                            </div>
+                            <span style={{ fontSize: '13px', color: isCurrent ? '#fbbf24' : (isCompleted ? '#fff' : '#6b7280'), fontWeight: isCurrent ? '700' : '400' }}>{step}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Past Request History Archive Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ color: '#fff', fontSize: '16px', margin: 0 }}>📜 Past Pickup Request History Archive</h4>
+                  <span style={{ fontSize: '12px', color: 'var(--gold-light, #fbbf24)', background: 'rgba(251, 191, 36, 0.1)', padding: '4px 10px', borderRadius: '6px' }}>Total Diverted: 125 kg</span>
+                </div>
+                {pickupRequests.map((req, idx) => (
+                  <div key={idx} className="login-card mgmt-sub-view" style={{ padding: '20px', margin: 0, background: 'linear-gradient(135deg, rgba(8, 20, 14, 0.9) 0%, rgba(4, 10, 7, 0.95) 100%)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ background: 'rgba(251, 191, 36, 0.15)', color: 'var(--gold-light, #fbbf24)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '800' }}>
+                          {req.requestId}
+                        </span>
+                        <span style={{ fontSize: '13px', color: '#fff', fontWeight: '700' }}>{req.reason}</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#9ca3af', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>
+                        📅 {req.date}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '13px', marginBottom: '14px' }}>
+                      <div>
+                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Assigned Collector</span>
+                        <span style={{ color: '#fff', fontWeight: '600' }}>{req.collectorName}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Vehicle Unit</span>
+                        <span style={{ color: '#60a5fa', fontWeight: '600' }}>{req.vehicleNumber}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Recorded Weight</span>
+                        <span style={{ color: '#34d399', fontWeight: '600' }}>{req.weight}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Final Status</span>
+                        <span style={{ color: '#facc15', fontWeight: '700' }}>● {req.status}</span>
+                      </div>
+                    </div>
+                    {req.notes && (
+                      <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', color: '#9ca3af', borderLeft: '3px solid #10b981' }}>
+                        <strong style={{ color: '#fff' }}>Note:</strong> {req.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* 5. SUSTAINABILITY & ESG */}
+          {activeTab === 'sustainability_esg' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              
+              {esgDetailView === null ? (
+                <>
+                  {/* Header Title & Intro */}
+                  <div className="login-card mgmt-sub-view" style={{ padding: '20px 24px', margin: 0 }}>
+                    <h3 style={{ margin: '0 0 4px 0', color: 'var(--gold-light, #fbbf24)', fontSize: '20px' }}>🌱 Sustainability & ESG Hub</h3>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>
+                      Track carbon credit measurement, transparency metrics, and grant eligibility through the core modules below. Click any card to open its dedicated view.
+                    </p>
+                  </div>
+
+                  {/* 4 Interactive Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px' }}>
+                    
+                    {/* Card 1: Carbon Footprint */}
+                    <div 
+                      onClick={() => setEsgDetailView('carbon')}
+                      className="login-card mgmt-sub-view" 
+                      style={{ 
+                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
+                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
+                      }}
+                    >
+                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>🌿 Carbon Footprint</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>View CO₂ emissions reduced and active carbon credits earned.</p>
+                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                    </div>
+
+                    {/* Card 2: Waste Impact */}
+                    <div 
+                      onClick={() => setEsgDetailView('waste')}
+                      className="login-card mgmt-sub-view" 
+                      style={{ 
+                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
+                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
+                      }}
+                    >
+                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>♻️ Waste Impact</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Monitor organic waste diverted and compost generated in kilograms.</p>
+                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                    </div>
+
+                    {/* Card 3: ESG Score */}
+                    <div 
+                      onClick={() => setEsgDetailView('esg')}
+                      className="login-card mgmt-sub-view" 
+                      style={{ 
+                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
+                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
+                      }}
+                    >
+                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>📊 ESG Score</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Inspect overall ESG rating and calculated sustainability score.</p>
+                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                    </div>
+
+                    {/* Card 4: Certificates & Reports */}
+                    <div 
+                      onClick={() => setEsgDetailView('certificates')}
+                      className="login-card mgmt-sub-view" 
+                      style={{ 
+                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
+                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
+                      }}
+                    >
+                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>🏆 Certificates & Reports</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Access downloadable audit reports and verified digital certificates.</p>
+                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                    </div>
+
+                  </div>
+                </>
+              ) : (
+                /* Dedicated New Screen View with Professional Header Layout */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  
+                  {/* Top Bar with Properly Separated Corner Back Button and Centered Heading */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 100px', alignItems: 'center', background: 'rgba(5, 15, 10, 0.8)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    {/* Small Corner Back Button */}
+                    <button 
+                      onClick={() => setEsgDetailView(null)} 
+                      className="guest-bypass-btn" 
+                      style={{ 
+                        margin: 0, 
+                        padding: '4px 10px', 
+                        fontSize: '11px', 
+                        height: 'auto', 
+                        minHeight: 'unset',
+                        lineHeight: '1.2',
+                        justifySelf: 'start'
+                      }}
+                    >
+                      ← Back
+                    </button>
+
+                    {/* Centered Heading */}
+                    <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', textAlign: 'center', justifySelf: 'center' }}>
+                      {esgDetailView === 'carbon' && '🌿 Carbon Footprint'}
+                      {esgDetailView === 'waste' && '♻️ Waste Impact'}
+                      {esgDetailView === 'esg' && '📊 ESG Score'}
+                      {esgDetailView === 'certificates' && '🏆 Certificates & Reports'}
+                    </h3>
+                    
+                    {/* Empty spacer div to maintain grid balance */}
+                    <div></div>
+                  </div>
+
+                  {/* Screen Content: Carbon Footprint */}
+                  {esgDetailView === 'carbon' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>CO₂ EMISSIONS REDUCED</span>
+                        <h2 style={{ fontSize: '38px', color: '#34d399', margin: '10px 0 6px 0', fontWeight: '800' }}>0.85 MT</h2>
+                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Verified greenhouse gas reductions certified through automated organic waste routing.</p>
+                      </div>
+                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>CARBON CREDITS EARNED</span>
+                        <h2 style={{ fontSize: '38px', color: 'var(--gold-light, #fbbf24)', margin: '10px 0 6px 0', fontWeight: '800' }}>12.4 Credits</h2>
+                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Eligible for corporate sustainability grants and carbon offset monetization.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Screen Content: Waste Impact */}
+                  {esgDetailView === 'waste' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>TOTAL ORGANIC WASTE DIVERTED (KG)</span>
+                        <h2 style={{ fontSize: '38px', color: '#10b981', margin: '10px 0 6px 0', fontWeight: '800' }}>1,420 kg</h2>
+                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Total kitchen and food waste successfully diverted from municipal landfills.</p>
+                      </div>
+                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>COMPOST GENERATED (KG)</span>
+                        <h2 style={{ fontSize: '38px', color: '#facc15', margin: '10px 0 6px 0', fontWeight: '800' }}>710 kg</h2>
+                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>High-grade nutrient fertilizer output produced for regional agriculture.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Screen Content: ESG Score */}
+                  {esgDetailView === 'esg' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>OVERALL ESG RATING</span>
+                        <h2 style={{ fontSize: '38px', color: '#34d399', margin: '10px 0 6px 0', fontWeight: '800' }}>Grade A</h2>
+                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Top-tier corporate compliance rating for environmental excellence.</p>
+                      </div>
+                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>SUSTAINABILITY SCORE</span>
+                        <h2 style={{ fontSize: '38px', color: 'var(--gold-light, #fbbf24)', margin: '10px 0 6px 0', fontWeight: '800' }}>94.2 / 100</h2>
+                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Based on continuous IoT telemetry and carbon offset auditing.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Screen Content: Certificates & Reports */}
+                  {esgDetailView === 'certificates' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+                          <div>
+                            <span style={{ fontSize: '11px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>PDF DOCUMENT</span>
+                            <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Download Sustainability Report</h4>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Comprehensive audit of waste diversion, recycling efficiency, and grant compliance.</p>
+                          </div>
+                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>
+                            📥 Download Sustainability Report
+                          </button>
+                        </div>
+                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+                          <div>
+                            <span style={{ fontSize: '11px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>VERIFIED LEDGER</span>
+                            <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Download Carbon Credit Report</h4>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Detailed GHG reduction ledgers ready for credit issuance and trading.</p>
+                          </div>
+                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>
+                            📥 Download Carbon Credit Report
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0 }}>
+                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700' }}>BLOCKCHAIN SECURED</span>
+                          <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Carbon Credit Certificate</h4>
+                          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>ID: <strong style={{ color: '#fbbf24' }}>GGOS-CC-9928-ISB</strong></p>
+                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>View Carbon Credit Certificate</button>
+                        </div>
+                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0 }}>
+                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700' }}>VERIFIED ASSET</span>
+                          <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Compost Verification Certificate</h4>
+                          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>ID: <strong style={{ color: '#fbbf24' }}>GGOS-CMP-4412-ICT</strong></p>
+                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>View Compost Verification Certificate</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
-              <form onSubmit={handleDepositSubmit}>
-                <div className="login-form-group">
-                  <label>Select Target Smart Bin</label>
-                  <select value={depositForm.binId} onChange={(e)=>setDepositForm({...depositForm, binId: e.target.value})} className="login-input">
-                    <option value="BIN-SG-01" style={{ background: '#08100c' }}>BIN-SG-01 (Main Kitchen - Organic)</option>
-                    <option value="BIN-SG-02" style={{ background: '#08100c' }}>BIN-SG-02 (Cafeteria - Coffee Grounds)</option>
-                  </select>
-                </div>
-                <div className="login-form-group">
-                  <label>Measured Weight (Kg)</label>
-                  <input type="number" required value={depositForm.weight} onChange={(e)=>setDepositForm({...depositForm, weight: e.target.value})} className="login-input" placeholder="e.g. 35" />
-                </div>
-                <div className="login-form-group">
-                  <label>Waste Sub-type</label>
-                  <select value={depositForm.category} onChange={(e)=>setDepositForm({...depositForm, category: e.target.value})} className="login-input">
-                    <option value="Kitchen Waste" style={{ background: '#08100c' }}>Raw Kitchen Scraps</option>
-                    <option value="Cooked Food" style={{ background: '#08100c' }}>Cooked Leftovers</option>
-                    <option value="Coffee Grounds" style={{ background: '#08100c' }}>Coffee Grounds & Tea</option>
-                  </select>
-                </div>
-                <button type="submit" className="login-btn" style={{ marginTop: '10px' }}>Log Deposit</button>
-              </form>
+
             </div>
           )}
 
-          {/* 4. WASTE HISTORY */}
-          {activeTab === 'history' && (
-            <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', color: '#fff' }}>📜 Complete Waste Deposit History</h3>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted, #9ca3af)' }}>
-                      <th style={{ padding: '12px' }}>Log ID</th>
-                      <th style={{ padding: '12px' }}>Date</th>
-                      <th style={{ padding: '12px' }}>Bin Reference</th>
-                      <th style={{ padding: '12px' }}>Category</th>
-                      <th style={{ padding: '12px' }}>Weight (Kg)</th>
-                      <th style={{ padding: '12px' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {wasteLogs.map((log) => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>{log.id}</td>
-                        <td style={{ padding: '12px', color: '#fff' }}>{log.date}</td>
-                        <td style={{ padding: '12px', color: '#60a5fa' }}>{log.binId}</td>
-                        <td style={{ padding: '12px', color: 'var(--text-muted, #9ca3af)' }}>{log.type}</td>
-                        <td style={{ padding: '12px', color: '#fff', fontWeight: '700' }}>{log.weightKg} kg</td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>{log.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* 5. PICKUP TRACKING */}
-          {activeTab === 'tracking' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-              <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-                <h3 style={{ marginTop: 0, color: 'var(--gold-light, #fbbf24)' }}>🚚 Request New Dispatch</h3>
-                {pickupSuccessMsg && <div style={{ padding: '10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', marginBottom: '15px', fontSize: '12px' }}>Request Dispatched!</div>}
-                <form onSubmit={handlePickupSubmit}>
-                  <div className="login-form-group">
-                    <label>Waste Category</label>
-                    <select value={pickupForm.wasteType} onChange={(e) => setPickupForm({...pickupForm, wasteType: e.target.value})} className="login-input">
-                      <option value="Mixed Organic" style={{ background: '#08100c' }}>Mixed Organic Waste</option>
-                      <option value="Food Scraps" style={{ background: '#08100c' }}>Kitchen & Food Scraps</option>
-                    </select>
-                  </div>
-                  <div className="login-form-group">
-                    <label>Weight (Kg)</label>
-                    <input type="number" value={pickupForm.estimatedWeightKg} onChange={(e) => setPickupForm({...pickupForm, estimatedWeightKg: e.target.value})} className="login-input" required />
-                  </div>
-                  <button type="submit" className="login-btn">Dispatch Pickup Fleet</button>
-                </form>
-              </div>
-
-              <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-                <h3 style={{ marginTop: 0, color: '#10b981' }}>📡 Active Pickup Dispatch Status</h3>
-                <div style={{ borderLeft: '3px solid #10b981', paddingLeft: '14px', margin: '15px 0' }}>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#fff' }}>Vehicle: ICT-GRN-9912</p>
-                  <p style={{ margin: '4px 0', fontSize: '12px', color: '#9ca3af' }}>Driver: Muhammad Ali (Verified Collector)</p>
-                  <span style={{ fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>● En Route — ETA 18 mins</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 6. SMART BINS */}
-          {activeTab === 'bins' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-              <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h4 style={{ margin: 0, color: '#fff' }}>BIN-SG-01 (Main Kitchen)</h4>
-                  <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>Online</span>
-                </div>
-                <p style={{ fontSize: '13px', color: '#9ca3af' }}>Capacity Filled: <strong>78%</strong></p>
-                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden', margin: '10px 0' }}>
-                  <div style={{ width: '78%', height: '100%', background: 'var(--gold-light, #fbbf24)' }}></div>
-                </div>
-                <p style={{ fontSize: '11px', color: '#6b7280' }}>Sensor ID: SENSOR-9920A</p>
-              </div>
-
-              <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h4 style={{ margin: 0, color: '#fff' }}>BIN-SG-02 (Cafeteria)</h4>
-                  <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>Online</span>
-                </div>
-                <p style={{ fontSize: '13px', color: '#9ca3af' }}>Capacity Filled: <strong>32%</strong></p>
-                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden', margin: '10px 0' }}>
-                  <div style={{ width: '32%', height: '100%', background: '#10b981' }}></div>
-                </div>
-                <p style={{ fontSize: '11px', color: '#6b7280' }}>Sensor ID: SENSOR-9921B</p>
-              </div>
-            </div>
-          )}
-
-          {/* 7. COMPOST TRACKING */}
-          {activeTab === 'compost' && (
-            <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-              <h3 style={{ marginTop: 0, color: '#34d399' }}>🌱 Facility Compost Processing Pipeline</h3>
-              <p style={{ fontSize: '13px', color: '#9ca3af' }}>Track your organic waste conversion into high-grade bio-fertilizer.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '20px' }}>
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ fontSize: '11px', color: '#9ca3af' }}>BATCH #CP-2026-08</span>
-                  <h4 style={{ color: '#fbbf24', margin: '6px 0' }}>Thermophilic Phase</h4>
-                  <p style={{ fontSize: '12px', color: '#34d399', margin: 0 }}>Temp: 58°C (Optimal)</p>
-                </div>
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ fontSize: '11px', color: '#9ca3af' }}>ESTIMATED YIELD</span>
-                  <h4 style={{ color: '#10b981', margin: '6px 0' }}>450 Kg Organic Fertilizer</h4>
-                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Ready in ~12 Days</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 8. DIGITAL CERTIFICATES */}
-          {activeTab === 'certificates' && (
-            <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-              <h3 style={{ marginTop: 0, color: 'var(--gold-light, #fbbf24)' }}>📄 ESG Compliance & Sustainability Certificates</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
-                  <div>
-                    <h4 style={{ margin: 0, color: '#fff' }}>Monthly Zero-Waste Verification (August 2026)</h4>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#9ca3af' }}>Issued by GreenGoldOS Environmental Authority</p>
-                  </div>
-                  <button className="login-btn" style={{ width: 'auto', padding: '6px 16px', fontSize: '12px' }}>Download PDF</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 9. CARBON IMPACT */}
-          {activeTab === 'impact' && (
-            <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-              <h3 style={{ marginTop: 0, color: '#10b981' }}>🌍 Environmental & Carbon Audit Metrics</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                <div>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>Methane Gas Avoided</span>
-                  <h2 style={{ color: '#34d399', margin: '6px 0' }}>1,840 m³</h2>
-                </div>
-                <div>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>Total Carbon Offset</span>
-                  <h2 style={{ color: '#fbbf24', margin: '6px 0' }}>3.45 MT CO2e</h2>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 10. REPORTS */}
-          {activeTab === 'reports' && (
-            <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-              <h3 style={{ marginTop: 0, color: '#60a5fa' }}>📊 Corporate ESG & Waste Audit Reports</h3>
-              <p style={{ fontSize: '13px', color: '#9ca3af' }}>Generate comprehensive audit logs for internal corporate compliance.</p>
-              <button className="login-btn" style={{ width: 'auto', marginTop: '10px' }}>Export Full Audit Log (.CSV)</button>
-            </div>
-          )}
-
-          {/* 11. REWARDS */}
-          {activeTab === 'rewards' && (
-            <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-              <h3 style={{ marginTop: 0, color: '#a78bfa' }}>🏆 Green Gold Points & Loyalty Program</h3>
-              <div style={{ padding: '16px', background: 'rgba(167, 139, 250, 0.1)', border: '1px solid #a78bfa', borderRadius: '8px', marginBottom: '20px' }}>
-                <span style={{ fontSize: '12px', color: '#9ca3af' }}>AVAILABLE REWARD BALANCE</span>
-                <h2 style={{ color: '#a78bfa', margin: '6px 0' }}>850 Points</h2>
-              </div>
-              <button className="login-btn" style={{ width: 'auto' }}>Redeem for Free Organic Compost Bags</button>
-            </div>
-          )}
-
-          {/* 12. NOTIFICATIONS */}
+          {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && (
-            <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-              <h3 style={{ marginTop: 0, color: '#fff' }}>🔔 System Alerts & Updates</h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0', fontSize: '13px', color: '#9ca3af' }}>
-                <li style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>🟢 <strong>Collection Complete:</strong> BIN-SG-01 emptied successfully at 04:30 PM.</li>
-                <li style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>⚠️ <strong>Capacity Warning:</strong> BIN-SG-01 has reached 78% capacity.</li>
-              </ul>
+            <div className="login-card mgmt-sub-view" style={{ maxWidth: '750px', margin: '0 auto', padding: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>🔔 System Notifications & Alerts</h3>
+                <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>2 Unread</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ background: 'rgba(239, 68, 68, 0.08)', borderLeft: '4px solid #ef4444', padding: '14px 16px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <strong style={{ color: '#fff', fontSize: '14px' }}>Critical Bin Capacity Alert</strong>
+                    <span style={{ fontSize: '11px', color: '#f87171' }}>10 mins ago</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>BIN-SG-01 in Main Kitchen has reached 100% capacity. Immediate pickup request recommended.</p>
+                </div>
+                <div style={{ background: 'rgba(16, 185, 129, 0.08)', borderLeft: '4px solid #10b981', padding: '14px 16px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <strong style={{ color: '#fff', fontSize: '14px' }}>Carbon Credit Minted Successfully</strong>
+                    <span style={{ fontSize: '11px', color: '#34d399' }}>2 hours ago</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>0.025 MT carbon credits have been successfully verified and added to your portfolio.</p>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderLeft: '4px solid #fbbf24', padding: '14px 16px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <strong style={{ color: '#fff', fontSize: '14px' }}>Monthly ESG Report Ready</strong>
+                    <span style={{ fontSize: '11px', color: '#fbbf24' }}>Yesterday</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Your Q3 sustainability audit report is now available for download in the ESG hub.</p>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* 13. PROFILE & SETTINGS */}
+          {/* PROFILE & SETTINGS TAB */}
           {activeTab === 'profile' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-              
-              <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>
-                  👤 Profile Information
-                </h3>
+            <div className="login-card mgmt-sub-view" style={{ maxWidth: '750px', margin: '0 auto', padding: '28px' }}>
+              <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>👤 Generator Profile & Facility Settings</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#9ca3af' }}>Manage your organization credentials and automated dispatch preferences.</p>
+              </div>
 
-                {profileSavedMsg && (
-                  <div style={{ padding: '10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#34d399', marginBottom: '16px', fontSize: '12px' }}>
-                    ✓ Profile settings saved successfully!
-                  </div>
-                )}
-
-                <form onSubmit={handleProfileSave}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="login-form-group">
                     <label>Organization Name</label>
-                    <input 
-                      type="text" 
-                      value={profileData.orgName} 
-                      onChange={(e) => setProfileData({...profileData, orgName: e.target.value})}
-                      className="login-input" 
-                    />
+                    <input type="text" className="login-input" defaultValue={displayName} disabled />
                   </div>
-
                   <div className="login-form-group">
-                    <label>City / Location</label>
-                    <input 
-                      type="text" 
-                      value={profileData.city} 
-                      onChange={(e) => setProfileData({...profileData, city: e.target.value})}
-                      className="login-input" 
-                    />
+                    <label>City / Region</label>
+                    <input type="text" className="login-input" defaultValue={userCity} disabled />
                   </div>
+                </div>
 
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="login-form-group">
-                    <label>Official Contact Email</label>
-                    <input 
-                      type="email" 
-                      value={profileData.email} 
-                      onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                      className="login-input" 
-                    />
+                    <label>Primary Contact Phone</label>
+                    <input type="text" className="login-input" defaultValue={userPhone} />
                   </div>
-
                   <div className="login-form-group">
-                    <label>Phone Number</label>
-                    <input 
-                      type="text" 
-                      value={profileData.phone} 
-                      onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                      className="login-input" 
-                    />
+                    <label>Estimated Daily Waste</label>
+                    <input type="text" className="login-input" defaultValue={wasteEstimate} />
                   </div>
+                </div>
 
-                  <button type="submit" className="login-btn" style={{ marginTop: '10px' }}>
-                    Update Profile Details
+                <div className="login-form-group">
+                  <label>Facility Street Address</label>
+                  <textarea rows="2" className="login-input" defaultValue="Plot 5, Commercial Sector F-7/2, Islamabad" style={{ resize: 'vertical' }} />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button className="login-btn" style={{ width: 'auto', padding: '10px 24px', margin: 0 }}>
+                    Save Profile Changes
                   </button>
-                </form>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div className="login-card mgmt-sub-view" style={{ padding: '24px' }}>
-                  <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#10b981', fontSize: '18px' }}>
-                    ⚙️ System & Fleet Settings
-                  </h3>
-
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>Hardware Status</label>
-                    <input type="text" className="login-input" value={profileData.binCount} readOnly style={{ opacity: 0.8 }} />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>Automated Pickup Dispatch</div>
-                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>Auto-request driver when bin fill exceeds 80%</div>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true} 
-                      style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }} 
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>Email Alert Notifications</div>
-                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>Receive daily ESG & waste summary logs</div>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={profileData.notificationsEnabled} 
-                      onChange={(e) => setProfileData({...profileData, notificationsEnabled: e.target.checked})}
-                      style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }} 
-                    />
-                  </div>
-                </div>
-
-                <div className="login-card mgmt-sub-view" style={{ padding: '20px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                  <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700' }}>SECURITY STATUS</span>
-                  <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#fff' }}>2-Factor Authentication & Encrypted Smart Sensor Node Active.</p>
                 </div>
               </div>
-
             </div>
           )}
 
