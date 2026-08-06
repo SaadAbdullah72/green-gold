@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { 
+  IconLeaf, IconDashboard, IconTruck, IconBox, IconPlus, 
+  IconSettings, IconLab, IconChart, IconBell, IconUser, IconBrandLogo 
+} from './Icons';
 
 /**
  * WasteCollectorDashboard Component
@@ -54,30 +58,38 @@ export default function WasteCollectorDashboard({
   const [filterWaste, setFilterWaste] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Safety Fallbacks
+  const safeUsername = username || 'Driver E-04';
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const safePerformance = performance || { tasksCompletedToday: 0, totalAssignedToday: 0, weeklyCollectionsKg: 0, completionRate: 0, weeklyTasksCompleted: 0 };
+  const safeShift = shift || { active: true, startTime: '08:00 AM', vehicleNumber: 'ICT-GRN-9912', zone: 'Islamabad Capital Territory' };
+
   // Extract initials for profile avatar
-  const initials = username.split(/[ _]/).map(w => w[0]).join("").toUpperCase().substring(0, 2);
+  const initials = (safeUsername || 'Driver').split(/[ _]/).filter(Boolean).map(w => w[0]).join("").toUpperCase().substring(0, 2) || 'WC';
 
   // Filter Tasks
-  const filteredTasks = tasks.filter(t => {
-    const matchesSearch = t.collectionPoint.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          t.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          t.binId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || t.status.toLowerCase() === filterStatus.toLowerCase();
-    const matchesPriority = filterPriority === 'all' || t.priority.toLowerCase() === filterPriority.toLowerCase();
-    const matchesWaste = filterWaste === 'all' || t.wasteType.toLowerCase().includes(filterWaste.toLowerCase());
+  const filteredTasks = safeTasks.filter(t => {
+    if (!t) return false;
+    const matchesSearch = (t.collectionPoint || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (t.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (t.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (t.binId || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || (t.status || '').toLowerCase() === filterStatus.toLowerCase();
+    const matchesPriority = filterPriority === 'all' || (t.priority || '').toLowerCase() === filterPriority.toLowerCase();
+    const matchesWaste = filterWaste === 'all' || (t.wasteType || '').toLowerCase().includes(filterWaste.toLowerCase());
     return matchesSearch && matchesStatus && matchesPriority && matchesWaste;
   });
 
   // Today's Stats
-  const completedToday = tasks.filter(t => t.status === 'Completed').length;
-  const skippedToday = tasks.filter(t => t.status === 'Skipped' || t.status === 'Failed').length;
-  const remainingToday = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Skipped' && t.status !== 'Failed').length;
-  const totalToday = tasks.length;
+  const completedToday = safeTasks.filter(t => t.status === 'Completed').length;
+  const skippedToday = safeTasks.filter(t => t.status === 'Skipped' || t.status === 'Failed').length;
+  const remainingToday = safeTasks.filter(t => t.status !== 'Completed' && t.status !== 'Skipped' && t.status !== 'Failed').length;
+  const totalToday = safeTasks.length;
   const completionProgress = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
 
   // Find next up task (the first non-completed/non-skipped task)
-  const nextTask = tasks.find(t => t.status !== 'Completed' && t.status !== 'Skipped' && t.status !== 'Failed');
+  const nextTask = safeTasks.find(t => t.status !== 'Completed' && t.status !== 'Skipped' && t.status !== 'Failed');
 
   // Handle open details modal
   const openTaskDetails = (task) => {
@@ -154,17 +166,7 @@ export default function WasteCollectorDashboard({
         {/* Brand Header */}
         <div className="app-logo">
           <div className="logo-icon">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12" stroke="url(#gold-grad-side)" strokeLinecap="round"/>
-              <path d="M12 12c0-3-2-5-5-5c-2 0-3 2-1 4c3 3 6 1 6 1z" fill="var(--primary)"/>
-              <path d="M12 12c0 3 2 5 5 5c2 0 3-2 1-4c-3-3-6-1-6-1z" fill="var(--gold-light)"/>
-              <defs>
-                <linearGradient id="gold-grad-side" x1="2" y1="2" x2="22" y2="22">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="100%" stopColor="#d97706" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <IconLeaf size={24} color="var(--primary)" />
           </div>
           <div className="logo-text">
             <h1>GreenGoldOS</h1>
@@ -230,8 +232,8 @@ export default function WasteCollectorDashboard({
                 <span className="menu-btn-content">
                   <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                   Notifications
-                  {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="badge-counter" style={{ marginLeft: 'auto' }}>{notifications.filter(n => !n.read).length}</span>
+                  {safeNotifications.filter(n => !n.read).length > 0 && (
+                    <span className="badge-counter" style={{ marginLeft: 'auto' }}>{safeNotifications.filter(n => !n.read).length}</span>
                   )}
                 </span>
               </button>
@@ -252,7 +254,7 @@ export default function WasteCollectorDashboard({
           <div className="profile-card" onClick={onLogout} style={{ cursor: 'pointer' }} title="Click to log out">
             <div className="profile-avatar">{initials}</div>
             <div className="profile-info">
-              <span className="name">{shift.driverName}</span>
+              <span className="name">{safeShift.driverName || safeUsername}</span>
               <span className="role" style={{ color: 'var(--gold-light)', fontWeight: '600' }}>Logout ⮞</span>
             </div>
           </div>

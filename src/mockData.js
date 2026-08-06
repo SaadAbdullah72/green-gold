@@ -19,6 +19,86 @@ export const MOCK_DATA = {
     { id: "SITE-04", name: "Downtown Office Hub", bins: 5, sortAccuracy: 94.1, status: "Compliant" }
   ],
 
+  // Waste Collector Staff Data
+  collectorTasks: [
+    {
+      id: "TASK-101",
+      collectionPoint: "Hotel Marriott (Main Kitchen)",
+      location: "Plot 5, Sector F-7/2, Islamabad",
+      binId: "BIN-SG-01",
+      fillLevel: 100,
+      estQuantity: 42,
+      wasteType: "Organic Food Waste",
+      status: "Assigned",
+      priority: "Urgent",
+      timeSlot: "09:00 - 10:00 AM",
+      instructions: "Gate 2 rear entrance access. Contact Kitchen Manager on arrival.",
+      binStatus: "Full"
+    },
+    {
+      id: "TASK-102",
+      collectionPoint: "Sector 7 Residential Gate",
+      location: "Block C, Street 14, Islamabad",
+      binId: "BIN-SG-04",
+      fillLevel: 85,
+      estQuantity: 28,
+      wasteType: "Organic Garden Waste",
+      status: "Assigned",
+      priority: "Medium",
+      timeSlot: "10:30 - 11:30 AM",
+      instructions: "Smart bin unlocked via RFID scanner.",
+      binStatus: "Normal"
+    },
+    {
+      id: "TASK-103",
+      collectionPoint: "City College Cafeteria",
+      location: "Sector H-9, Islamabad",
+      binId: "BIN-SG-09",
+      fillLevel: 95,
+      estQuantity: 55,
+      wasteType: "Organic Food Waste",
+      status: "Assigned",
+      priority: "High",
+      timeSlot: "12:00 - 01:00 PM",
+      instructions: "Report to cafeteria loading bay.",
+      binStatus: "Full"
+    }
+  ],
+
+  collectorNotifications: [
+    {
+      id: "NOTIF-01",
+      message: "New urgent pickup assigned at Hotel Marriott (Main Kitchen).",
+      time: "10 mins ago",
+      type: "dispatch",
+      read: false
+    },
+    {
+      id: "NOTIF-02",
+      message: "Route optimized for Sector F-7/2 traffic bypass.",
+      time: "25 mins ago",
+      type: "info",
+      read: false
+    }
+  ],
+
+  collectorPerformance: {
+    tasksCompletedToday: 0,
+    totalAssignedToday: 3,
+    weeklyCollectionsKg: 480,
+    completionRate: 96.5,
+    weeklyTasksCompleted: 24,
+    fuelSavedLiters: 18.4,
+    ecoScore: 94
+  },
+
+  collectorShift: {
+    active: true,
+    startTime: "08:00 AM",
+    vehicleNumber: "ICT-GRN-9912",
+    zone: "Islamabad Capital Territory - Zone A"
+  },
+
   // 1. Pending Installation Requests (Approval Queue)
   installRequests: [
     {

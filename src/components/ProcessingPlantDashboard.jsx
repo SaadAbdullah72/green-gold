@@ -1,4 +1,9 @@
 import React, { useState } from 'react';
+import { 
+  IconDashboard, IconPlus, IconBox, IconLeaf, 
+  IconTruck, IconUser, IconShield, IconChart, IconCheck
+} from './Icons';
+
 export default function ProcessingPlantDashboard({ 
   username = "Plant Supervisor", 
   location = "Islamabad Plant Yard #4", 
@@ -61,28 +66,28 @@ export default function ProcessingPlantDashboard({
     {
       title: "OPERATIONS",
       items: [
-        { id: 'dashboard', name: 'Dashboard', icon: '🏠' },
-        { id: 'intake-equipment', name: 'Intake & Equipment', icon: '📥', badge: 1 },
+        { id: 'dashboard', name: 'Dashboard', icon: <IconDashboard size={18} /> },
+        { id: 'intake-equipment', name: 'Intake & Equipment', icon: <IconBox size={18} />, badge: 1 },
       ]
     },
     {
       title: "PROCESSING & QA",
       items: [
-        { id: 'monitoring-quality', name: 'Monitoring & Quality', icon: '🌱' },
+        { id: 'monitoring-quality', name: 'Monitoring & Quality', icon: <IconLeaf size={18} /> },
       ]
     },
     {
       title: "LOGISTICS & IMPACT",
       items: [
-        { id: 'inventory-distribution', name: 'Inventory & Distribution', icon: '📦' },
-        { id: 'carbon', name: 'Carbon Impact & Reports', icon: '🌍' },
+        { id: 'inventory-distribution', name: 'Inventory & Distribution', icon: <IconTruck size={18} /> },
+        { id: 'carbon', name: 'Carbon Impact & Reports', icon: <IconChart size={18} /> },
       ]
     },
     {
       title: "ADMINISTRATION",
       items: [
-        { id: 'admin-profile', name: 'Administration & Profile', icon: '👤', badge: notifications.filter(n => !n.read).length },
-        { id: 'logout', name: 'Logout', icon: '🚪' }
+        { id: 'admin-profile', name: 'Administration & Profile', icon: <IconUser size={18} />, badge: notifications.filter(n => !n.read).length },
+        { id: 'logout', name: 'Logout', icon: <IconShield size={18} /> }
       ]
     }
   ];
@@ -119,34 +124,38 @@ export default function ProcessingPlantDashboard({
       <aside className="sidebar-left" style={{ overflowY: 'auto' }}>
         <div className="app-logo">
           <div className="logo-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <IconLeaf size={24} color="var(--primary)" />
           </div>
           <div className="logo-text">
             <h1>GreenGoldOS</h1>
-            <span>PLANT OPERATIONS PORTAL</span>
+            <span>Compost Processing</span>
           </div>
         </div>
-        {/* SIDEBAR SECTIONS & ITEMS */}
-        {menuSections.map((sec, idx) => (
-          <React.Fragment key={idx}>
-            <div className="menu-label">{sec.title}</div>
+        {/* RENDER ALIGNED SUB-TABS NAVIGATION */}
+        {menuSections.map((section, idx) => (
+          <div key={idx} style={{ marginBottom: '15px' }}>
+            <h4 className="menu-label">{section.title}</h4>
             <ul className="menu-list">
-              {sec.items.map((item) => (
+              {section.items.map(item => (
                 <li key={item.id}>
                   <button 
-                    className={`menu-btn ${activeTab === item.id ? 'active' : ''}`} 
+                    className={`menu-btn ${activeTab === item.id ? 'active' : ''}`}
                     onClick={() => handleMenuClick(item.id)}
                   >
-                    <div className="menu-btn-content">
-                      <span style={{ fontSize: '16px' }}>{item.icon}</span>
+                    <span className="menu-btn-content" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {item.icon}
                       <span>{item.name}</span>
-                    </div>
-                    {item.badge > 0 && <span className="badge-counter">{item.badge}</span>}
+                    </span>
+                    {item.badge > 0 && (
+                      <span className="status-pill approved" style={{ marginLeft: 'auto', fontSize: '10px' }}>
+                        {item.badge}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}
             </ul>
-          </React.Fragment>
+          </div>
         ))}
         {/* SIDEBAR FOOTER PROFILE */}
         <div className="sidebar-footer" style={{ marginTop: '20px' }}>
@@ -170,41 +179,41 @@ export default function ProcessingPlantDashboard({
             </h2>
             <p>Real-time telemetry, operational controls, and plant execution suite.</p>
           </div>
-          <button className="action-btn approve" style={{ padding: '12px 24px', fontSize: '14px' }} onClick={() => setShowModal(true)}>
+          <button className="btn-emerald" style={{ padding: '12px 24px', fontSize: '14px' }} onClick={() => setShowModal(true)}>
             + Initialize Digestion Pile
           </button>
         </header>
         {/* KPI METRIC CARDS (Visible on dashboard) */}
         {activeTab === 'dashboard' && (
           <section className="kpi-grid">
-            <div className="kpi-card glass-panel">
+            <div className="kpi-card soft-card">
               <div className="kpi-title">
                 <span>Daily Waste Intake</span>
-                <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <IconTruck size={18} color="var(--primary)" />
               </div>
               <div className="kpi-value">8,150 <span style={{ fontSize: '18px', color: 'var(--primary)' }}>kg</span></div>
               <div className="kpi-label">Target: 10,000 kg / day</div>
             </div>
-            <div className="kpi-card glass-panel">
+            <div className="kpi-card soft-card">
               <div className="kpi-title">
                 <span>Carbon Credits Minted</span>
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5H9.5a2.5 2.5 0 000 5h5a2.5 2.5 0 010 5H8"/></svg>
+                <IconLeaf size={18} color="var(--primary)" />
               </div>
-              <div className="kpi-value" style={{ color: 'var(--gold-light)' }}>1.64 <span style={{ fontSize: '18px' }}>MT</span></div>
+              <div className="kpi-value" style={{ color: 'var(--primary)' }}>1.64 <span style={{ fontSize: '18px' }}>MT</span></div>
               <div className="kpi-label">58.2 Trees Equivalent Saved</div>
             </div>
-            <div className="kpi-card glass-panel">
+            <div className="kpi-card soft-card">
               <div className="kpi-title">
                 <span>Active Digestion Piles</span>
-                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <IconBox size={18} color="var(--primary)" />
               </div>
-              <div className="kpi-value">6 <span style={{ fontSize: '18px', color: 'var(--secondary)' }}>Piles</span></div>
+              <div className="kpi-value">6 <span style={{ fontSize: '18px', color: 'var(--primary)' }}>Piles</span></div>
               <div className="kpi-label">Air Blowers: 100% Active</div>
             </div>
-            <div className="kpi-card glass-panel">
+            <div className="kpi-card soft-card">
               <div className="kpi-title">
                 <span>Compost Quality Index</span>
-                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <IconCheck size={18} color="var(--primary)" />
               </div>
               <div className="kpi-value">98.9%</div>
               <div className="kpi-label">Grade-A Organic Compliant</div>

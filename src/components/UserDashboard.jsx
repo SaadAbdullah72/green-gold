@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import {
+  IconDashboard, IconPlus, IconBin, IconTruck,
+  IconLeaf, IconBell, IconUser, IconChart, IconShield, IconBox
+} from './Icons';
 
 export default function UserDashboard({ username, userData, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -92,36 +96,37 @@ export default function UserDashboard({ username, userData, onLogout }) {
     {
       title: "DASHBOARD & OVERVIEW",
       items: [
-        { id: 'overview', label: '📊 Dashboard Overview' },
+        { id: 'overview', label: 'Dashboard Overview', icon: <IconDashboard size={22} /> },
       ]
     },
     {
       title: "BIN MANAGEMENT",
       items: [
-        { id: 'request_bin', label: '➕ Request Smart Bin' },
-        { id: 'bins', label: '🗑️ My Bins Status' },
+        { id: 'request_bin', label: 'Request Smart Bin', icon: <IconPlus size={22} /> },
+        { id: 'bins', label: 'My Bins Status', icon: <IconBin size={22} /> },
       ]
     },
     {
       title: "PICKUP & LOGISTICS",
       items: [
-        { id: 'filled_bin_pickup', label: '🚛 Filled Bin Pickup Request' },
+        { id: 'filled_bin_pickup', label: 'Filled Bin Pickup Request', icon: <IconTruck size={22} /> },
       ]
     },
     {
       title: "SUSTAINABILITY & ESG",
       items: [
-        { id: 'sustainability_esg', label: '🌱 Sustainability & ESG' },
+        { id: 'sustainability_esg', label: 'Sustainability & ESG', icon: <IconLeaf size={22} /> },
       ]
     },
     {
       title: "ACCOUNT & SETTINGS",
       items: [
-        { id: 'notifications', label: '🔔 Notifications' },
-        { id: 'profile', label: '👤 Profile & Settings' },
+        { id: 'notifications', label: 'Notifications', icon: <IconBell size={22} /> },
+        { id: 'profile', label: 'Profile & Settings', icon: <IconUser size={22} /> },
       ]
     }
   ];
+
 
   const handlePickupFormSubmit = (e) => {
     e.preventDefault();
@@ -160,7 +165,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
   return (
     <div className="dashboard-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      
+
       {/* MANAGEMENT APPROVAL POPUP MODAL */}
       {showApprovalModal && (
         <div style={{
@@ -269,26 +274,29 @@ export default function UserDashboard({ username, userData, onLogout }) {
         </div>
       )}
 
-      {/* TOP HEADER / BRANDING BAR */}
-      <header className="dashboard-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(5, 15, 10, 0.85)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="login-logo-icon" style={{ width: '38px', height: '38px' }}>
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+      {/* TOP HEADER / BRANDING & GREETING BAR */}
+      <header style={{ borderBottom: '1px solid var(--border-color)', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', zIndex: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="avatar-circle">
+            {displayName.charAt(0)}
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', fontWeight: '700', letterSpacing: '0.5px' }}>GreenGoldOS</h2>
-            <span style={{ fontSize: '11px', color: 'var(--gold-light, #fbbf24)', fontWeight: '600' }}>WASTE GENERATOR PORTAL</span>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>Good Morning</div>
+            <h2 style={{ margin: 0, fontSize: '18px', color: 'var(--text-primary)', fontWeight: '800', letterSpacing: '-0.02em' }}>{displayName}</h2>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>{displayName}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>{userCity}</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="rewards-pill">
+            🍃 1,257 Rewards
           </div>
-          <button 
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer' }}>
+            🔔
+          </div>
+          <button
             onClick={onLogout}
-            className="guest-bypass-btn"
-            style={{ margin: 0, padding: '6px 14px', fontSize: '12px', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#f87171', background: 'rgba(239, 68, 68, 0.1)' }}
+            className="btn-outline"
+            style={{ height: '40px', padding: '0 16px', fontSize: '13px', color: 'var(--error)', borderColor: '#FCA5A5' }}
           >
             Logout ➔
           </button>
@@ -296,18 +304,18 @@ export default function UserDashboard({ username, userData, onLogout }) {
       </header>
 
       {/* BODY LAYOUT: LEFT SIDEBAR + MAIN CONTENT */}
-      <div style={{ display: 'flex', flex: 1, maxWidth: '1400px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        
+      <div style={{ display: 'flex', flex: 1, width: '100%', boxSizing: 'border-box' }}>
+
         {/* LEFT SIDEBAR */}
-        <aside style={{ 
-          width: '270px', background: 'rgba(5, 15, 10, 0.65)', backdropFilter: 'blur(8px)', 
-          borderRight: '1px solid rgba(255,255,255,0.08)', padding: '20px 12px',
+        <aside style={{
+          width: '270px', background: 'var(--bg-surface)',
+          borderRight: '1px solid var(--border-color)', padding: '24px 16px',
           display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto',
-          maxHeight: 'calc(100vh - 71px)', position: 'sticky', top: '71px'
+          maxHeight: 'calc(100vh - 73px)', position: 'sticky', top: '73px'
         }}>
           {menuSections.map((sec, idx) => (
             <div key={idx}>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--gold-light, #fbbf24)', paddingLeft: '8px', marginBottom: '6px', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', paddingLeft: '12px', marginBottom: '8px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 {sec.title}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -315,15 +323,8 @@ export default function UserDashboard({ username, userData, onLogout }) {
                   <button
                     key={item.id}
                     onClick={() => { setActiveTab(item.id); setEsgDetailView(null); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', width: '100%', padding: '10px 12px',
-                      borderRadius: '8px', border: 'none',
-                      background: activeTab === item.id ? 'rgba(251, 191, 36, 0.15)' : 'transparent',
-                      color: activeTab === item.id ? 'var(--gold-light, #fbbf24)' : '#d1d5db',
-                      fontWeight: activeTab === item.id ? '700' : '500', fontSize: '13px',
-                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease',
-                      borderLeft: activeTab === item.id ? '3px solid var(--gold-light, #fbbf24)' : '3px solid transparent'
-                    }}
+                    className={`nav-tab-btn ${activeTab === item.id ? 'active' : ''}`}
+                    style={{ width: '100%', justifyContent: 'flex-start' }}
                   >
                     {item.label}
                   </button>
@@ -333,49 +334,50 @@ export default function UserDashboard({ username, userData, onLogout }) {
           ))}
         </aside>
 
+
         {/* MAIN CONTENT AREA */}
         <main style={{ flex: 1, padding: '24px', boxSizing: 'border-box', overflowY: 'auto' }}>
-          
+
           {/* 1. CLEAN & PROFESSIONAL DASHBOARD OVERVIEW */}
           {activeTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-              
+
               {/* Welcome Banner */}
-              <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '28px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 15, 10, 0.85) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#34d399', letterSpacing: '0.5px' }}>GENERATOR PORTAL CONTROL DECK</span>
-                <h2 style={{ fontSize: '26px', color: '#fff', margin: '6px 0 8px 0', fontWeight: '800' }}>Welcome back, {displayName}</h2>
-                <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0, maxWidth: '700px', lineHeight: '1.5' }}>
+              <div className="soft-card" style={{ margin: 0, padding: '28px', background: '#FFFFFF', border: '1px solid var(--border-color)' }}>
+                <span className="pill-badge" style={{ marginBottom: '12px' }}>GENERATOR PORTAL CONTROL DECK</span>
+                <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', margin: '6px 0 8px 0', fontWeight: '800' }}>Welcome back, {displayName}</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, maxWidth: '700px', lineHeight: '1.6' }}>
                   Monitor real-time waste diversion telemetry, manage smart bin requests, and access your sustainability metrics seamlessly through the quick category navigation hubs below.
                 </p>
               </div>
 
-              {/* Category Quick Navigation Hub (Professional Grid Layout with 1 Link Button per Category) */}
+              {/* Category Quick Navigation Hub (Professional Grid Layout) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '16px', fontWeight: '700', letterSpacing: '0.5px' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '16px', fontWeight: '800', letterSpacing: '0.5px' }}>
                   📂 MAIN CATEGORY NAVIGATION
                 </h3>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                  
+
                   {/* Category 1: Bin Management */}
-                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="soft-card" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>BIN MANAGEMENT</div>
-                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Smart Bins & Allotments</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Request new IoT waste bins or monitor real-time fill capacities and sensor metrics.</p>
+                      <span className="pill-badge" style={{ fontSize: '10px', marginBottom: '8px' }}>BIN MANAGEMENT</span>
+                      <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Smart Bins & Allotments</h4>
+                      <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Request new IoT waste bins or monitor real-time fill capacities and sensor metrics.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                      <button 
-                        onClick={() => setActiveTab('request_bin')} 
-                        className="login-btn" 
-                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      <button
+                        onClick={() => setActiveTab('request_bin')}
+                        className="btn-emerald"
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px', height: '40px' }}
                       >
                         Request Smart Bin ➔
                       </button>
-                      <button 
-                        onClick={() => setActiveTab('bins')} 
-                        className="guest-bypass-btn" 
-                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      <button
+                        onClick={() => setActiveTab('bins')}
+                        className="btn-outline"
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px', height: '40px' }}
                       >
                         My Bins Status ➔
                       </button>
@@ -383,56 +385,56 @@ export default function UserDashboard({ username, userData, onLogout }) {
                   </div>
 
                   {/* Category 2: Pickup & Logistics */}
-                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="soft-card" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>PICKUP & LOGISTICS</div>
-                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Dispatches & Live Tracking</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Initiate filled bin pickup requests and track assigned transport vehicles in real-time.</p>
+                      <span className="pill-badge" style={{ fontSize: '10px', marginBottom: '8px' }}>PICKUP & LOGISTICS</span>
+                      <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Dispatches & Live Tracking</h4>
+                      <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Initiate filled bin pickup requests and track assigned transport vehicles in real-time.</p>
                     </div>
-                    <button 
-                      onClick={() => setActiveTab('filled_bin_pickup')} 
-                      className="login-btn" 
-                      style={{ width: '100%', margin: 0, padding: '10px', fontSize: '12px' }}
+                    <button
+                      onClick={() => setActiveTab('filled_bin_pickup')}
+                      className="btn-emerald"
+                      style={{ width: '100%', margin: 0, padding: '10px', fontSize: '12px', height: '40px' }}
                     >
                       Open Pickup & Logistics Hub ➔
                     </button>
                   </div>
 
                   {/* Category 3: Sustainability & ESG */}
-                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="soft-card" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>SUSTAINABILITY & ESG</div>
-                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Carbon & Impact Reports</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Inspect verified carbon credits, waste diversion totals, ESG ratings, and audit certificates.</p>
+                      <span className="pill-badge" style={{ fontSize: '10px', marginBottom: '8px' }}>SUSTAINABILITY & ESG</span>
+                      <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Carbon & Impact Reports</h4>
+                      <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Inspect verified carbon credits, waste diversion totals, ESG ratings, and audit certificates.</p>
                     </div>
-                    <button 
-                      onClick={() => { setActiveTab('sustainability_esg'); setEsgDetailView(null); }} 
-                      className="login-btn" 
-                      style={{ width: '100%', margin: 0, padding: '10px', fontSize: '12px' }}
+                    <button
+                      onClick={() => { setActiveTab('sustainability_esg'); setEsgDetailView(null); }}
+                      className="btn-emerald"
+                      style={{ width: '100%', margin: 0, padding: '10px', fontSize: '12px', height: '40px' }}
                     >
                       Open ESG Hub ➔
                     </button>
                   </div>
 
                   {/* Category 4: Account & Settings */}
-                  <div className="login-card mgmt-sub-view" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px', background: 'rgba(5, 15, 10, 0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="soft-card" style={{ margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', marginBottom: '6px' }}>ACCOUNT & SETTINGS</div>
-                      <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '18px' }}>Facility Profile & Alerts</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', lineHeight: '1.4' }}>Manage organization credentials, contact details, and review system notifications.</p>
+                      <span className="pill-badge" style={{ fontSize: '10px', marginBottom: '8px' }}>ACCOUNT & SETTINGS</span>
+                      <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Facility Profile & Alerts</h4>
+                      <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Manage organization credentials, contact details, and review system notifications.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                      <button 
-                        onClick={() => setActiveTab('notifications')} 
-                        className="guest-bypass-btn" 
-                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      <button
+                        onClick={() => setActiveTab('notifications')}
+                        className="btn-outline"
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px', height: '40px' }}
                       >
                         Notifications ➔
                       </button>
-                      <button 
-                        onClick={() => setActiveTab('profile')} 
-                        className="login-btn" 
-                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px' }}
+                      <button
+                        onClick={() => setActiveTab('profile')}
+                        className="btn-emerald"
+                        style={{ flex: 1, margin: 0, padding: '10px', fontSize: '12px', height: '40px' }}
                       >
                         Profile Settings ➔
                       </button>
@@ -445,96 +447,100 @@ export default function UserDashboard({ username, userData, onLogout }) {
             </div>
           )}
 
-          {/* 2. REQUEST SMART BIN (Proper Form) */}
+          {/* 2. REQUEST SMART BIN */}
           {activeTab === 'request_bin' && (
-            <div className="login-card mgmt-sub-view" style={{ margin: '0 auto', maxWidth: '700px', padding: '28px' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '6px', fontSize: '20px', color: 'var(--gold-light, #fbbf24)', textAlign: 'center' }}>
-                ➕ Request Smart Bin Allotment Form
+            <div className="soft-card" style={{ margin: '0 auto', maxWidth: '700px', padding: '32px', background: '#FFFFFF' }}>
+              <h3 style={{ marginTop: 0, marginBottom: '6px', fontSize: '22px', color: 'var(--text-primary)', textAlign: 'center', fontWeight: '800' }}>
+                Request Smart Bin Allotment
               </h3>
-              <p style={{ textAlign: 'center', fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
-                Fill out the complete details below to request additional IoT-enabled organic waste bins.
+              <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                Fill out the deployment details below to request additional IoT-enabled organic waste bins.
               </p>
               <form onSubmit={handleBinRequestSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div className="login-form-group">
-                    <label>Location / Department Name *</label>
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="e.g. Main Kitchen, Floor 2" 
-                      value={binRequestForm.locationName} 
-                      onChange={(e) => setBinRequestForm({...binRequestForm, locationName: e.target.value})} 
-                      className="login-input" 
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Location / Department Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Main Kitchen, Floor 2"
+                      value={binRequestForm.locationName}
+                      onChange={(e) => setBinRequestForm({ ...binRequestForm, locationName: e.target.value })}
+                      className="login-input"
+                      style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                     />
                   </div>
                   <div className="login-form-group">
-                    <label>Facility Category *</label>
-                    <select 
-                      value={binRequestForm.category} 
-                      onChange={(e) => setBinRequestForm({...binRequestForm, category: e.target.value})} 
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Facility Category *</label>
+                    <select
+                      value={binRequestForm.category}
+                      onChange={(e) => setBinRequestForm({ ...binRequestForm, category: e.target.value })}
                       className="login-input"
+                      style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                     >
-                      <option value="Commercial Unit" style={{ background: '#08100c' }}>Commercial / Plaza / Retail</option>
-                      <option value="Restaurant / Cafe / Hotel" style={{ background: '#08100c' }}>Restaurant / Cafe / Hotel</option>
-                      <option value="Institutional / Cafeteria" style={{ background: '#08100c' }}>Institutional / Cafeteria</option>
+                      <option value="Commercial Unit">Commercial / Plaza / Retail</option>
+                      <option value="Restaurant / Cafe / Hotel">Restaurant / Cafe / Hotel</option>
+                      <option value="Institutional / Cafeteria">Institutional / Cafeteria</option>
                     </select>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div className="login-form-group">
-                    <label>Contact Number *</label>
-                    <input 
-                      type="tel" 
-                      required 
-                      placeholder="+92 300 1234567" 
-                      value={binRequestForm.contactNumber} 
-                      onChange={(e) => setBinRequestForm({...binRequestForm, contactNumber: e.target.value})} 
-                      className="login-input" 
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Contact Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+92 300 1234567"
+                      value={binRequestForm.contactNumber}
+                      onChange={(e) => setBinRequestForm({ ...binRequestForm, contactNumber: e.target.value })}
+                      className="login-input"
+                      style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                     />
                   </div>
                   <div className="login-form-group">
-                    <label>Bins Quantity Needed *</label>
-                    <select 
-                      value={binRequestForm.binsNeeded} 
-                      onChange={(e) => setBinRequestForm({...binRequestForm, binsNeeded: e.target.value})} 
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Bins Quantity Needed *</label>
+                    <select
+                      value={binRequestForm.binsNeeded}
+                      onChange={(e) => setBinRequestForm({ ...binRequestForm, binsNeeded: e.target.value })}
                       className="login-input"
+                      style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                     >
-                      <option value="1" style={{ background: '#08100c' }}>1 Unit</option>
-                      <option value="2" style={{ background: '#08100c' }}>2 Units</option>
-                      <option value="3" style={{ background: '#08100c' }}>3 Units</option>
-                      <option value="5" style={{ background: '#08100c' }}>5+ Units</option>
+                      <option value="1">1 Unit</option>
+                      <option value="2">2 Units</option>
+                      <option value="3">3 Units</option>
+                      <option value="5">5+ Units</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="login-form-group">
-                  <label>Complete Street Address / Placement Instructions *</label>
-                  <textarea 
-                    rows="3" 
-                    required 
-                    placeholder="Enter precise street address, building block, or floor level..." 
-                    value={binRequestForm.fullAddress} 
-                    onChange={(e) => setBinRequestForm({...binRequestForm, fullAddress: e.target.value})} 
-                    className="login-input" 
-                    style={{ resize: 'vertical' }} 
+                <div className="login-form-group" style={{ marginBottom: '16px' }}>
+                  <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Complete Street Address / Placement Instructions *</label>
+                  <textarea
+                    rows="3"
+                    required
+                    placeholder="Enter precise street address, building block, or floor level..."
+                    value={binRequestForm.fullAddress}
+                    onChange={(e) => setBinRequestForm({ ...binRequestForm, fullAddress: e.target.value })}
+                    className="login-input"
+                    style={{ resize: 'vertical', background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                   />
                 </div>
 
-                <div className="login-form-group">
-                  <label>Special Deployment Notes (Optional)</label>
-                  <textarea 
-                    rows="2" 
-                    placeholder="Mention specific sensor requirements or delivery timings..." 
-                    value={binRequestForm.specialInstructions} 
-                    onChange={(e) => setBinRequestForm({...binRequestForm, specialInstructions: e.target.value})} 
-                    className="login-input" 
-                    style={{ resize: 'vertical' }} 
+                <div className="login-form-group" style={{ marginBottom: '24px' }}>
+                  <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Special Deployment Notes (Optional)</label>
+                  <textarea
+                    rows="2"
+                    placeholder="Mention specific sensor requirements or delivery timings..."
+                    value={binRequestForm.specialInstructions}
+                    onChange={(e) => setBinRequestForm({ ...binRequestForm, specialInstructions: e.target.value })}
+                    className="login-input"
+                    style={{ resize: 'vertical', background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                   />
                 </div>
 
-                <button type="submit" className="login-btn" style={{ marginTop: '10px', width: '100%', padding: '12px' }}>
-                  📩 Submit Smart Bin Allotment Request
+                <button type="submit" className="btn-emerald" style={{ width: '100%', height: '46px', fontSize: '14px' }}>
+                  Submit Smart Bin Allotment Request ➔
                 </button>
               </form>
             </div>
@@ -543,36 +549,36 @@ export default function UserDashboard({ username, userData, onLogout }) {
           {/* 3. MY BINS STATUS */}
           {activeTab === 'bins' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="login-card mgmt-sub-view" style={{ padding: '20px', margin: 0 }}>
-                <h3 style={{ marginTop: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>🗑️ My Smart Bins Real-Time Telemetry</h3>
+              <div className="soft-card" style={{ padding: '20px 24px', margin: 0 }}>
+                <h3 style={{ marginTop: 0, color: 'var(--text-primary)', fontSize: '18px', fontWeight: '800' }}>My Smart Bins Real-Time Telemetry</h3>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
                 {smartBins.map((bin, index) => (
-                  <div key={index} className="login-card mgmt-sub-view" style={{ margin: 0, padding: '20px', border: bin.fillPercent === 100 ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  <div key={index} className="soft-card" style={{ margin: 0, padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <h4 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>{bin.id}</h4>
-                      <span style={{ fontSize: '11px', background: bin.fillPercent === 100 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', color: bin.fillPercent === 100 ? '#f87171' : '#34d399', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>
+                      <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '18px', fontWeight: '800' }}>{bin.id}</h4>
+                      <span className="pill-badge" style={{ background: bin.fillPercent === 100 ? '#FEE2E2' : '#ECFDF5', color: bin.fillPercent === 100 ? '#EF4444' : '#059669' }}>
                         {bin.status}
                       </span>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>Location: <strong style={{ color: '#fff' }}>{bin.location}</strong></p>
-                    <div style={{ marginBottom: '14px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                        <span style={{ color: '#9ca3af' }}>Capacity Filled:</span>
-                        <span style={{ color: '#fff', fontWeight: '700' }}>{bin.fillPercent}%</span>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>Location: <strong style={{ color: 'var(--text-primary)' }}>{bin.location}</strong></p>
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', marginBottom: '6px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Capacity Filled:</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '700' }}>{bin.fillPercent}%</span>
                       </div>
-                      <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ width: `${bin.fillPercent}%`, height: '100%', background: bin.fillPercent === 100 ? '#ef4444' : 'var(--gold-light, #fbbf24)' }}></div>
+                      <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${bin.fillPercent}%`, height: '100%', background: bin.fillPercent === 100 ? '#EF4444' : '#10B981', borderRadius: '4px' }}></div>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', textAlign: 'center', marginBottom: '14px' }}>
-                      <div><span style={{ fontSize: '10px', color: '#9ca3af', display: 'block' }}>Air Quality</span><strong style={{ fontSize: '11px', color: '#60a5fa' }}>{bin.airQuality}</strong></div>
-                      <div><span style={{ fontSize: '10px', color: '#9ca3af', display: 'block' }}>Moisture</span><strong style={{ fontSize: '12px', color: '#34d399' }}>{bin.moisture}</strong></div>
-                      <div><span style={{ fontSize: '10px', color: '#9ca3af', display: 'block' }}>Odor Level</span><strong style={{ fontSize: '12px', color: '#facc15' }}>{bin.odor}</strong></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: '#F8FAFC', padding: '12px', borderRadius: '12px', textAlign: 'center', marginBottom: '16px', border: '1px solid var(--border-color)' }}>
+                      <div><span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>Air Quality</span><strong style={{ fontSize: '12px', color: '#2563EB' }}>{bin.airQuality}</strong></div>
+                      <div><span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>Moisture</span><strong style={{ fontSize: '12px', color: '#059669' }}>{bin.moisture}</strong></div>
+                      <div><span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>Odor Level</span><strong style={{ fontSize: '12px', color: '#D97706' }}>{bin.odor}</strong></div>
                     </div>
                     {bin.fillPercent === 100 && (
-                      <button onClick={() => setShowPickupFormModal(true)} className="login-btn" style={{ width: '100%', padding: '8px', fontSize: '12px', background: '#ef4444', margin: 0 }}>
-                        🚨 Request Filled Bin Pickup
+                      <button onClick={() => setShowPickupFormModal(true)} className="btn-emerald" style={{ width: '100%', height: '40px', fontSize: '13px', background: '#EF4444', border: 'none' }}>
+                        Request Filled Bin Pickup ➔
                       </button>
                     )}
                   </div>
@@ -584,52 +590,52 @@ export default function UserDashboard({ username, userData, onLogout }) {
           {/* 4. FILLED BIN PICKUP & LIVE TRACKING */}
           {activeTab === 'filled_bin_pickup' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div className="soft-card" style={{ padding: '24px 28px', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <h3 style={{ marginTop: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '20px', marginBottom: '4px' }}>
-                    🚛 Filled Bin Pickup & Live Tracking
+                  <h3 style={{ marginTop: 0, color: 'var(--text-primary)', fontSize: '20px', fontWeight: '800', marginBottom: '4px' }}>
+                    Filled Bin Pickup & Live Tracking
                   </h3>
-                  <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
                     Request dispatches for full bins and monitor active vehicle tracking below.
                   </p>
                 </div>
                 <div>
-                  <button onClick={() => setShowPickupFormModal(true)} className="login-btn" style={{ width: 'auto', padding: '10px 18px', margin: 0 }}>
+                  <button onClick={() => setShowPickupFormModal(true)} className="btn-emerald" style={{ height: '42px', padding: '0 20px', fontSize: '13px' }}>
                     + Request Pickup
                   </button>
                 </div>
               </div>
 
               {/* Live Tracking Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <h4 style={{ color: '#fff', fontSize: '16px', margin: 0 }}>Active Dispatches & Tracking</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h4 style={{ color: 'var(--text-primary)', fontSize: '17px', fontWeight: '800', margin: 0 }}>Active Dispatches & Tracking</h4>
                 {pickupRequests.slice(0, 1).map((req, idx) => (
-                  <div key={idx} className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                  <div key={idx} className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
                       <div>
-                        <span style={{ fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>{req.requestId}</span>
-                        <h4 style={{ margin: '4px 0 0 0', color: '#fff', fontSize: '16px' }}>Reason: {req.reason}</h4>
+                        <span className="pill-badge" style={{ fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>{req.requestId}</span>
+                        <h4 style={{ margin: '6px 0 0 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Reason: {req.reason}</h4>
                       </div>
-                      <span style={{ fontSize: '12px', color: '#34d399', fontWeight: '700', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 10px', borderRadius: '8px' }}>{req.status}</span>
+                      <span className="pill-badge" style={{ background: '#ECFDF5', color: '#059669', fontSize: '12px', fontWeight: '700', padding: '6px 14px' }}>{req.status}</span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
-                      <div><span style={{ fontSize: '11px', color: '#9ca3af', display: 'block' }}>Collector Name</span><strong style={{ fontSize: '13px', color: '#fff' }}>{req.collectorName}</strong></div>
-                      <div><span style={{ fontSize: '11px', color: '#9ca3af', display: 'block' }}>Vehicle Number</span><strong style={{ fontSize: '13px', color: '#60a5fa' }}>{req.vehicleNumber}</strong></div>
-                      <div><span style={{ fontSize: '11px', color: '#9ca3af', display: 'block' }}>Estimated Arrival (ETA)</span><strong style={{ fontSize: '13px', color: '#facc15' }}>{req.eta}</strong></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px', background: '#F8FAFC', padding: '16px 20px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                      <div><span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Collector Name</span><strong style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '700' }}>{req.collectorName}</strong></div>
+                      <div><span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Vehicle Number</span><strong style={{ fontSize: '14px', color: '#2563EB', fontWeight: '700' }}>{req.vehicleNumber}</strong></div>
+                      <div><span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Estimated Arrival (ETA)</span><strong style={{ fontSize: '14px', color: '#059669', fontWeight: '700' }}>{req.eta}</strong></div>
                     </div>
 
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', marginBottom: '10px' }}>Live Tracking Progress:</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '14px' }}>Live Tracking Progress:</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {trackingSteps.map((step, sIdx) => {
                         const isCompleted = sIdx <= req.currentStepIndex;
                         const isCurrent = sIdx === req.currentStepIndex;
                         return (
                           <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: isCompleted ? (isCurrent ? '#fbbf24' : '#10b981') : 'rgba(255,255,255,0.1)', color: '#050f0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
+                            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: isCompleted ? (isCurrent ? '#F59E0B' : '#10B981') : '#F1F5F9', color: isCompleted ? '#FFFFFF' : '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800' }}>
                               {isCompleted ? '✓' : ''}
                             </div>
-                            <span style={{ fontSize: '13px', color: isCurrent ? '#fbbf24' : (isCompleted ? '#fff' : '#6b7280'), fontWeight: isCurrent ? '700' : '400' }}>{step}</span>
+                            <span style={{ fontSize: '13.5px', color: isCurrent ? '#D97706' : (isCompleted ? 'var(--text-primary)' : '#94A3B8'), fontWeight: isCurrent ? '700' : (isCompleted ? '600' : '400') }}>{step}</span>
                           </div>
                         );
                       })}
@@ -641,43 +647,43 @@ export default function UserDashboard({ username, userData, onLogout }) {
               {/* Past Request History Archive Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ color: '#fff', fontSize: '16px', margin: 0 }}>📜 Past Pickup Request History Archive</h4>
-                  <span style={{ fontSize: '12px', color: 'var(--gold-light, #fbbf24)', background: 'rgba(251, 191, 36, 0.1)', padding: '4px 10px', borderRadius: '6px' }}>Total Diverted: 125 kg</span>
+                  <h4 style={{ color: 'var(--text-primary)', fontSize: '17px', fontWeight: '800', margin: 0 }}>Past Pickup Request History Archive</h4>
+                  <span className="pill-badge" style={{ background: '#ECFDF5', color: '#059669' }}>Total Diverted: 125 kg</span>
                 </div>
                 {pickupRequests.map((req, idx) => (
-                  <div key={idx} className="login-card mgmt-sub-view" style={{ padding: '20px', margin: 0, background: 'linear-gradient(135deg, rgba(8, 20, 14, 0.9) 0%, rgba(4, 10, 7, 0.95) 100%)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ background: 'rgba(251, 191, 36, 0.15)', color: 'var(--gold-light, #fbbf24)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '800' }}>
+                  <div key={idx} className="soft-card" style={{ padding: '24px', margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span className="pill-badge" style={{ fontSize: '12px', fontWeight: '700' }}>
                           {req.requestId}
                         </span>
-                        <span style={{ fontSize: '13px', color: '#fff', fontWeight: '700' }}>{req.reason}</span>
+                        <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '700' }}>{req.reason}</span>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#9ca3af', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)', background: '#F1F5F9', padding: '4px 10px', borderRadius: '6px', fontWeight: '600' }}>
                         📅 {req.date}
                       </span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '13px', marginBottom: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', fontSize: '13.5px', marginBottom: '16px' }}>
                       <div>
-                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Assigned Collector</span>
-                        <span style={{ color: '#fff', fontWeight: '600' }}>{req.collectorName}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block', marginBottom: '2px' }}>Assigned Collector</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{req.collectorName}</span>
                       </div>
                       <div>
-                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Vehicle Unit</span>
-                        <span style={{ color: '#60a5fa', fontWeight: '600' }}>{req.vehicleNumber}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block', marginBottom: '2px' }}>Vehicle Unit</span>
+                        <span style={{ color: '#2563EB', fontWeight: '600' }}>{req.vehicleNumber}</span>
                       </div>
                       <div>
-                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Recorded Weight</span>
-                        <span style={{ color: '#34d399', fontWeight: '600' }}>{req.weight}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block', marginBottom: '2px' }}>Recorded Weight</span>
+                        <span style={{ color: '#059669', fontWeight: '700' }}>{req.weight}</span>
                       </div>
                       <div>
-                        <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block' }}>Final Status</span>
-                        <span style={{ color: '#facc15', fontWeight: '700' }}>● {req.status}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block', marginBottom: '2px' }}>Final Status</span>
+                        <span className="pill-badge" style={{ fontSize: '11px', background: '#ECFDF5', color: '#059669' }}>● {req.status}</span>
                       </div>
                     </div>
                     {req.notes && (
-                      <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', color: '#9ca3af', borderLeft: '3px solid #10b981' }}>
-                        <strong style={{ color: '#fff' }}>Note:</strong> {req.notes}
+                      <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', color: 'var(--text-primary)', borderLeft: '3px solid #10B981', border: '1px solid var(--border-color)', borderLeftWidth: '3px' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>Note:</strong> {req.notes}
                       </div>
                     )}
                   </div>
@@ -690,74 +696,93 @@ export default function UserDashboard({ username, userData, onLogout }) {
           {/* 5. SUSTAINABILITY & ESG */}
           {activeTab === 'sustainability_esg' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              
+
               {esgDetailView === null ? (
                 <>
                   {/* Header Title & Intro */}
-                  <div className="login-card mgmt-sub-view" style={{ padding: '20px 24px', margin: 0 }}>
-                    <h3 style={{ margin: '0 0 4px 0', color: 'var(--gold-light, #fbbf24)', fontSize: '20px' }}>🌱 Sustainability & ESG Hub</h3>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>
+                  <div className="soft-card" style={{ padding: '24px 28px', margin: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <IconLeaf size={24} color="var(--primary)" />
+                      <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '20px', fontWeight: '800' }}>Sustainability & ESG Hub</h3>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                       Track carbon credit measurement, transparency metrics, and grant eligibility through the core modules below. Click any card to open its dedicated view.
                     </p>
                   </div>
 
                   {/* 4 Interactive Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px' }}>
-                    
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+
                     {/* Card 1: Carbon Footprint */}
-                    <div 
+                    <div
                       onClick={() => setEsgDetailView('carbon')}
-                      className="login-card mgmt-sub-view" 
-                      style={{ 
-                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
-                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
-                      }}
+                      className="soft-card"
+                      style={{ margin: 0, padding: '28px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}
                     >
-                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>🌿 Carbon Footprint</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>View CO₂ emissions reduced and active carbon credits earned.</p>
-                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                      <div>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#ECFDF5', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                          <IconLeaf size={22} color="#059669" />
+                        </div>
+                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '800' }}>Carbon Footprint</h4>
+                        <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>View CO₂ emissions reduced and active carbon credits earned.</p>
+                      </div>
+                      <span style={{ fontSize: '13px', color: '#059669', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        Open View ➔
+                      </span>
                     </div>
 
                     {/* Card 2: Waste Impact */}
-                    <div 
+                    <div
                       onClick={() => setEsgDetailView('waste')}
-                      className="login-card mgmt-sub-view" 
-                      style={{ 
-                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
-                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
-                      }}
+                      className="soft-card"
+                      style={{ margin: 0, padding: '28px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}
                     >
-                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>♻️ Waste Impact</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Monitor organic waste diverted and compost generated in kilograms.</p>
-                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                      <div>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#ECFDF5', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                          <IconBin size={22} color="#059669" />
+                        </div>
+                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '800' }}>Waste Impact</h4>
+                        <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Monitor organic waste diverted and compost generated in kilograms.</p>
+                      </div>
+                      <span style={{ fontSize: '13px', color: '#059669', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        Open View ➔
+                      </span>
                     </div>
 
                     {/* Card 3: ESG Score */}
-                    <div 
+                    <div
                       onClick={() => setEsgDetailView('esg')}
-                      className="login-card mgmt-sub-view" 
-                      style={{ 
-                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
-                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
-                      }}
+                      className="soft-card"
+                      style={{ margin: 0, padding: '28px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}
                     >
-                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>📊 ESG Score</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Inspect overall ESG rating and calculated sustainability score.</p>
-                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                      <div>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid rgba(37, 99, 235, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                          <IconChart size={22} color="#2563EB" />
+                        </div>
+                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '800' }}>ESG Score</h4>
+                        <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Inspect overall ESG rating and calculated sustainability score.</p>
+                      </div>
+                      <span style={{ fontSize: '13px', color: '#2563EB', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        Open View ➔
+                      </span>
                     </div>
 
                     {/* Card 4: Certificates & Reports */}
-                    <div 
+                    <div
                       onClick={() => setEsgDetailView('certificates')}
-                      className="login-card mgmt-sub-view" 
-                      style={{ 
-                        margin: 0, padding: '24px', cursor: 'pointer', transition: 'all 0.2s ease',
-                        border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(5, 15, 10, 0.6)'
-                      }}
+                      className="soft-card"
+                      style={{ margin: 0, padding: '28px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}
                     >
-                      <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '18px' }}>🏆 Certificates & Reports</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Access downloadable audit reports and verified digital certificates.</p>
-                      <span style={{ display: 'inline-block', marginTop: '14px', fontSize: '12px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>Open View ➔</span>
+                      <div>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#FEF3C7', border: '1px solid rgba(217, 119, 6, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                          <IconShield size={22} color="#D97706" />
+                        </div>
+                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '800' }}>Certificates & Reports</h4>
+                        <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Access downloadable audit reports and verified digital certificates.</p>
+                      </div>
+                      <span style={{ fontSize: '13px', color: '#D97706', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        Open View ➔
+                      </span>
                     </div>
 
                   </div>
@@ -765,50 +790,45 @@ export default function UserDashboard({ username, userData, onLogout }) {
               ) : (
                 /* Dedicated New Screen View with Professional Header Layout */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  
-                  {/* Top Bar with Properly Separated Corner Back Button and Centered Heading */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 100px', alignItems: 'center', background: 'rgba(5, 15, 10, 0.8)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    {/* Small Corner Back Button */}
-                    <button 
-                      onClick={() => setEsgDetailView(null)} 
-                      className="guest-bypass-btn" 
-                      style={{ 
-                        margin: 0, 
-                        padding: '4px 10px', 
-                        fontSize: '11px', 
-                        height: 'auto', 
-                        minHeight: 'unset',
-                        lineHeight: '1.2',
+
+                  {/* Top Bar with Corner Back Button and Centered Heading */}
+                  <div className="soft-card" style={{ display: 'grid', gridTemplateColumns: '100px 1fr 100px', alignItems: 'center', padding: '14px 20px', margin: 0 }}>
+                    <button
+                      onClick={() => setEsgDetailView(null)}
+                      className="btn-outline"
+                      style={{
+                        margin: 0,
+                        padding: '4px 12px',
+                        fontSize: '12px',
+                        height: '34px',
                         justifySelf: 'start'
                       }}
                     >
                       ← Back
                     </button>
 
-                    {/* Centered Heading */}
-                    <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700', textAlign: 'center', justifySelf: 'center' }}>
-                      {esgDetailView === 'carbon' && '🌿 Carbon Footprint'}
-                      {esgDetailView === 'waste' && '♻️ Waste Impact'}
-                      {esgDetailView === 'esg' && '📊 ESG Score'}
-                      {esgDetailView === 'certificates' && '🏆 Certificates & Reports'}
+                    <h3 style={{ margin: 0, fontSize: '17px', color: 'var(--text-primary)', fontWeight: '800', textAlign: 'center', justifySelf: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {esgDetailView === 'carbon' && <><IconLeaf size={20} color="#059669" /> Carbon Footprint</>}
+                      {esgDetailView === 'waste' && <><IconBin size={20} color="#059669" /> Waste Impact</>}
+                      {esgDetailView === 'esg' && <><IconChart size={20} color="#2563EB" /> ESG Score</>}
+                      {esgDetailView === 'certificates' && <><IconShield size={20} color="#D97706" /> Certificates & Reports</>}
                     </h3>
-                    
-                    {/* Empty spacer div to maintain grid balance */}
+
                     <div></div>
                   </div>
 
                   {/* Screen Content: Carbon Footprint */}
                   {esgDetailView === 'carbon' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>CO₂ EMISSIONS REDUCED</span>
-                        <h2 style={{ fontSize: '38px', color: '#34d399', margin: '10px 0 6px 0', fontWeight: '800' }}>0.85 MT</h2>
-                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Verified greenhouse gas reductions certified through automated organic waste routing.</p>
+                      <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                        <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px' }}>CO₂ EMISSIONS REDUCED</span>
+                        <h2 style={{ fontSize: '38px', color: '#059669', margin: '10px 0 6px 0', fontWeight: '800' }}>0.85 MT</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>Verified greenhouse gas reductions certified through automated organic waste routing.</p>
                       </div>
-                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>CARBON CREDITS EARNED</span>
-                        <h2 style={{ fontSize: '38px', color: 'var(--gold-light, #fbbf24)', margin: '10px 0 6px 0', fontWeight: '800' }}>12.4 Credits</h2>
-                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Eligible for corporate sustainability grants and carbon offset monetization.</p>
+                      <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                        <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px', background: '#FEF3C7', color: '#D97706' }}>CARBON CREDITS EARNED</span>
+                        <h2 style={{ fontSize: '38px', color: '#D97706', margin: '10px 0 6px 0', fontWeight: '800' }}>12.4 Credits</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>Eligible for corporate sustainability grants and carbon offset monetization.</p>
                       </div>
                     </div>
                   )}
@@ -816,15 +836,15 @@ export default function UserDashboard({ username, userData, onLogout }) {
                   {/* Screen Content: Waste Impact */}
                   {esgDetailView === 'waste' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>TOTAL ORGANIC WASTE DIVERTED (KG)</span>
-                        <h2 style={{ fontSize: '38px', color: '#10b981', margin: '10px 0 6px 0', fontWeight: '800' }}>1,420 kg</h2>
-                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Total kitchen and food waste successfully diverted from municipal landfills.</p>
+                      <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                        <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px' }}>TOTAL ORGANIC WASTE DIVERTED (KG)</span>
+                        <h2 style={{ fontSize: '38px', color: '#059669', margin: '10px 0 6px 0', fontWeight: '800' }}>1,420 kg</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>Total kitchen and food waste successfully diverted from municipal landfills.</p>
                       </div>
-                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>COMPOST GENERATED (KG)</span>
-                        <h2 style={{ fontSize: '38px', color: '#facc15', margin: '10px 0 6px 0', fontWeight: '800' }}>710 kg</h2>
-                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>High-grade nutrient fertilizer output produced for regional agriculture.</p>
+                      <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                        <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px', background: '#FEF3C7', color: '#D97706' }}>COMPOST GENERATED (KG)</span>
+                        <h2 style={{ fontSize: '38px', color: '#D97706', margin: '10px 0 6px 0', fontWeight: '800' }}>710 kg</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>High-grade nutrient fertilizer output produced for regional agriculture.</p>
                       </div>
                     </div>
                   )}
@@ -832,15 +852,15 @@ export default function UserDashboard({ username, userData, onLogout }) {
                   {/* Screen Content: ESG Score */}
                   {esgDetailView === 'esg' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>OVERALL ESG RATING</span>
-                        <h2 style={{ fontSize: '38px', color: '#34d399', margin: '10px 0 6px 0', fontWeight: '800' }}>Grade A</h2>
-                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Top-tier corporate compliance rating for environmental excellence.</p>
+                      <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                        <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px' }}>OVERALL ESG RATING</span>
+                        <h2 style={{ fontSize: '38px', color: '#059669', margin: '10px 0 6px 0', fontWeight: '800' }}>Grade A</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>Top-tier corporate compliance rating for environmental excellence.</p>
                       </div>
-                      <div className="login-card mgmt-sub-view" style={{ padding: '28px', margin: 0 }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>SUSTAINABILITY SCORE</span>
-                        <h2 style={{ fontSize: '38px', color: 'var(--gold-light, #fbbf24)', margin: '10px 0 6px 0', fontWeight: '800' }}>94.2 / 100</h2>
-                        <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Based on continuous IoT telemetry and carbon offset auditing.</p>
+                      <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                        <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px', background: '#EFF6FF', color: '#2563EB' }}>SUSTAINABILITY SCORE</span>
+                        <h2 style={{ fontSize: '38px', color: '#2563EB', margin: '10px 0 6px 0', fontWeight: '800' }}>94.2 / 100</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>Based on continuous IoT telemetry and carbon offset auditing.</p>
                       </div>
                     </div>
                   )}
@@ -849,40 +869,40 @@ export default function UserDashboard({ username, userData, onLogout }) {
                   {esgDetailView === 'certificates' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+                        <div className="soft-card" style={{ padding: '28px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
                           <div>
-                            <span style={{ fontSize: '11px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>PDF DOCUMENT</span>
-                            <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Download Sustainability Report</h4>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Comprehensive audit of waste diversion, recycling efficiency, and grant compliance.</p>
+                            <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px' }}>PDF DOCUMENT</span>
+                            <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Download Sustainability Report</h4>
+                            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Comprehensive audit of waste diversion, recycling efficiency, and grant compliance.</p>
                           </div>
-                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>
-                            📥 Download Sustainability Report
+                          <button className="btn-emerald" style={{ width: '100%', height: '42px', fontSize: '13px', margin: 0 }}>
+                            Download Sustainability Report ➔
                           </button>
                         </div>
-                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+                        <div className="soft-card" style={{ padding: '28px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
                           <div>
-                            <span style={{ fontSize: '11px', color: 'var(--gold-light, #fbbf24)', fontWeight: '700' }}>VERIFIED LEDGER</span>
-                            <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Download Carbon Credit Report</h4>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Detailed GHG reduction ledgers ready for credit issuance and trading.</p>
+                            <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px', background: '#EFF6FF', color: '#2563EB' }}>VERIFIED LEDGER</span>
+                            <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Download Carbon Credit Report</h4>
+                            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Detailed GHG reduction ledgers ready for credit issuance and trading.</p>
                           </div>
-                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>
-                            📥 Download Carbon Credit Report
+                          <button className="btn-emerald" style={{ width: '100%', height: '42px', fontSize: '13px', margin: 0 }}>
+                            Download Carbon Credit Report ➔
                           </button>
                         </div>
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0 }}>
-                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700' }}>BLOCKCHAIN SECURED</span>
-                          <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Carbon Credit Certificate</h4>
-                          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>ID: <strong style={{ color: '#fbbf24' }}>GGOS-CC-9928-ISB</strong></p>
-                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>View Carbon Credit Certificate</button>
+                        <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                          <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px' }}>BLOCKCHAIN SECURED</span>
+                          <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Carbon Credit Certificate</h4>
+                          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>ID: <strong style={{ color: '#059669' }}>GGOS-CC-9928-ISB</strong></p>
+                          <button className="btn-outline" style={{ width: '100%', height: '40px', fontSize: '13px', margin: 0 }}>View Carbon Credit Certificate</button>
                         </div>
-                        <div className="login-card mgmt-sub-view" style={{ padding: '24px', margin: 0 }}>
-                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700' }}>VERIFIED ASSET</span>
-                          <h4 style={{ margin: '6px 0 6px 0', color: '#fff', fontSize: '16px' }}>Compost Verification Certificate</h4>
-                          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>ID: <strong style={{ color: '#fbbf24' }}>GGOS-CMP-4412-ICT</strong></p>
-                          <button className="login-btn" style={{ width: '100%', padding: '10px', fontSize: '12px', margin: 0 }}>View Compost Verification Certificate</button>
+                        <div className="soft-card" style={{ padding: '28px', margin: 0 }}>
+                          <span className="pill-badge" style={{ fontSize: '11px', marginBottom: '8px', background: '#FEF3C7', color: '#D97706' }}>VERIFIED ASSET</span>
+                          <h4 style={{ margin: '8px 0 6px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700' }}>Compost Verification Certificate</h4>
+                          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>ID: <strong style={{ color: '#D97706' }}>GGOS-CMP-4412-ICT</strong></p>
+                          <button className="btn-outline" style={{ width: '100%', height: '40px', fontSize: '13px', margin: 0 }}>View Compost Verification Certificate</button>
                         </div>
                       </div>
                     </div>
@@ -896,32 +916,34 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && (
-            <div className="login-card mgmt-sub-view" style={{ maxWidth: '750px', margin: '0 auto', padding: '28px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
-                <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>🔔 System Notifications & Alerts</h3>
-                <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>2 Unread</span>
+            <div className="soft-card" style={{ maxWidth: '750px', margin: '0 auto', padding: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '20px', fontWeight: '800' }}>System Notifications & Alerts</h3>
+                <span className="pill-badge" style={{ background: '#ECFDF5', color: '#059669' }}>2 Unread</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ background: 'rgba(239, 68, 68, 0.08)', borderLeft: '4px solid #ef4444', padding: '14px 16px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <strong style={{ color: '#fff', fontSize: '14px' }}>Critical Bin Capacity Alert</strong>
-                    <span style={{ fontSize: '11px', color: '#f87171' }}>10 mins ago</span>
+                <div style={{ background: '#FEF2F2', borderLeft: '4px solid #EF4444', padding: '16px 18px', borderRadius: '12px', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <strong style={{ color: '#991B1B', fontSize: '14.5px', fontWeight: '700' }}>Critical Bin Capacity Alert</strong>
+                    <span style={{ fontSize: '11.5px', color: '#EF4444', fontWeight: '600' }}>10 mins ago</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>BIN-SG-01 in Main Kitchen has reached 100% capacity. Immediate pickup request recommended.</p>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#7F1D1D', lineHeight: '1.5' }}>BIN-SG-01 in Main Kitchen has reached 100% capacity. Immediate pickup request recommended.</p>
                 </div>
-                <div style={{ background: 'rgba(16, 185, 129, 0.08)', borderLeft: '4px solid #10b981', padding: '14px 16px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <strong style={{ color: '#fff', fontSize: '14px' }}>Carbon Credit Minted Successfully</strong>
-                    <span style={{ fontSize: '11px', color: '#34d399' }}>2 hours ago</span>
+
+                <div style={{ background: '#ECFDF5', borderLeft: '4px solid #10B981', padding: '16px 18px', borderRadius: '12px', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <strong style={{ color: '#065F46', fontSize: '14.5px', fontWeight: '700' }}>Carbon Credit Minted Successfully</strong>
+                    <span style={{ fontSize: '11.5px', color: '#059669', fontWeight: '600' }}>2 hours ago</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>0.025 MT carbon credits have been successfully verified and added to your portfolio.</p>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#047857', lineHeight: '1.5' }}>0.025 MT carbon credits have been successfully verified and added to your portfolio.</p>
                 </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderLeft: '4px solid #fbbf24', padding: '14px 16px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <strong style={{ color: '#fff', fontSize: '14px' }}>Monthly ESG Report Ready</strong>
-                    <span style={{ fontSize: '11px', color: '#fbbf24' }}>Yesterday</span>
+
+                <div style={{ background: '#F8FAFC', borderLeft: '4px solid #F59E0B', padding: '16px 18px', borderRadius: '12px', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <strong style={{ color: 'var(--text-primary)', fontSize: '14.5px', fontWeight: '700' }}>Monthly ESG Report Ready</strong>
+                    <span style={{ fontSize: '11.5px', color: '#D97706', fontWeight: '600' }}>Yesterday</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Your Q3 sustainability audit report is now available for download in the ESG hub.</p>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>Your Q3 sustainability audit report is now available for download in the ESG hub.</p>
                 </div>
               </div>
             </div>
@@ -929,42 +951,42 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
           {/* PROFILE & SETTINGS TAB */}
           {activeTab === 'profile' && (
-            <div className="login-card mgmt-sub-view" style={{ maxWidth: '750px', margin: '0 auto', padding: '28px' }}>
-              <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0, color: 'var(--gold-light, #fbbf24)', fontSize: '18px' }}>👤 Generator Profile & Facility Settings</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#9ca3af' }}>Manage your organization credentials and automated dispatch preferences.</p>
+            <div className="soft-card" style={{ maxWidth: '750px', margin: '0 auto', padding: '32px' }}>
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px', marginBottom: '24px' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '20px', fontWeight: '800' }}>Generator Profile & Facility Settings</h3>
+                <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>Manage your organization credentials and automated dispatch preferences.</p>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="login-form-group">
-                    <label>Organization Name</label>
-                    <input type="text" className="login-input" defaultValue={displayName} disabled />
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Organization Name</label>
+                    <input type="text" className="login-input" defaultValue={displayName} disabled style={{ background: '#F1F5F9', border: '1px solid var(--border-color)', color: 'var(--text-primary)', opacity: '0.8' }} />
                   </div>
                   <div className="login-form-group">
-                    <label>City / Region</label>
-                    <input type="text" className="login-input" defaultValue={userCity} disabled />
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>City / Region</label>
+                    <input type="text" className="login-input" defaultValue={userCity} disabled style={{ background: '#F1F5F9', border: '1px solid var(--border-color)', color: 'var(--text-primary)', opacity: '0.8' }} />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="login-form-group">
-                    <label>Primary Contact Phone</label>
-                    <input type="text" className="login-input" defaultValue={userPhone} />
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Primary Contact Phone</label>
+                    <input type="text" className="login-input" defaultValue={userPhone} style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
                   </div>
                   <div className="login-form-group">
-                    <label>Estimated Daily Waste</label>
-                    <input type="text" className="login-input" defaultValue={wasteEstimate} />
+                    <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Estimated Daily Waste</label>
+                    <input type="text" className="login-input" defaultValue={wasteEstimate} style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
                   </div>
                 </div>
 
                 <div className="login-form-group">
-                  <label>Facility Street Address</label>
-                  <textarea rows="2" className="login-input" defaultValue="Plot 5, Commercial Sector F-7/2, Islamabad" style={{ resize: 'vertical' }} />
+                  <label style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '13px' }}>Facility Street Address</label>
+                  <textarea rows="2" className="login-input" defaultValue="Plot 5, Commercial Sector F-7/2, Islamabad" style={{ resize: 'vertical', background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                  <button className="login-btn" style={{ width: 'auto', padding: '10px 24px', margin: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                  <button className="btn-emerald" style={{ padding: '0 28px', height: '44px', fontSize: '14px' }}>
                     Save Profile Changes
                   </button>
                 </div>

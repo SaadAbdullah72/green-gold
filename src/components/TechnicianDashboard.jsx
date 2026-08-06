@@ -1,19 +1,24 @@
 import React, { useMemo, useState } from 'react';
 import { TECHNICAL_STAFF_DATA } from '../mockData';
+import { 
+  IconDashboard, IconTruck, IconBox, IconPlus, 
+  IconSettings, IconLab, IconChart, IconBell, IconUser 
+} from './Icons';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard Home', icon: '◈' },
-  { id: 'jobs', label: 'Assigned Jobs', icon: '▣' },
-  { id: 'inventory', label: 'Smart Bin Inventory', icon: '◌' },
-  { id: 'installs', label: 'Installation Requests', icon: '⬢' },
-  { id: 'maintenance', label: 'Maintenance', icon: '⚙' },
-  { id: 'diagnostics', label: 'Diagnostics', icon: '⌁' },
-  { id: 'calibration', label: 'Calibration', icon: '◎' },
-  { id: 'orders', label: 'Work Orders', icon: '▤' },
-  { id: 'parts', label: 'Spare Parts', icon: '⧉' },
-  { id: 'notifications', label: 'Notifications', icon: '✦' },
-  { id: 'profile', label: 'Profile & Settings', icon: '☰' }
+  { id: 'dashboard', label: 'Dashboard Home', icon: <IconDashboard size={18} /> },
+  { id: 'jobs', label: 'Assigned Jobs', icon: <IconTruck size={18} /> },
+  { id: 'inventory', label: 'Smart Bin Inventory', icon: <IconBox size={18} /> },
+  { id: 'installs', label: 'Installation Requests', icon: <IconPlus size={18} /> },
+  { id: 'maintenance', label: 'Maintenance', icon: <IconSettings size={18} /> },
+  { id: 'diagnostics', label: 'Diagnostics', icon: <IconLab size={18} /> },
+  { id: 'calibration', label: 'Calibration', icon: <IconChart size={18} /> },
+  { id: 'orders', label: 'Work Orders', icon: <IconBox size={18} /> },
+  { id: 'parts', label: 'Spare Parts', icon: <IconBox size={18} /> },
+  { id: 'notifications', label: 'Notifications', icon: <IconBell size={18} /> },
+  { id: 'profile', label: 'Profile & Settings', icon: <IconUser size={18} /> }
 ];
+
 
 export default function TechnicianDashboard({ onLogout }) {
   const [activeView, setActiveView] = useState('dashboard');
@@ -187,13 +192,13 @@ export default function TechnicianDashboard({ onLogout }) {
                     </tbody>
                   </table>
                 </div>
-                <div style={{ background: 'rgba(0,0,0,0.28)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(16, 185, 129, 0.12)' }}>
-                  <h4 style={{ color: 'var(--gold-light)', marginBottom: '12px' }}>Live Job Detail</h4>
+                <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '20px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '12px', fontWeight: '700' }}>Live Job Detail</h4>
                   {selectedJob ? (
                     <>
-                      <p style={{ marginBottom: '8px' }}><strong>{selectedJob.id}</strong> · {selectedJob.workflow}</p>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '12px' }}>{selectedJob.description}</p>
-                      <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
+                      <p style={{ marginBottom: '8px', color: 'var(--text-primary)' }}><strong>{selectedJob.id}</strong> · {selectedJob.workflow}</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '12px' }}>{selectedJob.description}</p>
+                      <div style={{ display: 'grid', gap: '10px', fontSize: '13px', color: 'var(--text-primary)' }}>
                         <div><strong>Organization:</strong> {selectedJob.org}</div>
                         <div><strong>Bin:</strong> {selectedJob.binId}</div>
                         <div><strong>GPS:</strong> {selectedJob.gps}</div>
@@ -207,22 +212,22 @@ export default function TechnicianDashboard({ onLogout }) {
                       </div>
                     </>
                   ) : (
-                    <p style={{ color: 'var(--text-muted)' }}>No active assignment selected.</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>No active assignment selected.</p>
                   )}
                 </div>
               </div>
             </div>
 
             <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3>Notifications</h3>
+              <h3 style={{ color: 'var(--text-primary)' }}>Notifications</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {notifications.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid rgba(16, 185, 129, 0.12)', borderRadius: '12px', padding: '14px 16px', background: 'rgba(0,0,0,0.22)' }}>
+                  <div key={item.id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px 16px', background: '#F8FAFC' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong>{item.title}</strong>
+                      <strong style={{ color: 'var(--text-primary)' }}>{item.title}</strong>
                       <span className={`status-pill ${item.severity === 'critical' ? 'warning' : 'approved'}`} style={{ fontSize: '10px' }}>{item.severity}</span>
                     </div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{item.detail}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>{item.detail}</div>
                   </div>
                 ))}
               </div>
@@ -377,30 +382,30 @@ export default function TechnicianDashboard({ onLogout }) {
 
         {activeView === 'diagnostics' && (
           <div className="mgmt-sub-view active" style={{ display: 'grid', gap: '24px' }}>
-            <div className="glass-panel table-panel">
-              <h3>Diagnostics & Telemetry</h3>
+            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
+              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: '800' }}>Diagnostics & Telemetry</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                 {[
-                  { label: 'Battery', value: '88%', tone: 'var(--gold-light)' },
-                  { label: 'Signal', value: '82%', tone: 'var(--secondary)' },
-                  { label: 'Weight Sensor', value: 'Stable', tone: 'var(--primary)' },
-                  { label: 'Fill Level', value: '63%', tone: 'var(--info)' },
-                  { label: 'Temperature', value: '24°C', tone: 'var(--gold-light)' },
-                  { label: 'Humidity', value: '58%', tone: 'var(--secondary)' }
+                  { label: 'Battery', value: '88%', tone: '#D97706' },
+                  { label: 'Signal', value: '82%', tone: '#059669' },
+                  { label: 'Weight Sensor', value: 'Stable', tone: '#059669' },
+                  { label: 'Fill Level', value: '63%', tone: '#2563EB' },
+                  { label: 'Temperature', value: '24°C', tone: '#0F172A' },
+                  { label: 'Humidity', value: '58%', tone: '#059669' }
                 ].map((metric) => (
-                  <div key={metric.label} style={{ border: '1px solid rgba(16, 185, 129, 0.12)', borderRadius: '12px', padding: '16px', background: 'rgba(0,0,0,0.24)' }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{metric.label}</div>
-                    <div style={{ fontSize: '24px', fontWeight: '800', color: metric.tone, marginTop: '8px' }}>{metric.value}</div>
+                  <div key={metric.label} className="soft-card" style={{ border: '1px solid var(--border-color)', borderRadius: '16px', padding: '20px', background: '#F8FAFC', margin: 0 }}>
+                    <span className="pill-badge" style={{ fontSize: '10.5px', marginBottom: '8px' }}>{metric.label}</span>
+                    <div style={{ fontSize: '28px', fontWeight: '800', color: metric.tone, marginTop: '6px' }}>{metric.value}</div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="glass-panel table-panel">
-              <h3>Firmware & Health</h3>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                <div><strong>Firmware:</strong> v3.4.1</div>
-                <div><strong>Overall health score:</strong> 93%</div>
-                <div><strong>Connectivity:</strong> Stable, strong uplink</div>
+            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
+              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '16px', fontSize: '18px', fontWeight: '800' }}>Firmware & Health</h3>
+              <div style={{ display: 'grid', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}>
+                <div><span style={{ color: 'var(--text-secondary)' }}>Firmware:</span> <strong>v3.4.1</strong></div>
+                <div><span style={{ color: 'var(--text-secondary)' }}>Overall health score:</span> <strong style={{ color: '#059669' }}>93%</strong></div>
+                <div><span style={{ color: 'var(--text-secondary)' }}>Connectivity:</span> <strong style={{ color: '#2563EB' }}>Stable, strong uplink</strong></div>
               </div>
             </div>
           </div>
@@ -508,16 +513,16 @@ export default function TechnicianDashboard({ onLogout }) {
 
         {activeView === 'notifications' && (
           <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Operational Alerts</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
+              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px' }}>Operational Alerts</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {notifications.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid rgba(16, 185, 129, 0.12)', borderRadius: '12px', padding: '14px 16px', background: 'rgba(0,0,0,0.22)' }}>
+                  <div key={item.id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', background: '#F8FAFC' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong>{item.title}</strong>
-                      <span className={`status-pill ${item.severity === 'critical' ? 'warning' : 'approved'}`}>{item.severity}</span>
+                      <strong style={{ color: 'var(--text-primary)', fontSize: '15px' }}>{item.title}</strong>
+                      <span className={`status-pill ${item.severity === 'critical' ? 'warning' : 'approved'}`} style={{ fontSize: '11px' }}>{item.severity}</span>
                     </div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{item.detail}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '13.5px', marginTop: '6px', lineHeight: '1.5' }}>{item.detail}</div>
                   </div>
                 ))}
               </div>
@@ -527,20 +532,20 @@ export default function TechnicianDashboard({ onLogout }) {
 
         {activeView === 'profile' && (
           <div className="mgmt-sub-view active" style={{ display: 'grid', gap: '24px' }}>
-            <div className="glass-panel table-panel">
-              <h3>Profile & Settings</h3>
-              <div style={{ display: 'grid', gap: '14px' }}>
+            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
+              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px' }}>Profile & Settings</h3>
+              <div style={{ display: 'grid', gap: '16px' }}>
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <label style={{ color: 'var(--gold-light)', fontSize: '12px', textTransform: 'uppercase' }}>Crew Lead</label>
-                  <input className="login-input" value="Alex Mercer" readOnly />
+                  <label style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600' }}>CREW LEAD</label>
+                  <input className="login-input" value="Alex Mercer" readOnly style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
                 </div>
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <label style={{ color: 'var(--gold-light)', fontSize: '12px', textTransform: 'uppercase' }}>Primary Zone</label>
-                  <input className="login-input" value="North Area" readOnly />
+                  <label style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600' }}>PRIMARY ZONE</label>
+                  <input className="login-input" value="North Area" readOnly style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
                 </div>
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <label style={{ color: 'var(--gold-light)', fontSize: '12px', textTransform: 'uppercase' }}>Mobile Sync</label>
-                  <input className="login-input" value="Enabled · Offline sync queued" readOnly />
+                  <label style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600' }}>MOBILE SYNC</label>
+                  <input className="login-input" value="Enabled · Offline sync queued" readOnly style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
                 </div>
               </div>
             </div>

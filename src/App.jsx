@@ -10,7 +10,22 @@ import QALabDashboard from './components/QALabDashboard';
 import MarketplaceDashboard from './components/MarketplaceDashboard';
 import WasteCollectorDashboard from './components/WasteCollectorDashboard';
 
+function FloatingParticles() {
+  return (
+    <div className="bg-leaf-emitter">
+      <div className="bg-particle" style={{ width: '40px', height: '18px', left: '15%', top: '20%', animationDelay: '0s', animationDuration: '14s' }}></div>
+      <div className="bg-particle" style={{ width: '30px', height: '14px', left: '45%', top: '50%', animationDelay: '2s', animationDuration: '18s' }}></div>
+      <div className="bg-particle" style={{ width: '50px', height: '22px', left: '75%', top: '10%', animationDelay: '4s', animationDuration: '16s' }}></div>
+      <div className="bg-particle" style={{ width: '35px', height: '16px', left: '60%', top: '80%', animationDelay: '1s', animationDuration: '20s' }}></div>
+      <div className="bg-particle" style={{ width: '45px', height: '20px', left: '85%', top: '65%', animationDelay: '6s', animationDuration: '15s' }}></div>
+    </div>
+  );
+}
+
+import { IconBrandLogo, IconBox, IconTruck, IconLeaf } from './components/Icons';
+
 export default function App() {
+  const [isLanding, setIsLanding] = useState(true);
   const [role, setRole] = useState('login'); 
   const [username, setUsername] = useState('General Manager');
   const [activeSubTab, setActiveSubTab] = useState('approvals');
@@ -19,6 +34,8 @@ export default function App() {
   function dbClone(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
+
+
 
   // =========================================================================
   // 2. MOCK DATABASE (CLONED STATE)
@@ -329,10 +346,122 @@ export default function App() {
   }
 
   // DEFAULT / LOGIN SCREEN
+  if (isLanding) {
+    return (
+      <div style={{ background: 'var(--bg-app)', minHeight: '100vh', padding: '0 20px 60px 20px', position: 'relative' }}>
+        {/* STICKY FLOATING GLASS NAVBAR */}
+        <nav className="glass-nav">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <IconBrandLogo size={36} />
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              GreenGold<span style={{ color: 'var(--primary)' }}>OS</span>
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer' }}>Ecosystem</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer' }}>IoT Telemetry</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer' }}>ESG Carbon</span>
+            <button className="btn-emerald" style={{ height: '40px', padding: '0 20px', fontSize: '13px' }} onClick={() => setIsLanding(false)}>
+              Access System Portal ➔
+            </button>
+          </div>
+        </nav>
+
+        {/* HERO SECTION */}
+        <section style={{ maxWidth: '860px', margin: '90px auto 80px auto', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
+            <IconBrandLogo size={110} />
+          </div>
+
+          <h1 style={{ fontSize: '56px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.12', marginBottom: '28px', letterSpacing: '-0.035em' }}>
+            Circular Bio-Waste Telemetry <br />
+            <span style={{ color: 'var(--primary)' }}>& Certified Carbon Offsets</span>
+          </h1>
+
+          <p style={{ fontSize: '18px', color: 'var(--text-secondary)', maxWidth: '640px', margin: '0 auto 44px auto', lineHeight: '1.65' }}>
+            Smart bin IoT telemetry, automated fleet dispatch, thermophilic composting analytics, and laboratory-verified carbon credit attestation.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+            <button className="btn-emerald" style={{ padding: '0 32px', height: '52px', fontSize: '15px' }} onClick={() => setIsLanding(false)}>
+              Access Portal Command ➔
+            </button>
+          </div>
+        </section>
+
+        {/* KEY STATISTICS BAR */}
+        <section style={{ maxWidth: '960px', margin: '0 auto 100px auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div className="soft-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
+              <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: '6px' }}>135+</div>
+              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>Smart Bins Online</div>
+            </div>
+            <div className="soft-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
+              <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '-0.03em', marginBottom: '6px' }}>1,200 kg</div>
+              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>Organic Waste Diverted</div>
+            </div>
+            <div className="soft-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
+              <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: '6px' }}>3.45 MT</div>
+              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>CO2e Minted Credits</div>
+            </div>
+          </div>
+        </section>
+
+        {/* 3-STEP WORKFLOW GRID */}
+        <section style={{ maxWidth: '1000px', margin: '0 auto 100px auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <h2 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.02em' }}>How GreenGoldOS Works</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>Automated circular transformation pipeline.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '28px' }}>
+            <div className="soft-card" style={{ padding: '32px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <IconBox size={24} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>1. Smart Telemetry</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                Sensors record bin fill levels. Automatic dispatch signals are sent when thresholds are breached.
+              </p>
+            </div>
+
+            <div className="soft-card" style={{ padding: '32px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <IconTruck size={24} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>2. Logistics & Composting</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                Automated route dispatch transports waste to composting yards for thermophilic aeration digestion.
+              </p>
+            </div>
+
+            <div className="soft-card" style={{ padding: '32px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <IconLeaf size={24} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>3. QA & Carbon Credit</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                Soil lab scientists certify NPK ratios before administrators issue verified CO2 offset tokens.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer style={{ textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '40px', color: 'var(--text-muted)', fontSize: '13px' }}>
+          GreenGoldOS © 2026 — Enterprise Circular Bio-Waste & Carbon Intelligence.
+        </footer>
+      </div>
+    );
+  }
+
   return (
-    <LoginGate 
-      onLogin={handleLogin} 
-      onLoginSuccess={(data) => handleLogin('generator', data)} 
-    />
+    <div style={{ position: 'relative', width: '100vw', minHeight: '100vh', background: 'var(--bg-app)' }}>
+      <LoginGate 
+        onLogin={handleLogin} 
+        onLoginSuccess={(data) => handleLogin('generator', data)} 
+      />
+    </div>
   );
-}
+}

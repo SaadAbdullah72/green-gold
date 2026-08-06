@@ -107,58 +107,72 @@ export default function ManagementDashboard({
       {/* =========================================================================
           MAIN COMMAND CENTER CONTENT
           ========================================================================= */}
-      <main className="main-content">
-        
-        {/* Section Header */}
-        <div className="view-header">
-          <div>
-            <h2>Management Command Center</h2>
-            <p>Admin, dispatch, and carbon offset ledgers</p>
+      <main className="main-content" style={{ flex: 1, padding: '32px', overflowY: 'auto', height: '100vh' }}>
+        {/* Top Greeting & Section Header */}
+        <div className="top-greeting-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="avatar-circle">
+              {initials}
+            </div>
+            <div>
+              <div style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>Good Morning</div>
+              <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-primary)', fontWeight: '800', letterSpacing: '-0.02em' }}>{username}</h2>
+            </div>
           </div>
-          <div>
-            <span className="status-pill approved" style={{ fontSize: '12px', padding: '6px 12px', fontWeight: '700' }}>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="rewards-pill">
+              🍃 1,257 Rewards
+            </div>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer' }}>
+              🔔
+            </div>
+            <span className="pill-badge">
               Executive Authority
             </span>
           </div>
         </div>
 
         {/* KPI Indicators Grid */}
-        <div className="kpi-grid">
+        <div className="stats-grid">
           {/* Gauge 1: Active provisions count */}
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Active Bins In Field</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <div className="soft-card">
+            <div className="kpi-title" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', marginBottom: '12px' }}>
+              <span>ACTIVE BINS IN FIELD</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
             </div>
-            <div className="kpi-value">{stats.activeBins}</div>
-            <div className="kpi-label">Across active client zones</div>
+            <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.1', marginBottom: '8px' }}>{stats.activeBins}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Across active client zones</div>
           </div>
+          
           {/* Gauge 2: Weight statistics */}
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Organic diverted</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+          <div className="soft-card">
+            <div className="kpi-title" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', marginBottom: '12px' }}>
+              <span>ORGANIC DIVERTED</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
             </div>
-            <div className="kpi-value">{stats.totalWasteDivertedKg.toLocaleString()} kg</div>
-            <div className="kpi-label">Processed into organic products</div>
+            <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--primary)', lineHeight: '1.1', marginBottom: '8px' }}>{stats.totalWasteDivertedKg.toLocaleString()} kg</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Processed into organic products</div>
           </div>
+
           {/* Gauge 3: Minted carbon avoidance balance */}
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
+          <div className="soft-card">
+            <div className="kpi-title" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', marginBottom: '12px' }}>
               <span>MINTED CARBON CREDITS</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle></svg>
             </div>
-            <div className="kpi-value">{stats.certifiedCarbonCreditsMt.toFixed(2)} MT CO2e</div>
-            <div className="kpi-label" style={{ color: 'var(--text-muted)' }}>Pending verification: {stats.pendingCarbonCreditsMt.toFixed(2)} MT</div>
+            <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.1', marginBottom: '8px' }}>{stats.certifiedCarbonCreditsMt.toFixed(2)} MT</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pending verification: {stats.pendingCarbonCreditsMt.toFixed(2)} MT</div>
           </div>
+
           {/* Gauge 4: Inorganic recovery sorting */}
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Plastics Recovered</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+          <div className="soft-card">
+            <div className="kpi-title" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '700', marginBottom: '12px' }}>
+              <span>PLASTICS RECOVERED</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
             </div>
-            <div className="kpi-value">{stats.recycledPlasticsKg} kg</div>
-            <div className="kpi-label">Sorted out at collection hubs</div>
+            <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--primary)', lineHeight: '1.1', marginBottom: '8px' }}>{stats.recycledPlasticsKg} kg</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Cleanliness Grade A</div>
           </div>
         </div>
 

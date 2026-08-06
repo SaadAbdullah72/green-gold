@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IconBrandLogo } from './Icons';
 
 export default function LoginGate({ onLogin }) {
   const [selectedRole, setSelectedRole] = useState('management');
@@ -9,37 +10,36 @@ export default function LoginGate({ onLogin }) {
   };
 
   return (
-    <div className="login-gate">
-      <div className="glass-panel login-card">
-        <div className="login-logo">
-          <div className="login-logo-icon">
-            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12" stroke="url(#gold-grad)" strokeLinecap="round"/>
-              <path d="M12 12c0-3-2-5-5-5c-2 0-3 2-1 4c3 3 6 1 6 1z" fill="var(--primary)"/>
-              <path d="M12 12c0 3 2 5 5 5c2 0 3-2 1-4c-3-3-6-1-6-1z" fill="var(--gold-light)"/>
-              <defs>
-                <linearGradient id="gold-grad" x1="2" y1="2" x2="22" y2="22">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="100%" stopColor="#d97706" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <h2>GreenGoldOS Gateway</h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Smart waste, compost, and carbon operating system
-          </p>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', background: 'var(--bg-app)' }}>
+      <div className="soft-card" style={{ width: '100%', maxWidth: '440px', padding: '40px', textAlign: 'center' }}>
+        
+        {/* Brand Icon Badge */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+          <IconBrandLogo size={64} />
         </div>
 
+
+        <h2 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+          GreenGoldOS Portal
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '32px' }}>
+          Circular bio-waste, compost & carbon intelligence platform
+        </p>
+
         <form onSubmit={handleSubmit}>
-          <div className="login-form-group">
-            <label htmlFor="role-select">Select Access Portal Profile</label>
+          <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+            <label 
+              htmlFor="role-select" 
+              style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}
+            >
+              Select Access Profile
+            </label>
             <select
               id="role-select"
-              className="login-input"
+              className="modern-input"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              style={{ width: '100%', background: 'rgba(0, 0, 0, 0.45)', cursor: 'pointer' }}
+              style={{ cursor: 'pointer', height: '52px' }}
             >
               <option value="management">Management Console (System Admin)</option>
               <option value="generator">Waste Generator (Hotel Marriott, etc.)</option>
@@ -48,13 +48,14 @@ export default function LoginGate({ onLogin }) {
               <option value="composition">Waste Composition Firm (Processing Plant)</option>
             </select>
           </div>
-          <button type="submit" className="login-btn">
-            Access System Portal
+
+          <button type="submit" className="btn-emerald" style={{ width: '100%', height: '52px', fontSize: '15px' }}>
+            Access System Portal ➔
           </button>
         </form>
 
-        <p style={{ fontSize: '11px', color: 'var(--text-dark)', marginTop: '20px', textAlign: 'center' }}>
-          By logging in, you accept the GreenGold circular governance protocol terms.
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
+          By accessing the portal, you agree to the GreenGold circular governance protocol standards.
         </p>
       </div>
     </div>
