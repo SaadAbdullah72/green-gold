@@ -25,3 +25,5 @@ connectDB().then(() => {
 }).catch(err => {
   console.error('MongoDB Initialization Warning:', err.message);
 });
+
+export default app;
