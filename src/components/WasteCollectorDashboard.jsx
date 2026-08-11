@@ -106,7 +106,7 @@ export default function WasteCollectorDashboard({ username, userData, onLogout }
   const completedJobsHistory = realJobs.filter(j => j.status === 'COMPLETED');
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAF6', fontFamily: 'var(--font-body)' }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', background: '#F8FAF6', fontFamily: 'var(--font-body)' }}>
       
       {/* COMPLETE WORK MODAL OVERLAY */}
       {showCompleteModal && targetJob && (
@@ -187,7 +187,7 @@ export default function WasteCollectorDashboard({ username, userData, onLogout }
       )}
 
       {/* EXECUTIVE DARK SIDEBAR */}
-      <aside style={{ width: '280px', background: '#0B2822', color: '#FFFFFF', padding: '28px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+      <aside className="sidebar-left" style={{ width: '280px', background: '#0B2822', color: '#FFFFFF', padding: '28px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
         <div>
           {/* Brand Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px', padding: '0 8px' }}>

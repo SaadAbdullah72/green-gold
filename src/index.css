@@ -1142,19 +1142,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =========================================================================
-   MOBILE RESPONSIVENESS (PWA)
+   MOBILE RESPONSIVENESS (PWA) - ALL DASHBOARDS
    ========================================================================= */
 @media (max-width: 768px) {
-  /* Navbar */
+  /* ── Landing Page Navbar ── */
   .eco-navbar {
-    padding: 12px 20px !important;
+    padding: 10px 16px !important;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
     justify-content: center !important;
   }
   .eco-navbar img {
-    width: 44px !important;
-    height: 44px !important;
+    width: 40px !important;
+    height: 40px !important;
   }
   .eco-nav-links {
     gap: 16px !important;
@@ -1165,20 +1165,20 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 14px !important;
   }
   .eco-navbar > div:last-child {
-    display: none !important; /* Hide contact chips on small screens to save space */
+    display: none !important;
   }
 
-  /* Hero Section */
+  /* ── Hero Section ── */
   .eco-hero {
     padding: 60px 20px 40px !important;
     text-align: center;
   }
   .eco-hero-title {
-    font-size: 42px !important;
+    font-size: 36px !important;
     line-height: 1.1 !important;
   }
   .eco-hero-desc {
-    font-size: 16px !important;
+    font-size: 15px !important;
     margin: 20px auto !important;
   }
   .eco-hero-actions {
@@ -1190,7 +1190,7 @@ h1, h2, h3, h4, h5, h6 {
     width: 100%;
   }
 
-  /* About Grid */
+  /* ── About Grid ── */
   .eco-about-section {
     padding: 60px 20px !important;
   }
@@ -1203,13 +1203,13 @@ h1, h2, h3, h4, h5, h6 {
     padding: 10px !important;
   }
   .eco-about-img-frame {
-    display: none !important; /* Hide the decorative frame on mobile to prevent overflow */
+    display: none !important;
   }
   .eco-about-title {
-    font-size: 32px !important;
+    font-size: 28px !important;
   }
 
-  /* Services Grid */
+  /* ── Services Grid ── */
   .eco-services-section {
     padding: 60px 20px !important;
   }
@@ -1217,35 +1217,233 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr !important;
   }
 
-  /* Counter Bar */
+  /* ── Counter Bar ── */
   .eco-counter-bar {
     grid-template-columns: 1fr 1fr !important;
-    gap: 20px;
-    padding: 30px 20px !important;
+    gap: 16px;
+    padding: 24px 16px !important;
     margin-top: 40px !important;
   }
-  
-  /* Footer */
+
+  /* ── Footer ── */
   .eco-footer {
-    padding: 24px 20px !important;
+    padding: 24px 16px !important;
   }
 
-  /* Login Portal */
+  /* ── Login Portal ── */
   .login-gate-wrapper {
     flex-direction: column !important;
     overflow-y: auto !important;
   }
   .login-hero-sidebar {
     min-height: auto !important;
-    padding: 40px 20px !important;
+    padding: 30px 20px !important;
   }
   .login-hero-sidebar img {
-    width: 180px !important;
-    height: 180px !important;
+    width: 140px !important;
+    height: 140px !important;
   }
   .login-auth-container {
-    padding: 30px 20px !important;
+    padding: 24px 16px !important;
     max-width: 100% !important;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     ALL DASHBOARDS - SIDEBAR COLLAPSE ON MOBILE
+     ══════════════════════════════════════════════════════════════ */
+  
+  /* Management, Technician, ProcessingPlant Dashboards (CSS class based) */
+  .app-container {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+  }
+
+  .sidebar-left {
+    position: relative !important;
+    height: auto !important;
+    padding: 16px !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+  }
+
+  .sidebar-left .app-logo {
+    margin-bottom: 0 !important;
+  }
+
+  .sidebar-left nav {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    flex-grow: 0 !important;
+    width: 100% !important;
+  }
+
+  .sidebar-left .menu-label {
+    display: none !important;
+  }
+
+  .sidebar-left .menu-list {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .sidebar-left .menu-btn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  .sidebar-left .sidebar-footer {
+    display: none !important;
+  }
+
+  .sidebar-left .profile-card {
+    display: none !important;
+  }
+
+  /* Main Content Area */
+  .main-content {
+    padding: 16px !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* Top Greeting Bar */
+  .top-greeting-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 0 0 16px 0 !important;
+  }
+
+  .top-greeting-bar h2 {
+    font-size: 18px !important;
+  }
+
+  /* Avatar */
+  .avatar-circle {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  /* Stats / KPI Cards Grid */
+  .stats-grid,
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Stat Cards */
+  .stat-card,
+  .kpi-card {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .stat-card h3,
+  .kpi-card h3 {
+    font-size: 10px !important;
+  }
+
+  .stat-value {
+    font-size: 22px !important;
+  }
+
+  /* Sub Tab Navigation (Management Dashboard) */
+  .sub-tab-nav,
+  .dashboard-tabs {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .sub-tab-btn,
+  .dashboard-tab-btn {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Request Cards & Items */
+  .request-card,
+  .job-card,
+  .soft-card {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Tables on Mobile - Horizontal Scroll */
+  table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    font-size: 12px !important;
+  }
+
+  th, td {
+    padding: 8px 10px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Log Rows */
+  .log-row {
+    padding: 10px 12px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  /* Buttons */
+  .btn-eco-primary,
+  .btn-eco-secondary {
+    padding: 10px 18px !important;
+    font-size: 13px !important;
+  }
+
+  /* Modal Overlays */
+  .modal-overlay {
+    padding: 16px !important;
+  }
+
+  .modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 20px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Generic flex row items - stack on mobile */
+  [style*="display: flex"][style*="gap"] {
+    flex-wrap: wrap !important;
   }
 }
 
+/* Extra small screens (< 480px) */
+@media (max-width: 480px) {
+  .stats-grid,
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .eco-hero-title {
+    font-size: 28px !important;
+  }
+
+  .eco-counter-bar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sidebar-left .menu-btn {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .sidebar-left .app-logo .logo-text h1 {
+    font-size: 15px !important;
+  }
+}
