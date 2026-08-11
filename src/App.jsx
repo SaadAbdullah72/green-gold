@@ -76,6 +76,23 @@ export default function App() {
     window.history.replaceState({ role: 'login' }, '');
     const handlePopState = () => setRole('login');
     window.addEventListener('popstate', handlePopState);
+
+    // Auto-restore MongoDB Session on app mount/refresh
+    const restoreSession = async () => {
+      const token = localStorage.getItem('greengold_token');
+      if (token) {
+        try {
+          const res = await api.auth.getMe();
+          if (res.user) {
+            handleLogin(res.user.role === 'TECHNICAL' ? 'collector' : res.user.role === 'MANAGEMENT' ? 'management' : 'generator', res.user);
+          }
+        } catch (e) {
+          localStorage.removeItem('greengold_token');
+        }
+      }
+    };
+    restoreSession();
+
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -88,35 +105,38 @@ export default function App() {
   const handleLogin = (selectedRole, payload = null) => {
     let targetRole = 'login';
     
+    if (payload) {
+      setUserData(payload);
+      setUsername(payload.fullName || payload.organizationName || 'User');
+      if (payload.role === 'MANAGEMENT') selectedRole = 'management';
+      if (payload.role === 'USER') selectedRole = 'generator';
+      if (payload.role === 'TECHNICAL') selectedRole = 'collector';
+    }
+
     if (selectedRole === 'management') {
       targetRole = 'management';
-      setUsername('General Manager');
+      if (!payload) setUsername('General Manager');
     } else if (selectedRole === 'generator') {
       targetRole = 'generator';
-      if (payload) {
-        setUserData(payload);
-        setUsername(payload.organizationName || payload.fullName || 'Waste Generator');
-      } else {
-        setUsername('Marriott Manager');
-      }
+      if (!payload) setUsername('Marriott Manager');
     } else if (selectedRole === 'installer') {
       targetRole = 'installer';
-      setUsername('Lead Installer');
+      if (!payload) setUsername('Lead Installer');
     } else if (selectedRole === 'collector') {
       targetRole = 'collector';
-      setUsername('Driver E-04');
+      if (!payload) setUsername('Driver E-04');
     } else if (selectedRole === 'logistics') {
       targetRole = 'logistics';
-      setUsername('Driver E-04');
+      if (!payload) setUsername('Driver E-04');
     } else if (selectedRole === 'composition' || selectedRole === 'processor') {
       targetRole = 'processor';
-      setUsername('Plant Supervisor');
+      if (!payload) setUsername('Plant Supervisor');
     } else if (selectedRole === 'qa') {
       targetRole = 'qa';
-      setUsername('QA Specialist');
+      if (!payload) setUsername('QA Specialist');
     } else if (selectedRole === 'buyer') {
       targetRole = 'buyer';
-      setUsername('Green Marketplace Buyer');
+      if (!payload) setUsername('Green Marketplace Buyer');
     }
 
     setRole(targetRole);
@@ -124,6 +144,8 @@ export default function App() {
   };
 
   const handleBackToLogin = () => {
+    api.auth.logout();
+    setUserData(null);
     setRole('login');
     window.history.pushState({ role: 'login' }, '');
   };
@@ -306,6 +328,7 @@ export default function App() {
     return (
       <WasteCollectorDashboard
         username={username}
+        userData={userData}
         onLogout={handleBackToLogin}
         tasks={collectorTasks}
         notifications={collectorNotifications}
@@ -348,109 +371,160 @@ export default function App() {
   // DEFAULT / LOGIN SCREEN
   if (isLanding) {
     return (
-      <div style={{ background: 'var(--bg-app)', minHeight: '100vh', padding: '0 20px 60px 20px', position: 'relative' }}>
-        {/* STICKY FLOATING GLASS NAVBAR */}
-        <nav className="glass-nav">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <IconBrandLogo size={36} />
-            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              GreenGold<span style={{ color: 'var(--primary)' }}>OS</span>
-            </span>
+      <div style={{ background: 'var(--bg-app)', minHeight: '100vh', position: 'relative' }}>
+        {/* CUSTOMIZED ECO NAVBAR */}
+        <nav className="eco-navbar" style={{ padding: '8px 50px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          {/* Logo (Sleek, Dissolved Background) */}
+          <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => setIsLanding(false)}>
+            <img src="/logo.png" alt="GreenGold Logo" style={{ width: '64px', height: '64px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.1)' }} />
           </div>
 
+          {/* 3 Tabs */}
+          <ul className="eco-nav-links" style={{ display: 'flex', gap: '40px', margin: 0, padding: 0, listStyle: 'none', alignItems: 'center' }}>
+            <li className="eco-nav-item" style={{ fontSize: '16px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.3s' }} onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}>Services</li>
+            <li className="eco-nav-item" style={{ fontSize: '16px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.3s' }} onClick={() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth' })}>Info</li>
+            <li className="eco-nav-item" style={{ fontSize: '16px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.3s' }} onClick={() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' })}>Contact</li>
+          </ul>
+
+          {/* Contact Details on Right (Professional & Minimal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer' }}>Ecosystem</span>
-            <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer' }}>IoT Telemetry</span>
-            <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer' }}>ESG Carbon</span>
-            <button className="btn-emerald" style={{ height: '40px', padding: '0 20px', fontSize: '13px' }} onClick={() => setIsLanding(false)}>
-              Access System Portal ➔
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#f8fafc', transition: 'opacity 0.2s', cursor: 'pointer', opacity: 0.9 }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span style={{ fontSize: '15px', fontWeight: '500', letterSpacing: '0.3px' }}>contact@greengoldos.com</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#f8fafc', transition: 'opacity 0.2s', cursor: 'pointer', opacity: 0.9 }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span style={{ fontSize: '15px', fontWeight: '500', letterSpacing: '0.3px' }}>+1 (800) 555-0199</span>
+            </div>
           </div>
         </nav>
-
         {/* HERO SECTION */}
-        <section style={{ maxWidth: '860px', margin: '90px auto 80px auto', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
-            <IconBrandLogo size={110} />
+        <section className="eco-hero">
+          {/* Vertical Pagination Dots */}
+          <div className="eco-hero-pagination">
+            <div className="eco-dot active"></div>
+            <div className="eco-dot"></div>
           </div>
 
-          <h1 style={{ fontSize: '56px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.12', marginBottom: '28px', letterSpacing: '-0.035em' }}>
-            Circular Bio-Waste Telemetry <br />
-            <span style={{ color: 'var(--primary)' }}>& Certified Carbon Offsets</span>
+          <div className="eco-hero-tag">NATURAL ENVIRONMENT</div>
+
+          <h1 className="eco-hero-title">
+            Leading the way to <br />
+            a greener future
           </h1>
 
-          <p style={{ fontSize: '18px', color: 'var(--text-secondary)', maxWidth: '640px', margin: '0 auto 44px auto', lineHeight: '1.65' }}>
-            Smart bin IoT telemetry, automated fleet dispatch, thermophilic composting analytics, and laboratory-verified carbon credit attestation.
+          <p className="eco-hero-desc">
+            GreenGold OS is a revolutionary smart waste management platform utilizing IoT technology and AI to drive a sustainable, zero-emissions circular economy.
           </p>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-            <button className="btn-emerald" style={{ padding: '0 32px', height: '52px', fontSize: '15px' }} onClick={() => setIsLanding(false)}>
-              Access Portal Command ➔
+          <div className="eco-hero-actions">
+            <button className="btn-eco-primary" onClick={() => setIsLanding(false)}>
+              Join Us Now »
+            </button>
+            <button className="btn-eco-secondary" onClick={() => setIsLanding(false)}>
+              Get Started »
             </button>
           </div>
+
+          {/* Social Links Bottom Left */}
+          <div className="eco-hero-socials-bottom">
+            <span>FACEBOOK</span>
+            <span>INSTAGRAM</span>
+            <span>TWITTER</span>
+          </div>
+
+          {/* Slider Controls Bottom Right */}
+          <div className="eco-hero-controls">
+            <button className="eco-arrow-btn eco-arrow-left" onClick={() => setIsLanding(false)}>←</button>
+            <button className="eco-arrow-btn eco-arrow-right" onClick={() => setIsLanding(false)}>→</button>
+          </div>
         </section>
 
-        {/* KEY STATISTICS BAR */}
-        <section style={{ maxWidth: '960px', margin: '0 auto 100px auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-            <div className="soft-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
-              <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: '6px' }}>135+</div>
-              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>Smart Bins Online</div>
+        {/* ABOUT SECTION ("Building a greener future together Forever") */}
+        <section id="info-section" className="eco-about-section">
+          <div className="eco-about-grid">
+            <div className="eco-about-image-wrapper">
+              <div className="eco-about-img-frame"></div>
+              <img src="/ecofine_about.png" alt="Ecofine Sustainability" className="eco-about-img-main" />
             </div>
-            <div className="soft-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
-              <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '-0.03em', marginBottom: '6px' }}>1,200 kg</div>
-              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>Organic Waste Diverted</div>
-            </div>
-            <div className="soft-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
-              <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: '6px' }}>3.45 MT</div>
-              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>CO2e Minted Credits</div>
+
+            <div>
+              <div className="eco-about-tag">ABOUT WITH US</div>
+              <h2 className="eco-about-title">
+                Building a greener <br />
+                future together Forever
+              </h2>
+              <p className="eco-about-desc" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '18px', lineHeight: '1.6', color: '#475569' }}>
+                Our comprehensive platform empowers cities and businesses to efficiently manage organic waste. From automated smart bin collection to carbon certification and an integrated compost marketplace, GreenGold OS ensures transparency, accountability, and maximum sustainability at every step. Join us in transforming waste into wealth and paving the way for a cleaner, greener planet.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* 3-STEP WORKFLOW GRID */}
-        <section style={{ maxWidth: '1000px', margin: '0 auto 100px auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.02em' }}>How GreenGoldOS Works</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>Automated circular transformation pipeline.</p>
+        {/* SERVICES SECTION ("Preserving The Earth For Future Generations") */}
+        <section id="services-section" className="eco-services-section">
+          <div className="eco-services-header">
+            <div className="eco-services-tag">OUR SERVICES</div>
+            <h2 className="eco-services-title">
+              Preserving The Earth For Future Generations
+            </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '28px' }}>
-            <div className="soft-card" style={{ padding: '32px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <IconBox size={24} />
+          <div className="eco-services-grid">
+            <div className="eco-service-card">
+              <div className="eco-service-icon-badge">
+                <IconLeaf size={32} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>1. Smart Telemetry</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Sensors record bin fill levels. Automatic dispatch signals are sent when thresholds are breached.
-              </p>
+              <h3>Carbon Offsetting</h3>
+              <p>This allows individuals and organizations to support their efforts to combat carbon climate change.</p>
             </div>
 
-            <div className="soft-card" style={{ padding: '32px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <IconTruck size={24} />
+            <div className="eco-service-card">
+              <div className="eco-service-icon-badge">
+                <IconBox size={32} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>2. Logistics & Composting</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Automated route dispatch transports waste to composting yards for thermophilic aeration digestion.
-              </p>
+              <h3>Energy Consulting</h3>
+              <p>Energy consulting involves providing expert advice and guidance on energy-related matters.</p>
             </div>
 
-            <div className="soft-card" style={{ padding: '32px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <IconLeaf size={24} />
+            <div className="eco-service-card">
+              <div className="eco-service-icon-badge">
+                <IconTruck size={32} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>3. QA & Carbon Credit</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Soil lab scientists certify NPK ratios before administrators issue verified CO2 offset tokens.
-              </p>
+              <h3>Climate Adaptation</h3>
+              <p>Refers to the adaptation process of human and natural systems in response to the impacts.</p>
+            </div>
+          </div>
+
+          {/* STAT COUNTER GRID BAR */}
+          <div className="eco-counter-bar">
+            <div className="eco-counter-item">
+              <div className="eco-counter-val">200+</div>
+              <div className="eco-counter-lbl">Smart Bio-Bins Active</div>
+            </div>
+            <div className="eco-counter-item">
+              <div className="eco-counter-val">10+</div>
+              <div className="eco-counter-lbl">Processing Hubs</div>
+            </div>
+            <div className="eco-counter-item">
+              <div className="eco-counter-val">20+</div>
+              <div className="eco-counter-lbl">Certified Farms</div>
+            </div>
+            <div className="eco-counter-item">
+              <div className="eco-counter-val">20+</div>
+              <div className="eco-counter-lbl">MT CO2e Offsets</div>
             </div>
           </div>
         </section>
 
         {/* FOOTER */}
-        <footer style={{ textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '40px', color: 'var(--text-muted)', fontSize: '13px' }}>
-          GreenGoldOS © 2026 — Enterprise Circular Bio-Waste & Carbon Intelligence.
+        <footer id="contact-section" className="eco-footer">
+          Ecofine & GreenGoldOS © 2026 — Leading the way to a greener future.
         </footer>
       </div>
     );

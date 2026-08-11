@@ -63,17 +63,7 @@ export default function TechnicianDashboard({ onLogout }) {
       <aside className="sidebar-left">
         <div className="app-logo">
           <div className="logo-icon">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12" stroke="url(#gold-grad-side)" strokeLinecap="round" />
-              <path d="M12 12c0-3-2-5-5-5c-2 0-3 2-1 4c3 3 6 1 6 1z" fill="var(--primary)" />
-              <path d="M12 12c0 3 2 5 5 5c2 0 3-2 1-4c-3-3-6-1-6-1z" fill="var(--gold-light)" />
-              <defs>
-                <linearGradient id="gold-grad-side" x1="2" y1="2" x2="22" y2="22">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="100%" stopColor="#d97706" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="/logo.png" alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.2)' }} />
           </div>
           <div className="logo-text">
             <h1>GreenGoldOS</h1>

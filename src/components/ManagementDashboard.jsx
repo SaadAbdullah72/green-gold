@@ -1,20 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TECH_CREWS, LOGISTICS_PARTNERS, FACTORY_REPORTS } from '../mockData';
+import { api } from '../api';
 
-/**
- * ManagementDashboard Presentational Component
- * 
- * Provides:
- * 1. Sidebar Control Panel: Includes branding, navigation links, and logout controls.
- * 2. KPI Cards Grid: Displays operational telemetry statistics (active bins, diverted waste, carbon offset weight).
- * 3. Reactive Sub-Tabs: Switches between:
- *    - Pending Installation Requests (with approval workflows).
- *    - Logistics Hauling Dispatch (with truck assignment actions).
- *    - Soil Attestation Carbon Credit Tokenizer (with minting triggers).
- *    - Factory performance statistics and monthly trends.
- *    - Active agreements audit ledger.
- * 4. Technicians & Carriers Selection Modals: Overlay dialog boxes for dispatching crews.
- */
 export default function ManagementDashboard({
   username,
   onLogout,
@@ -39,6 +26,107 @@ export default function ManagementDashboard({
   setShowLogisticsModal,
   confirmAssignLogistics
 }) {
+  // Real Backend Data State
+  const [dbRequests, setDbRequests] = useState([]);
+  const [dbWorkers, setDbWorkers] = useState([]);
+  const [dbAuditLogs, setDbAuditLogs] = useState([]);
+  const [loadingDb, setLoadingDb] = useState(false);
+
+  // Mandatory Decline Modal State
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [declineTargetId, setDeclineTargetId] = useState(null);
+  const [declineReasonText, setDeclineReasonText] = useState('');
+  const [declineError, setDeclineError] = useState('');
+
+  // Worker Assign Modal State
+  const [showWorkerAssignModal, setShowWorkerAssignModal] = useState(false);
+  const [assignTargetReq, setAssignTargetReq] = useState(null);
+  const [selectedWorkerId, setSelectedWorkerId] = useState('');
+  const [binsQuota, setBinsQuota] = useState(2);
+  const [assignMessage, setAssignMessage] = useState('');
+
+  const loadManagementData = async (isInitial = false) => {
+    try {
+      const reqRes = await api.management.getRequests();
+      if (reqRes.requests) {
+        setDbRequests(prev => JSON.stringify(prev) !== JSON.stringify(reqRes.requests) ? reqRes.requests : prev);
+      }
+
+      const workerRes = await api.management.getWorkers();
+      if (workerRes.workers) {
+        setDbWorkers(prev => JSON.stringify(prev) !== JSON.stringify(workerRes.workers) ? workerRes.workers : prev);
+      }
+
+      const auditRes = await api.audit.getLogs();
+      if (auditRes.logs) {
+        setDbAuditLogs(prev => JSON.stringify(prev) !== JSON.stringify(auditRes.logs) ? auditRes.logs : prev);
+      }
+    } catch (err) {
+      if (err.message && (err.message.includes('Token') || err.message.includes('authorized'))) {
+        if (onLogout) onLogout();
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadManagementData(true);
+    const timer = setInterval(() => loadManagementData(false), 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleApproveDbRequest = async (reqId) => {
+    try {
+      await api.management.approveRequest(reqId);
+      setDbRequests(prev => prev.map(r => r._id === reqId ? { ...r, status: 'ASSIGNING' } : r));
+      const target = dbRequests.find(r => r._id === reqId);
+      if (target) {
+        setAssignTargetReq(target);
+        setSelectedWorkerId('');
+        setAssignMessage('');
+        setShowWorkerAssignModal(true);
+      }
+    } catch (err) {
+      alert(`Approve Error: ${err.message}`);
+    }
+  };
+
+  const handleOpenDeclineModal = (reqId) => {
+    setDeclineTargetId(reqId);
+    setDeclineReasonText('');
+    setDeclineError('');
+    setShowDeclineModal(true);
+  };
+
+  const handleSubmitDeclineReason = async () => {
+    if (!declineReasonText || declineReasonText.trim().length === 0) {
+      setDeclineError('Decline reason is mandatory before declining a request.');
+      return;
+    }
+    try {
+      await api.management.declineRequest(declineTargetId, declineReasonText);
+      setDbRequests(prev => prev.map(r => r._id === declineTargetId ? { ...r, status: 'DECLINED', declineReason: declineReasonText.trim() } : r));
+      setShowDeclineModal(false);
+    } catch (err) {
+      setDeclineError(err.message);
+    }
+  };
+
+  const handleAssignWorkerSubmit = async () => {
+    if (!selectedWorkerId) {
+      alert('Please select an eligible technical worker.');
+      return;
+    }
+    try {
+      const res = await api.management.assignJob(assignTargetReq._id, selectedWorkerId, binsQuota);
+      setAssignMessage(res.message || 'Worker assigned successfully.');
+      setTimeout(() => {
+        setShowWorkerAssignModal(false);
+        setAssignMessage('');
+      }, 1200);
+    } catch (err) {
+      alert(`Assignment Error: ${err.message}`);
+    }
+  };
   // Extract user initials to render in the profile card avatar circle
   const initials = username.split(/[ _]/).map(w => w[0]).join("").toUpperCase().substring(0, 2);
 
@@ -57,17 +145,7 @@ export default function ManagementDashboard({
         {/* Brand Header */}
         <div className="app-logo">
           <div className="logo-icon">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12" stroke="url(#gold-grad-side)" strokeLinecap="round"/>
-              <path d="M12 12c0-3-2-5-5-5c-2 0-3 2-1 4c3 3 6 1 6 1z" fill="var(--primary)"/>
-              <path d="M12 12c0 3 2 5 5 5c2 0 3-2 1-4c-3-3-6-1-6-1z" fill="var(--gold-light)"/>
-              <defs>
-                <linearGradient id="gold-grad-side" x1="2" y1="2" x2="22" y2="22">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="100%" stopColor="#d97706" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="/logo.png" alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.2)' }} />
           </div>
           <div className="logo-text">
             <h1>GreenGoldOS</h1>
@@ -239,27 +317,60 @@ export default function ManagementDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {installRequests.filter(r => r.status === 'Pending').length === 0 ? (
+                      {dbRequests.length === 0 ? (
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                            No pending installations request found.
+                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
+                            No service requests found in database.
                           </td>
                         </tr>
                       ) : (
-                        installRequests.filter(r => r.status === 'Pending').map(req => (
-                          <tr key={req.id}>
-                            <td><strong>{req.id}</strong></td>
+                        dbRequests.map(req => (
+                          <tr key={req._id}>
+                            <td><strong>{req.requestNumber}</strong></td>
                             <td>
-                              <div style={{ fontWeight: 600 }}>{req.org}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Contact: {req.contact} | {req.phone}</div>
+                              <div style={{ fontWeight: 600 }}>{req.organizationName}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                Contact: {req.contactPerson} | {req.phone}
+                              </div>
                             </td>
-                            <td><strong style={{ color: 'var(--gold-light)' }}>{req.binsRequested} Bins</strong></td>
-                            <td>{req.location}</td>
-                            <td>{req.requestDate}</td>
+                            <td>
+                              <strong style={{ color: 'var(--gold-light)' }}>{req.numberOfBins} Bins</strong>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                Workers Required: {req.requiredWorkers || Math.ceil(req.numberOfBins / 2)}
+                              </div>
+                            </td>
+                            <td>
+                              <div>{req.town}, {req.city}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{req.address}</div>
+                            </td>
+                            <td>
+                              <span className={`status-badge ${req.status.toLowerCase()}`} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' }}>
+                                {req.status}
+                              </span>
+                              {req.declineReason && (
+                                <div style={{ fontSize: '10px', color: '#EF4444', marginTop: '4px' }}>
+                                  Reason: "{req.declineReason}"
+                                </div>
+                              )}
+                            </td>
                             <td>
                               <div className="action-btn-group">
-                                <button className="action-btn approve" onClick={() => handleApproveReq(req.id)}>Approve</button>
-                                <button className="action-btn deny" onClick={() => handleDenyReq(req.id)}>Deny</button>
+                                {(req.status === 'SUBMITTED' || req.status === 'PENDING_REVIEW') && (
+                                  <>
+                                    <button className="action-btn approve" onClick={() => handleApproveDbRequest(req._id)}>
+                                      Approve
+                                    </button>
+                                    <button className="action-btn deny" onClick={() => handleOpenDeclineModal(req._id)}>
+                                      Decline
+                                    </button>
+                                  </>
+                                )}
+
+                                {(req.status === 'APPROVED' || req.status === 'ASSIGNING' || req.status === 'ASSIGNED') && (
+                                  <button className="action-btn approve" style={{ background: '#3B82F6' }} onClick={() => { setAssignTargetReq(req); setShowWorkerAssignModal(true); }}>
+                                    Assign Worker ({req.assignedWorkersCount || 0}/{req.requiredWorkers || Math.ceil(req.numberOfBins / 2)})
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -267,6 +378,125 @@ export default function ManagementDashboard({
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* ACTIVE APPROVED DEPLOYMENTS & TECHNICAL TEAM STATUS TRACKER */}
+                <div style={{ marginTop: '36px', paddingTop: '28px', borderTop: '2px dashed #E2E8F0' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A', marginBottom: '6px' }}>
+                    Active Approved Deployments & Technical Team Status
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '24px' }}>
+                    Real-time status tracking for approved bin deployment requests, assigned technical staff, and installation completion progress.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {dbRequests.filter(r => r.status === 'APPROVED' || r.status === 'ASSIGNING' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS' || r.status === 'Completed').length === 0 ? (
+                      <div style={{ padding: '36px', background: '#F8FAFC', borderRadius: '16px', textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
+                        No active approved bin deployment requests currently in field execution.
+                      </div>
+                    ) : (
+                      dbRequests.filter(r => r.status === 'APPROVED' || r.status === 'ASSIGNING' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS' || r.status === 'Completed').map(req => {
+                        const assignedList = req.assignedWorkers || [];
+                        const completedCount = assignedList.filter(w => w.status === 'COMPLETED').length;
+                        const totalAssigned = assignedList.length;
+                        const progressPct = totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0;
+
+                        return (
+                          <div key={req._id} style={{ padding: '24px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                              <div>
+                                <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                  REQUEST #{req.requestNumber}
+                                </span>
+                                <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: '2px 0 0 0' }}>
+                                  {req.organizationName}
+                                </h4>
+                                <div style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>
+                                  Placement Location: {req.address}, {req.town}, {req.city} • Bins Quota: <strong>{req.numberOfBins} Units</strong>
+                                </div>
+                              </div>
+
+                              <div style={{ textAlign: 'right' }}>
+                                <span className={`status-badge ${req.status.toLowerCase()}`} style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' }}>
+                                  OVERALL STATUS: {req.status === 'Completed' ? 'COMPLETED / FULLY INSTALLED' : req.status}
+                                </span>
+                                <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', marginTop: '6px' }}>
+                                  Progress: {completedCount} of {req.requiredWorkers || 2} Workers Done ({progressPct}%)
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px' }}>
+                              <div style={{ width: `${progressPct}%`, height: '100%', background: req.status === 'Completed' ? '#047857' : '#10B981', transition: 'width 0.3s ease' }}></div>
+                            </div>
+
+                            {/* Assigned Technical Members Real-Time Status Table */}
+                            <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '16px', border: '1px solid #E2E8F0' }}>
+                              <div style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>
+                                Assigned Technical Members Real-Time Status
+                              </div>
+
+                              {assignedList.length === 0 ? (
+                                <div style={{ fontSize: '13px', color: '#64748B', fontStyle: 'italic' }}>
+                                  No technical workers assigned yet. Click "Assign Worker" button in the table above to dispatch installation crew.
+                                </div>
+                              ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                                  {assignedList.map((item, idx) => {
+                                    const w = item.worker || {};
+                                    const wStatus = item.status || 'ASSIGNED';
+                                    
+                                    let badgeBg = '#FEF3C7';
+                                    let badgeColor = '#D97706';
+                                    let badgeText = 'Waiting for Technical Member Confirmation';
+
+                                    if (wStatus === 'ACCEPTED') {
+                                      badgeBg = '#ECFDF5';
+                                      badgeColor = '#047857';
+                                      badgeText = 'Confirmed / Availability Confirmed';
+                                    } else if (wStatus === 'IN_PROGRESS') {
+                                      badgeBg = '#EFF6FF';
+                                      badgeColor = '#1E40AF';
+                                      badgeText = 'On-Site Installation Work In Progress';
+                                    } else if (wStatus === 'PARTIALLY_DELAYED') {
+                                      badgeBg = '#FEF3C7';
+                                      badgeColor = '#B45309';
+                                      badgeText = `Partially Delayed: "${item.delayReason || 'Site access issue'}"`;
+                                    } else if (wStatus === 'COMPLETED') {
+                                      badgeBg = '#D1FAE5';
+                                      badgeColor = '#065F46';
+                                      badgeText = 'Task Done / Installation Completed';
+                                    } else if (wStatus === 'DECLINED') {
+                                      badgeBg = '#FEE2E2';
+                                      badgeColor = '#991B1B';
+                                      badgeText = `Declined: "${item.declineReason || 'Unavailable'}"`;
+                                    }
+
+                                    return (
+                                      <div key={idx} style={{ background: '#FFFFFF', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                                        <div style={{ fontWeight: '800', color: '#0F172A', fontSize: '14px' }}>
+                                          {w.fullName || 'Technical Staff'} (ID: {w.employeeId || 'T-101'})
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                                          Phone: {w.phone || '+92 300 0000000'} | Emergency: {w.secondaryPhone || w.phone}
+                                        </div>
+                                        <div style={{ marginTop: '10px' }}>
+                                          <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', background: badgeBg, color: badgeColor }}>
+                                            {badgeText}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -510,30 +740,148 @@ export default function ManagementDashboard({
           </div>
         )}
 
-        {/* =========================================================================
-            LOGS PANEL (ACTION AUDITS)
-            ========================================================================= */}
-        <div className="glass-panel mt-20 table-panel logs-panel">
-          <h3>Management Action Audits</h3>
-          <div className="logs-container">
-            {logs.map((log, idx) => (
-              <div className="log-row" key={idx}>
-                <span className={`log-badge ${log.category.toLowerCase()}`}>{log.category}</span>
-                <div className="log-text-content">
-                  <div className="log-message">{log.message}</div>
-                  <div className="log-time">{log.timestamp}</div>
-                </div>
+      </main>
+
+      {/* =========================================================================
+          MODAL A: MANDATORY DECLINE REASON MODAL
+          ========================================================================= */}
+      {showDeclineModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
+          <div className="soft-card" style={{ maxWidth: '480px', width: '100%', padding: '32px', background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#991B1B', marginBottom: '8px' }}>
+              Decline Service Request
+            </h3>
+            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '20px', lineHeight: '1.5' }}>
+              A mandatory decline reason is required. This reason will be stored in MongoDB and notified to the user.
+            </p>
+
+            {declineError && (
+              <div style={{ padding: '10px', background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', borderRadius: '8px', fontSize: '12px', fontWeight: '600', marginBottom: '16px' }}>
+                {declineError}
               </div>
-            ))}
+            )}
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Mandatory Reason for Decline *
+              </label>
+              <textarea
+                className="modern-input"
+                rows="4"
+                placeholder="e.g. Site location does not meet security or accessibility requirements for 240L bin deployment."
+                value={declineReasonText}
+                onChange={(e) => setDeclineReasonText(e.target.value)}
+                style={{ width: '100%', padding: '12px', fontSize: '13px', borderRadius: '10px', height: '100px' }}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn-eco-secondary"
+                onClick={() => setShowDeclineModal(false)}
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-eco-primary"
+                onClick={handleSubmitDeclineReason}
+                style={{ background: '#DC2626', borderColor: '#DC2626', padding: '10px 18px', fontSize: '13px' }}
+              >
+                Decline Request »
+              </button>
+            </div>
           </div>
         </div>
-      </main>
+      )}
+
+      {/* =========================================================================
+          MODAL B: TECHNICAL WORKFORCE ASSIGNMENT MODAL (5-MIN TIMER ALERT)
+          ========================================================================= */}
+      {showWorkerAssignModal && assignTargetReq && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
+          <div className="soft-card" style={{ maxWidth: '540px', width: '100%', padding: '32px', background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              TECHNICAL WORKFORCE ASSIGNMENT
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1E293B', marginBottom: '8px' }}>
+              Assign Technical Worker to #{assignTargetReq.requestNumber}
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '20px', lineHeight: '1.4' }}>
+              Target Organization: <strong>{assignTargetReq.organizationName}</strong> ({assignTargetReq.numberOfBins} Bins in {assignTargetReq.town}). <br />
+              Worker will have <strong style={{ color: '#D97706' }}>5 minutes</strong> to respond before assignment automatically expires.
+            </p>
+
+            {assignMessage && (
+              <div style={{ padding: '12px', background: '#ECFDF5', border: '1px solid #6EE7B7', color: '#065F46', borderRadius: '10px', fontSize: '13px', fontWeight: '700', marginBottom: '16px', textAlign: 'center' }}>
+                {assignMessage}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Select Available Technical Worker (Real MongoDB Status)
+              </label>
+              <select
+                className="modern-input"
+                value={selectedWorkerId}
+                onChange={(e) => setSelectedWorkerId(e.target.value)}
+                style={{ width: '100%', height: '46px' }}
+              >
+                <option value="">-- Choose Technical Staff --</option>
+                {dbWorkers.map(w => (
+                  <option key={w._id} value={w._id} disabled={w.workerStatus !== 'IDLE'}>
+                    {w.fullName} (ID: {w.employeeId || 'T-100'}) — Status: {w.workerStatus} {w.workerStatus === 'IDLE' ? '[Available]' : '[Busy]'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Bins Quota Assigned to this Worker
+              </label>
+              <input
+                type="number"
+                className="modern-input"
+                min="1"
+                max={assignTargetReq.numberOfBins}
+                value={binsQuota}
+                onChange={(e) => setBinsQuota(parseInt(e.target.value, 10) || 1)}
+                style={{ width: '100%', height: '44px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn-eco-secondary"
+                onClick={() => setShowWorkerAssignModal(false)}
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-eco-primary"
+                onClick={handleAssignWorkerSubmit}
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Dispatch 5-Min Assignment »
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           MODAL 1: ASSIGN TECHNICIAN CREW OVERLAY
           ========================================================================= */}
       {showTechModal && (
-        <div className="login-gate" style={{ background: 'rgba(0, 0, 0, 0.7)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
           <div className="glass-panel login-card" style={{ maxWidth: '500px' }}>
             <h3 style={{ fontSize: '20px', color: '#fff', marginBottom: '10px' }}>Assign Technician Crew</h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
@@ -581,7 +929,7 @@ export default function ManagementDashboard({
           MODAL 2: ASSIGN LOGISTICS PARTNER OVERLAY
           ========================================================================= */}
       {showLogisticsModal && (
-        <div className="login-gate" style={{ background: 'rgba(0, 0, 0, 0.7)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
           <div className="glass-panel login-card" style={{ maxWidth: '500px' }}>
             <h3 style={{ fontSize: '20px', color: '#fff', marginBottom: '10px' }}>Assign Logistics Carrier</h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
