@@ -103,7 +103,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', background: '#F8FAFC', overflow: 'hidden', margin: 0, padding: 0 }}>
+    <div className="login-gate-wrapper" style={{ display: 'flex', minHeight: '100vh', width: '100vw', background: '#F8FAFC', overflow: 'hidden', margin: 0, padding: 0 }}>
       
       {/* LEFT HAND HERO SIDEBAR (Clean Carbon-Free Environment Banner) */}
       <div 
@@ -147,6 +147,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
 
       {/* RIGHT HAND AUTH FORM CONTAINER */}
       <div 
+        className="login-auth-container"
         style={{ 
           flex: 1, 
           display: 'flex', 

@@ -1229,5 +1229,23 @@ h1, h2, h3, h4, h5, h6 {
   .eco-footer {
     padding: 24px 20px !important;
   }
+
+  /* Login Portal */
+  .login-gate-wrapper {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+  .login-hero-sidebar {
+    min-height: auto !important;
+    padding: 40px 20px !important;
+  }
+  .login-hero-sidebar img {
+    width: 180px !important;
+    height: 180px !important;
+  }
+  .login-auth-container {
+    padding: 30px 20px !important;
+    max-width: 100% !important;
+  }
 }
 
