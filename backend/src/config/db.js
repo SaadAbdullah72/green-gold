@@ -2,25 +2,28 @@ import mongoose from 'mongoose';
 import { loadUsersFromDisk } from './persistence.js';
 
 export const connectDB = async () => {
-  const connStr = process.env.MONGODB_URI;
+  if (mongoose.connection.readyState >= 1) return mongoose.connection;
+
+  const fallbackUri = 'mongodb+srv://saad489254_db_user:RXYHYFoiS3ePpiOb@cluster0.t2dgddz.mongodb.net/greengold_os?retryWrites=true&w=majority';
+  const connStr = process.env.MONGODB_URI || fallbackUri;
   
   if (!connStr || connStr.includes('127.0.0.1')) {
-    console.log(`⚠️ WARNING: You are currently using a Local MongoDB URI. For Live Cloud Database, please update MONGODB_URI in backend/.env with your MongoDB Atlas connection string!`);
+    console.log(`⚠️ WARNING: You are currently using a Local MongoDB URI.`);
   }
 
   try {
     const conn = await mongoose.connect(connStr, { 
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000
+      serverSelectionTimeoutMS: 5000, // Shorter timeout for serverless
+      connectTimeoutMS: 5000
     });
-    console.log(`✅ REAL MONGODB CONNECTED: ${conn.connection.host}:${conn.connection.port} / ${conn.connection.name}`);
+    console.log(`✅ REAL MONGODB CONNECTED: ${conn.connection.host}:${conn.connection.port}`);
     await autoSeedManagementAccount();
     return conn;
   } catch (err) {
-    console.error(`❌ CRITICAL ERROR: Could not connect to MongoDB Database at ${connStr}`);
+    console.error(`❌ CRITICAL ERROR: Could not connect to MongoDB Database`);
     console.error(`❌ Reason: ${err.message}`);
-    console.error(`❌ Please ensure your MongoDB Atlas (Live Cloud) is running and the URI is correct in backend/.env`);
-    process.exit(1); // Force exit if database connection fails
+    // Do NOT process.exit(1) in serverless environments, it will crash the function entirely
+    throw err;
   }
 };
 
