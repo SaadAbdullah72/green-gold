@@ -1152,6 +1152,10 @@ h1, h2, h3, h4, h5, h6 {
     gap: 16px;
     justify-content: center !important;
   }
+  .eco-navbar img {
+    width: 44px !important;
+    height: 44px !important;
+  }
   .eco-nav-links {
     gap: 16px !important;
     width: 100%;
@@ -1195,7 +1199,11 @@ h1, h2, h3, h4, h5, h6 {
     gap: 40px;
   }
   .eco-about-image-wrapper {
-    height: 300px;
+    height: auto !important;
+    padding: 10px !important;
+  }
+  .eco-about-img-frame {
+    display: none !important; /* Hide the decorative frame on mobile to prevent overflow */
   }
   .eco-about-title {
     font-size: 32px !important;

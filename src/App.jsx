@@ -438,11 +438,7 @@ export default function App() {
             <span>TWITTER</span>
           </div>
 
-          {/* Slider Controls Bottom Right */}
-          <div className="eco-hero-controls">
-            <button className="eco-arrow-btn eco-arrow-left" onClick={() => setIsLanding(false)}>←</button>
-            <button className="eco-arrow-btn eco-arrow-right" onClick={() => setIsLanding(false)}>→</button>
-          </div>
+          {/* Slider Controls Removed */}
         </section>
 
         {/* ABOUT SECTION ("Building a greener future together Forever") */}
@@ -532,6 +528,14 @@ export default function App() {
 
   return (
     <div style={{ position: 'relative', width: '100vw', minHeight: '100vh', background: 'var(--bg-app)' }}>
+      {/* Global Back to Home Navigation */}
+      <button 
+        onClick={() => { setIsLanding(true); setRole('login'); }}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, padding: '12px 20px', background: 'var(--header-dark)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '30px', cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
+      >
+        <span>🏠</span> Back to Home
+      </button>
+
       <LoginGate 
         onLogin={handleLogin} 
         onLoginSuccess={(data) => handleLogin('generator', data)} 
