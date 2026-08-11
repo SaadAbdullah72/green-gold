@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { ensureDBConnected } from './config/db.js';
 
 import authRoutes from './routes/authRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
@@ -19,7 +20,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check
+// Health Check (no DB needed)
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -27,6 +28,9 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Ensure DB is connected before hitting any API route
+app.use('/api', ensureDBConnected);
 
 // API Routes
 app.use('/api/auth', authRoutes);

@@ -6,7 +6,10 @@
     },
     {
       "src": "package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "rewrites": [
@@ -18,5 +21,11 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "MONGODB_URI": "mongodb+srv://saad489254_db_user:RXYHYFoiS3ePpiOb@cluster0.t2dgddz.mongodb.net/greengold_os?retryWrites=true&w=majority",
+    "JWT_SECRET": "greengold_os_super_secret_jwt_key_2026_production",
+    "JWT_EXPIRES_IN": "7d",
+    "NODE_ENV": "production"
+  }
 }
