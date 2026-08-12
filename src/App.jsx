@@ -25,6 +25,7 @@ function FloatingParticles() {
 import { IconBrandLogo, IconBox, IconTruck, IconLeaf } from './components/Icons';
 
 export default function App() {
+  const [appInitializing, setAppInitializing] = useState(true);
   const [isLanding, setIsLanding] = useState(true);
   const [role, setRole] = useState('login'); 
   const [username, setUsername] = useState('General Manager');
@@ -73,6 +74,10 @@ export default function App() {
   const [pendingWasteId, setPendingWasteId] = useState(null); // Tracks target waste ID during dispatch routing
 
   useEffect(() => {
+    const initTimer = setTimeout(() => {
+      setAppInitializing(false);
+    }, 2200);
+
     window.history.replaceState({ role: 'login' }, '');
     const handlePopState = () => setRole('login');
     window.addEventListener('popstate', handlePopState);
@@ -93,7 +98,10 @@ export default function App() {
     };
     restoreSession();
 
-    return () => window.removeEventListener('popstate', handlePopState);
+    return () => {
+      clearTimeout(initTimer);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const logActivity = (category, message) => {
@@ -326,6 +334,22 @@ export default function App() {
       </div>
     </>
   );
+
+  // Single 2.2 Second Opening Splash Screen (Full White, Large 160px Logo)
+  if (appInitializing) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#FFFFFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 999999 }}>
+        <img src="/logo.png" alt="GreenGold OS" style={{ width: '160px', height: '160px', objectFit: 'contain' }} />
+        <div style={{ color: '#064E3B', fontSize: '18px', fontWeight: '900', letterSpacing: '0.12em', marginTop: '20px', textTransform: 'uppercase' }}>
+          GreenGold OS
+        </div>
+        <div style={{ color: '#059669', fontSize: '12px', fontWeight: '700', letterSpacing: '0.08em', marginTop: '4px', textTransform: 'uppercase' }}>
+          Smart Waste Management Platform
+        </div>
+        <div style={{ width: '32px', height: '32px', border: '3px solid rgba(16, 185, 129, 0.15)', borderTopColor: '#10B981', borderRadius: '50%', animation: 'spin 0.7s linear infinite', marginTop: '24px' }}></div>
+      </div>
+    );
+  }
 
   // ROUTING CONTROLLER
   if (role === 'management') {
