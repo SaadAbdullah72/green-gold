@@ -147,6 +147,7 @@ export default function App() {
     api.auth.logout();
     setUserData(null);
     setRole('login');
+    setIsLanding(true);
     window.history.pushState({ role: 'login' }, '');
   };
 
@@ -294,78 +295,113 @@ export default function App() {
     ));
   };
 
+  // Formal top-left back navigation bar (shown on every dashboard/login page)
+  const BackBar = () => (
+    <div className="global-back-bar" onClick={handleBackToLogin} style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+      height: '36px', display: 'flex', alignItems: 'center', gap: '8px',
+      padding: '0 20px',
+      background: 'linear-gradient(90deg, #0B2822 0%, #0F3D32 100%)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      cursor: 'pointer', userSelect: 'none',
+      transition: 'opacity 0.2s'
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A7F3D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 12H5"></path>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      <span style={{ fontSize: '12px', fontWeight: '600', color: '#A7F3D0', letterSpacing: '0.03em' }}>
+        Back to Home
+      </span>
+    </div>
+  );
+
+  // Wrapper that adds padding-top to account for the fixed back bar
+  const DashboardWrapper = ({ children }) => (
+    <>
+      <BackBar />
+      <div style={{ paddingTop: '36px' }}>
+        {children}
+      </div>
+    </>
+  );
+
   // ROUTING CONTROLLER
   if (role === 'management') {
     return (
-      <ManagementDashboard
-        username={username}
-        onLogout={handleBackToLogin}
-        activeSubTab={activeSubTab}
-        setActiveSubTab={setActiveSubTab}
-        stats={stats}
-        activeSites={activeSites}
-        installRequests={installRequests}
-        batchesAwaitingCert={batchesAwaitingCert}
-        collectedWasteQueue={collectedWasteQueue}
-        logs={logs}
-        factoryPeriod={factoryPeriod}
-        setFactoryPeriod={setFactoryPeriod}
-        handleApproveReq={handleApproveReq}
-        handleDenyReq={handleDenyReq}
-        handleCertifyCarbon={handleCertifyCarbon}
-        handleAssignLogistics={handleAssignLogistics}
-        showTechModal={showTechModal}
-        setShowTechModal={setShowTechModal}
-        confirmApproveReq={confirmApproveReq}
-        showLogisticsModal={showLogisticsModal}
-        setShowLogisticsModal={setShowLogisticsModal}
-        confirmAssignLogistics={confirmAssignLogistics}
-      />
+      <DashboardWrapper>
+        <ManagementDashboard
+          username={username}
+          onLogout={handleBackToLogin}
+          activeSubTab={activeSubTab}
+          setActiveSubTab={setActiveSubTab}
+          stats={stats}
+          activeSites={activeSites}
+          installRequests={installRequests}
+          batchesAwaitingCert={batchesAwaitingCert}
+          collectedWasteQueue={collectedWasteQueue}
+          logs={logs}
+          factoryPeriod={factoryPeriod}
+          setFactoryPeriod={setFactoryPeriod}
+          handleApproveReq={handleApproveReq}
+          handleDenyReq={handleDenyReq}
+          handleCertifyCarbon={handleCertifyCarbon}
+          handleAssignLogistics={handleAssignLogistics}
+          showTechModal={showTechModal}
+          setShowTechModal={setShowTechModal}
+          confirmApproveReq={confirmApproveReq}
+          showLogisticsModal={showLogisticsModal}
+          setShowLogisticsModal={setShowLogisticsModal}
+          confirmAssignLogistics={confirmAssignLogistics}
+        />
+      </DashboardWrapper>
     );
   }
 
   if (role === 'collector') {
     return (
-      <WasteCollectorDashboard
-        username={username}
-        userData={userData}
-        onLogout={handleBackToLogin}
-        tasks={collectorTasks}
-        notifications={collectorNotifications}
-        performance={collectorPerformance}
-        shift={collectorShift}
-        onUpdateTaskStatus={handleUpdateCollectorTaskStatus}
-        onCompleteCollection={handleCompleteCollectorCollection}
-        onReportIssue={handleReportCollectorIssue}
-        onToggleShiftStatus={handleToggleCollectorShiftStatus}
-        onClearNotification={handleClearCollectorNotification}
-      />
+      <DashboardWrapper>
+        <WasteCollectorDashboard
+          username={username}
+          userData={userData}
+          onLogout={handleBackToLogin}
+          tasks={collectorTasks}
+          notifications={collectorNotifications}
+          performance={collectorPerformance}
+          shift={collectorShift}
+          onUpdateTaskStatus={handleUpdateCollectorTaskStatus}
+          onCompleteCollection={handleCompleteCollectorCollection}
+          onReportIssue={handleReportCollectorIssue}
+          onToggleShiftStatus={handleToggleCollectorShiftStatus}
+          onClearNotification={handleClearCollectorNotification}
+        />
+      </DashboardWrapper>
     );
   }
 
   if (role === 'generator') {
-    return <UserDashboard username={username} userData={userData} onLogout={handleBackToLogin} />;
+    return <DashboardWrapper><UserDashboard username={username} userData={userData} onLogout={handleBackToLogin} /></DashboardWrapper>;
   }
 
   if (role === 'installer') {
-    return <TechnicianDashboard username={username} onLogout={handleBackToLogin} />;
+    return <DashboardWrapper><TechnicianDashboard username={username} onLogout={handleBackToLogin} /></DashboardWrapper>;
   }
 
   if (role === 'logistics') {
-    return <LogisticsDashboard username={username} onLogout={handleBackToLogin} />;
+    return <DashboardWrapper><LogisticsDashboard username={username} onLogout={handleBackToLogin} /></DashboardWrapper>;
   }
 
   // 👈 Route to ProcessingPlantDashboard
   if (role === 'processor') {
-    return <ProcessingPlantDashboard username={username} onLogout={handleBackToLogin} />;
+    return <DashboardWrapper><ProcessingPlantDashboard username={username} onLogout={handleBackToLogin} /></DashboardWrapper>;
   }
 
   if (role === 'qa') {
-    return <QALabDashboard username={username} onLogout={handleBackToLogin} />;
+    return <DashboardWrapper><QALabDashboard username={username} onLogout={handleBackToLogin} /></DashboardWrapper>;
   }
 
   if (role === 'buyer') {
-    return <MarketplaceDashboard username={username} onLogout={handleBackToLogin} />;
+    return <DashboardWrapper><MarketplaceDashboard username={username} onLogout={handleBackToLogin} /></DashboardWrapper>;
   }
 
   // DEFAULT / LOGIN SCREEN
@@ -528,18 +564,13 @@ export default function App() {
 
   return (
     <div style={{ position: 'relative', width: '100vw', minHeight: '100vh', background: 'var(--bg-app)' }}>
-      {/* Global Back to Home Navigation */}
-      <button 
-        onClick={() => { setIsLanding(true); setRole('login'); }}
-        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, padding: '12px 20px', background: 'var(--header-dark)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '30px', cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
-      >
-        <span>🏠</span> Back to Home
-      </button>
-
-      <LoginGate 
-        onLogin={handleLogin} 
-        onLoginSuccess={(data) => handleLogin('generator', data)} 
-      />
+      <BackBar />
+      <div style={{ paddingTop: '36px' }}>
+        <LoginGate 
+          onLogin={handleLogin} 
+          onLoginSuccess={(data) => handleLogin('generator', data)} 
+        />
+      </div>
     </div>
   );
 }

@@ -630,6 +630,32 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =========================================================================
+   GLOBAL BACK NAVIGATION BAR
+   ========================================================================= */
+
+.global-back-bar {
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.global-back-bar:hover {
+  background: linear-gradient(90deg, #0F3D32 0%, #155E4A 100%) !important;
+}
+
+.global-back-bar:hover span {
+  color: #FFFFFF !important;
+}
+
+.global-back-bar:hover svg {
+  stroke: #FFFFFF !important;
+  transform: translateX(-3px);
+  transition: transform 0.2s ease;
+}
+
+.global-back-bar svg {
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+/* =========================================================================
    STAKEHOLDER DASHBOARDS LAYOUT & SIDEBAR ALIGNMENT
    ========================================================================= */
 
