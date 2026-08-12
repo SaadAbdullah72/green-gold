@@ -124,7 +124,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', my: 'auto', flex: 1 }}>
           {/* Prominent Main Logo */}
           <div style={{ marginBottom: '-10px', display: 'inline-flex' }}>
-            <img src="/logo.png" alt="GreenGold Logo" style={{ width: '280px', height: '280px', objectFit: 'contain', mixBlendMode: 'screen', borderRadius: '24px', filter: 'brightness(1.1) drop-shadow(0 0 30px rgba(52, 211, 153, 0.4))' }} />
+            <img src="/logo.png" alt="GreenGold Logo" style={{ width: '280px', height: '280px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.2) contrast(1.1)' }} />
           </div>
           <div style={{ fontSize: '13px', color: '#34D399', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '32px' }}>
             CIRCULAR BIO-ECONOMY SYSTEM
