@@ -1173,168 +1173,31 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
   /* ── Landing Page Navbar ── */
   .eco-navbar {
-    padding: 10px 16px !important;
+    padding: 12px 16px !important;
     flex-wrap: wrap;
     gap: 12px;
-    justify-content: center !important;
+    justify-content: space-between !important;
   }
   .eco-navbar img {
-    width: 40px !important;
-    height: 40px !important;
-  }
-  .eco-nav-links {
-    gap: 16px !important;
-    width: 100%;
-    justify-content: center;
-  }
-  .eco-nav-item {
-    font-size: 14px !important;
-  }
-  .eco-navbar > div:last-child {
-    display: none !important;
+    width: 64px !important;
+    height: 64px !important;
   }
 
-  /* ── Hero Section ── */
-  .eco-hero {
-    padding: 60px 20px 40px !important;
-    text-align: center;
-  }
-  .eco-hero-title {
-    font-size: 36px !important;
-    line-height: 1.1 !important;
-  }
-  .eco-hero-desc {
-    font-size: 15px !important;
-    margin: 20px auto !important;
-  }
-  .eco-hero-actions {
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
-  }
-  .eco-hero-actions button {
-    width: 100%;
-  }
-
-  /* ── About Grid ── */
-  .eco-about-section {
-    padding: 60px 20px !important;
-  }
-  .eco-about-grid {
-    grid-template-columns: 1fr !important;
-    gap: 40px;
-  }
-  .eco-about-image-wrapper {
-    height: auto !important;
-    padding: 10px !important;
-  }
-  .eco-about-img-frame {
-    display: none !important;
-  }
-  .eco-about-title {
-    font-size: 28px !important;
-  }
-
-  /* ── Services Grid ── */
-  .eco-services-section {
-    padding: 60px 20px !important;
-  }
-  .eco-services-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* ── Counter Bar ── */
-  .eco-counter-bar {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 16px;
-    padding: 24px 16px !important;
-    margin-top: 40px !important;
-  }
-
-  /* ── Footer ── */
-  .eco-footer {
-    padding: 24px 16px !important;
-  }
-
-  /* ── Login Portal ── */
-  .login-gate-wrapper {
-    flex-direction: column !important;
-    overflow-y: auto !important;
-  }
-  .login-hero-sidebar {
-    min-height: auto !important;
-    padding: 30px 20px !important;
-  }
-  .login-hero-sidebar img {
-    width: 140px !important;
-    height: 140px !important;
-  }
-  .login-auth-container {
-    padding: 24px 16px !important;
-    max-width: 100% !important;
-  }
-
-  /* ══════════════════════════════════════════════════════════════
-     ALL DASHBOARDS - SIDEBAR COLLAPSE ON MOBILE
-     ══════════════════════════════════════════════════════════════ */
-  
-  /* Management, Technician, ProcessingPlant, User, WasteCollector Dashboards */
-  .app-container {
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto 1fr !important;
-  }
-
-  .sidebar-left {
-    position: relative !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    height: auto !important;
-    padding: 14px 16px !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    gap: 10px !important;
-    border-right: none !important;
-    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-  }
-
-  .sidebar-left .app-logo {
-    margin-bottom: 0 !important;
-  }
-
-  .sidebar-left nav {
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    flex-grow: 0 !important;
-    width: 100% !important;
-  }
-
-  .sidebar-left .menu-label {
-    display: none !important;
-  }
-
-  .sidebar-left .menu-list {
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-  }
-
-  .sidebar-left .menu-btn {
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    white-space: nowrap !important;
+  .sidebar-left img {
+    width: 52px !important;
+    height: 52px !important;
   }
 
   .sidebar-left .sidebar-footer {
-    display: none !important;
+    display: flex !important;
+    margin-left: auto !important;
   }
 
   .sidebar-left .profile-card {
-    display: none !important;
+    display: flex !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    background: rgba(255,255,255,0.1) !important;
   }
 
   /* Main Content Area */
