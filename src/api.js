@@ -222,5 +222,20 @@ export const api = {
       const res = await fetch(`${API_BASE}/audit`, { headers: getHeaders() });
       return await handleResponse(res);
     }
+  },
+
+  iot: {
+    getBins: async () => {
+      const res = await fetch(`${API_BASE}/iot/bins`);
+      return await handleResponse(res);
+    },
+    sendTelemetry: async (telemetryData) => {
+      const res = await fetch(`${API_BASE}/iot/telemetry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(telemetryData)
+      });
+      return await handleResponse(res);
+    }
   }
 };

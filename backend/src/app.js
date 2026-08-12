@@ -8,6 +8,7 @@ import managementRoutes from './routes/managementRoutes.js';
 import technicalRoutes from './routes/technicalRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
+import iotRoutes from './routes/iotRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/management', managementRoutes);
 app.use('/api/technical', technicalRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/iot', iotRoutes);
 
 // Error Handler
 app.use(errorHandler);
