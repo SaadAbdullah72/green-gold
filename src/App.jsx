@@ -151,13 +151,21 @@ export default function App() {
     window.history.pushState({ role: targetRole }, '');
   };
 
-  const handleBackToLogin = () => {
-    api.auth.logout();
+  const handleBackToLogin = (e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    try {
+      api.auth.logout();
+    } catch(err) {
+      // silent catch
+    }
     localStorage.removeItem('greengold_token');
     setUserData(null);
     setRole('login');
     setIsLanding(true);
-    window.history.pushState({ role: 'login' }, '');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.history.pushState({ role: 'login' }, '', '/');
   };
 
   // Helper actions
@@ -306,21 +314,22 @@ export default function App() {
 
   // Formal top-left back navigation bar (shown on every dashboard/login page)
   const BackBar = () => (
-    <div className="global-back-bar" onClick={handleBackToLogin} style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-      height: '36px', display: 'flex', alignItems: 'center', gap: '8px',
+    <div className="global-back-bar" onClick={(e) => handleBackToLogin(e)} style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999999,
+      height: '38px', display: 'flex', alignItems: 'center', gap: '8px',
       padding: '0 20px',
       background: 'linear-gradient(90deg, #0B2822 0%, #0F3D32 100%)',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: '1px solid rgba(255,255,255,0.15)',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
       cursor: 'pointer', userSelect: 'none',
-      transition: 'opacity 0.2s'
+      transition: 'all 0.2s ease'
     }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A7F3D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 12H5"></path>
         <polyline points="12 19 5 12 12 5"></polyline>
       </svg>
-      <span style={{ fontSize: '12px', fontWeight: '600', color: '#A7F3D0', letterSpacing: '0.03em' }}>
-        Back to Home
+      <span style={{ fontSize: '13px', fontWeight: '700', color: '#FFFFFF', letterSpacing: '0.04em' }}>
+        Back to Home Page
       </span>
     </div>
   );
@@ -329,7 +338,7 @@ export default function App() {
   const DashboardWrapper = ({ children }) => (
     <>
       <BackBar />
-      <div style={{ paddingTop: '36px' }}>
+      <div style={{ paddingTop: '38px' }}>
         {children}
       </div>
     </>
