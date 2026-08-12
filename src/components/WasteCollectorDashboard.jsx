@@ -283,7 +283,7 @@ export default function WasteCollectorDashboard({ username, userData, onLogout }
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+      <main className="main-content" style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
         
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
