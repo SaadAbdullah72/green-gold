@@ -136,7 +136,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
         <div>
           {/* Brand Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px', padding: '0 8px' }}>
-            <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.2)' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', objectFit: 'contain' }} />
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: 0, letterSpacing: '-0.02em' }}>
                 GreenGold OS

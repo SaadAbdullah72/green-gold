@@ -446,7 +446,7 @@ export default function App() {
         <nav className="eco-navbar" style={{ padding: '8px 50px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           {/* Logo (Sleek, Dissolved Background) */}
           <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => setIsLanding(false)}>
-            <img src="/logo.png" alt="GreenGold Logo" style={{ width: '76px', height: '76px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.1)' }} />
+            <img src="/logo.png" alt="GreenGold Logo" style={{ width: '76px', height: '76px', objectFit: 'contain' }} />
           </div>
 
           {/* 3 Tabs */}

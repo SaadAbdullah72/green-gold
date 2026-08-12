@@ -145,7 +145,7 @@ export default function ManagementDashboard({
         {/* Brand Header */}
         <div className="app-logo">
           <div className="logo-icon">
-            <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.2)' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', objectFit: 'contain' }} />
           </div>
           <div className="logo-text">
             <h1>GreenGoldOS</h1>

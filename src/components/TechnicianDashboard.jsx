@@ -63,7 +63,7 @@ export default function TechnicianDashboard({ onLogout }) {
       <aside className="sidebar-left">
         <div className="app-logo">
           <div className="logo-icon">
-            <img src="/logo.png" alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain', mixBlendMode: 'screen', filter: 'brightness(1.2)' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
           </div>
           <div className="logo-text">
             <h1>GreenGoldOS</h1>
