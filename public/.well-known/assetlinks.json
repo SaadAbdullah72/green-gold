@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.green_gold_irkx.twa",
+      "sha256_cert_fingerprints": ["35:8A:98:DA:FC:71:8F:B5:88:1D:FB:E1:BC:99:5D:C8:35:96:97:B5:3D:CC:6A:10:FB:58:EF:B9:87:5D:9E:11"]
+    }
+  }
+]
