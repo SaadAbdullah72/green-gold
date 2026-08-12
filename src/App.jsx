@@ -468,12 +468,7 @@ export default function App() {
             </button>
           </div>
 
-          {/* Social Links Bottom Left */}
-          <div className="eco-hero-socials-bottom">
-            <span>FACEBOOK</span>
-            <span>INSTAGRAM</span>
-            <span>TWITTER</span>
-          </div>
+
 
           {/* Slider Controls Removed */}
         </section>
