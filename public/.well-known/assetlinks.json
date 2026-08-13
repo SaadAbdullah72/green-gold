@@ -4,7 +4,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "app.vercel.green_gold_irkx.twa",
-      "sha256_cert_fingerprints": ["51:92:DA:0C:98:8A:26:96:46:AB:55:C2:2B:C4:D7:31:AC:F6:5F:D0:C7:96:BE:32:E2:39:9F:C1:6A:0F:BA:50"]
+      "sha256_cert_fingerprints": ["AD:CA:6D:41:A1:96:37:7E:2C:02:9F:1D:24:79:A4:D0:EE:4A:6A:48:7D:A5:A4:A3:2C:C0:3E:6D:5A:1A:DF:53"]
     }
   }
 ]
