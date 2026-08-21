@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { IconBrandLogo, IconBox, IconUser } from './Icons';
 import { api } from '../api';
+import DashboardAssistant from './DashboardAssistant';
+import RequestProgressTracker from './RequestProgressTracker';
 
 export default function WasteCollectorDashboard({ username, userData, onLogout }) {
   const [activeTab, setActiveTab] = useState('assigned_jobs');
@@ -66,6 +68,33 @@ export default function WasteCollectorDashboard({ username, userData, onLogout }
       await loadTechnicalJobs();
     } catch (err) {
       alert(`Delay Error: ${err.message}`);
+    }
+  };
+
+  const handleProgressStageUpdate = async (job, nextStage) => {
+    try {
+      if (nextStage === 'VIEWED') {
+        setActionMsg('Request viewed by the collection team.');
+        setTimeout(() => setActionMsg(''), 2500);
+        return;
+      }
+
+      if (nextStage === 'ACCEPTED') {
+        await handleAcceptJob(job._id);
+        return;
+      }
+
+      if (nextStage === 'AT_SITE') {
+        setActionMsg('Collector has reached the destination and is at the site.');
+        setTimeout(() => setActionMsg(''), 2500);
+        return;
+      }
+
+      if (nextStage === 'COMPLETED') {
+        handleOpenCompleteModal(job);
+      }
+    } catch (err) {
+      setActionMsg(err.message || 'Could not update collection stage');
     }
   };
 
@@ -480,6 +509,7 @@ export default function WasteCollectorDashboard({ username, userData, onLogout }
         )}
 
       </main>
+      <DashboardAssistant dashboardName="collector" accent="#22C55E" />
     </div>
   );
 }

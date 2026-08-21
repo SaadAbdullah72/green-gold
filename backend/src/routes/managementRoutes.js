@@ -1,9 +1,12 @@
 import express from 'express';
 import { 
   getAllRequests, 
+  getCollectionQueue,
   approveRequest, 
   declineRequest, 
-  getTechnicalWorkers, 
+  getTechnicalWorkers,
+  getCollectors,
+  assignCollectorToPickup,
   assignJob 
 } from '../controllers/managementController.js';
 import { authenticateUser, requireRole } from '../middleware/auth.js';
@@ -14,10 +17,13 @@ router.use(authenticateUser);
 router.use(requireRole('MANAGEMENT'));
 
 router.get('/requests', getAllRequests);
+router.get('/collection-queue', getCollectionQueue);
 router.patch('/requests/:id/approve', approveRequest);
 router.patch('/requests/:id/decline', declineRequest);
 
 router.get('/workers', getTechnicalWorkers);
+router.get('/collectors', getCollectors);
+router.post('/collectors/:pickupId/assign', assignCollectorToPickup);
 router.post('/jobs/:requestId/assign', assignJob);
 
 export default router;

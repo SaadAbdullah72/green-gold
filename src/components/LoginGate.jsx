@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { IconBrandLogo } from './Icons';
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginGate({ onLogin, onLoginSuccess }) {
   const [selectedRoleProfile, setSelectedRoleProfile] = useState('USER'); // 'MANAGEMENT', 'USER', 'TECHNICAL'
@@ -21,6 +23,8 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleRoleProfileChange = (newRole) => {
     setSelectedRoleProfile(newRole);
@@ -31,6 +35,10 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
       setIsRegister(false);
       setEmail('saad489254@gmail.com');
       setPassword('saad123');
+    } else if (newRole === 'COLLECTOR') {
+      setIsRegister(false);
+      setEmail('collector@greengold.com');
+      setPassword('collector123');
     } else {
       setEmail('');
       setPassword('');
@@ -75,21 +83,47 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             secondaryPhone,
             password
           });
+        } else if (selectedRoleProfile === 'COLLECTOR') {
+          data = await api.auth.registerCollector({
+            fullName,
+            email,
+            phone,
+            secondaryPhone,
+            password,
+            vehicleNumber: 'ICT-GRN-9912',
+            zone: town || 'F-7'
+          });
         }
       } else {
         data = await api.auth.login(email, password, selectedRoleProfile);
       }
 
       if (data && data.user) {
-        let mappedRole = 'generator';
-        if (data.user.role === 'MANAGEMENT') mappedRole = 'management';
-        if (data.user.role === 'TECHNICAL') mappedRole = 'collector';
+        const normalizedRole = data.user.role === 'MANAGEMENT'
+          ? 'ROLE_ADMIN'
+          : data.user.role === 'TECHNICAL'
+            ? 'ROLE_TECHNICIAN'
+            : data.user.role === 'USER'
+              ? 'ROLE_GENERATOR'
+              : data.user.role === 'COLLECTOR'
+                ? 'ROLE_COLLECTOR'
+                : 'ROLE_GENERATOR';
+
+        login({ ...data.user, role: normalizedRole }, data.token);
 
         if (onLoginSuccess) {
           onLoginSuccess(data.user);
-        } else {
-          onLogin(mappedRole);
+        } else if (onLogin) {
+          onLogin(normalizedRole, data.user);
         }
+
+        const routeMap = {
+          ROLE_ADMIN: '/management',
+          ROLE_GENERATOR: '/generator',
+          ROLE_TECHNICIAN: '/technician',
+          ROLE_COLLECTOR: '/collector',
+        };
+        navigate(routeMap[normalizedRole] || '/generator');
       }
     } catch (err) {
       if (err.message && err.message.includes('already registered')) {
@@ -184,6 +218,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
               <option value="MANAGEMENT">Management Operations</option>
               <option value="USER">Customer / Waste Generator</option>
               <option value="TECHNICAL">Technical Workforce Crew</option>
+              <option value="COLLECTOR">Waste Collector</option>
             </select>
           </div>
 
@@ -227,9 +262,11 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             </div>
           )}
 
-          {selectedRoleProfile === 'MANAGEMENT' && !isRegister && (
+          {(selectedRoleProfile === 'MANAGEMENT' || selectedRoleProfile === 'COLLECTOR') && !isRegister && (
             <div style={{ padding: '12px 16px', background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0369A1', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '20px' }}>
-              Management Admin Account Credentials Loaded: <strong>saad489254@gmail.com</strong> / <strong>saad123</strong>
+              {selectedRoleProfile === 'MANAGEMENT'
+                ? <>Management Admin Account Loaded: <strong>saad489254@gmail.com</strong> / <strong>saad123</strong></>
+                : <>Collector Demo Account Loaded: <strong>collector@greengold.com</strong> / <strong>collector123</strong></>}
             </div>
           )}
 

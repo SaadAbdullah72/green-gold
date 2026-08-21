@@ -3,6 +3,7 @@ import {
   registerUser, 
   registerManagement, 
   registerTechnical, 
+  registerCollector,
   login, 
   logout, 
   getMe 
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post('/register/user', registerUser);
 router.post('/register/management', registerManagement);
 router.post('/register/technical', registerTechnical);
+router.post('/register/collector', registerCollector);
 
 router.post('/login', login);
 router.post('/logout', logout);

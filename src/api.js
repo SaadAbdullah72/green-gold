@@ -16,22 +16,43 @@ const handleResponse = async (res) => {
     localStorage.removeItem('greengold_token');
     localStorage.removeItem('greengold_user');
   }
-  const data = await res.json();
+
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (error) {
+    data = {};
+  }
+
   if (!res.ok || data.success === false) {
     throw new Error(data.message || 'API Request Failed');
   }
+
   return data;
+};
+
+const fetchJson = async (url, options = {}) => {
+  try {
+    const res = await fetch(url, options);
+    return await handleResponse(res);
+  } catch (error) {
+    const message = error.message || 'Failed to fetch';
+    if (message.includes('Failed to fetch')) {
+      throw new Error('Backend unavailable. Start the GreenGold backend on port 5000 or use the local mock fallback mode.');
+    }
+    throw error;
+  }
 };
 
 export const api = {
   auth: {
     login: async (email, password) => {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const data = await fetchJson(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await handleResponse(res);
+
       if (data.token) {
         localStorage.setItem('greengold_token', data.token);
         localStorage.setItem('greengold_user', JSON.stringify(data.user));
@@ -40,12 +61,11 @@ export const api = {
     },
 
     registerUser: async (userData) => {
-      const res = await fetch(`${API_BASE}/auth/register/user`, {
+      const data = await fetchJson(`${API_BASE}/auth/register/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
       });
-      const data = await handleResponse(res);
       if (data.token) {
         localStorage.setItem('greengold_token', data.token);
         localStorage.setItem('greengold_user', JSON.stringify(data.user));
@@ -54,12 +74,11 @@ export const api = {
     },
 
     registerManagement: async (mgmtData) => {
-      const res = await fetch(`${API_BASE}/auth/register/management`, {
+      const data = await fetchJson(`${API_BASE}/auth/register/management`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mgmtData)
       });
-      const data = await handleResponse(res);
       if (data.token) {
         localStorage.setItem('greengold_token', data.token);
         localStorage.setItem('greengold_user', JSON.stringify(data.user));
@@ -68,12 +87,24 @@ export const api = {
     },
 
     registerTechnical: async (techData) => {
-      const res = await fetch(`${API_BASE}/auth/register/technical`, {
+      const data = await fetchJson(`${API_BASE}/auth/register/technical`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(techData)
       });
-      const data = await handleResponse(res);
+      if (data.token) {
+        localStorage.setItem('greengold_token', data.token);
+        localStorage.setItem('greengold_user', JSON.stringify(data.user));
+      }
+      return data;
+    },
+
+    registerCollector: async (collectorData) => {
+      const data = await fetchJson(`${API_BASE}/auth/register/collector`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(collectorData)
+      });
       if (data.token) {
         localStorage.setItem('greengold_token', data.token);
         localStorage.setItem('greengold_user', JSON.stringify(data.user));
@@ -82,8 +113,8 @@ export const api = {
     },
 
     getMe: async () => {
-      const res = await fetch(`${API_BASE}/auth/me`, { headers: getHeaders() });
-      return await handleResponse(res);
+      const res = await fetchJson(`${API_BASE}/auth/me`, { headers: getHeaders() });
+      return res;
     },
 
     logout: () => {
@@ -102,8 +133,22 @@ export const api = {
       return await handleResponse(res);
     },
 
+    createCollection: async (reqData) => {
+      const res = await fetch(`${API_BASE}/requests/collection`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(reqData)
+      });
+      return await handleResponse(res);
+    },
+
     getMy: async () => {
       const res = await fetch(`${API_BASE}/requests/my`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getMyCollection: async () => {
+      const res = await fetch(`${API_BASE}/requests/collection/my`, { headers: getHeaders() });
       return await handleResponse(res);
     },
 
@@ -117,6 +162,25 @@ export const api = {
     getRequests: async (status = '') => {
       const url = status ? `${API_BASE}/management/requests?status=${status}` : `${API_BASE}/management/requests`;
       const res = await fetch(url, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getCollectors: async () => {
+      const res = await fetch(`${API_BASE}/management/collectors`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getCollectionQueue: async () => {
+      const res = await fetch(`${API_BASE}/management/collection-queue`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    assignCollector: async (pickupId, collectorId, payload = {}) => {
+      const res = await fetch(`${API_BASE}/management/collectors/${pickupId}/assign`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ collectorId, pickupId, ...payload })
+      });
       return await handleResponse(res);
     },
 
@@ -197,6 +261,21 @@ export const api = {
         method: 'PATCH',
         headers: getHeaders(),
         body: JSON.stringify(data)
+      });
+      return await handleResponse(res);
+    }
+  },
+
+  collector: {
+    getMyAssignments: async () => {
+      const res = await fetch(`${API_BASE}/collector/assignments`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    completeAssignment: async (assignmentId) => {
+      const res = await fetch(`${API_BASE}/collector/assignments/${assignmentId}/complete`, {
+        method: 'PATCH',
+        headers: getHeaders()
       });
       return await handleResponse(res);
     }
