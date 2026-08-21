@@ -9,6 +9,7 @@ import technicalRoutes from './routes/technicalRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 import iotRoutes from './routes/iotRoutes.js';
+import collectorRoutes from './routes/collectorRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/management', managementRoutes);
 app.use('/api/technical', technicalRoutes);
+app.use('/api/collector', collectorRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/iot', iotRoutes);

@@ -3,6 +3,8 @@ import {
   IconBrandLogo, IconPlus, IconBox, IconUser, IconBell
 } from './Icons';
 import { api } from '../api';
+import DashboardAssistant from './DashboardAssistant';
+import RequestProgressTracker from './RequestProgressTracker';
 
 export default function UserDashboard({ username, userData, onLogout }) {
   // 3 Essential Navigation Tabs Requested by User: 'request_bin', 'my_requests', 'assigned_tech_contacts'
@@ -10,6 +12,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
   // Backend Requests State
   const [realRequests, setRealRequests] = useState([]);
+  const [collectionRequests, setCollectionRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
   const loadRequests = async () => {
@@ -23,9 +26,24 @@ export default function UserDashboard({ username, userData, onLogout }) {
     }
   };
 
+  const loadCollectionRequests = async () => {
+    try {
+      const res = await api.requests.getMyCollection();
+      const requests = res?.requests || JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
+      setCollectionRequests(prev => JSON.stringify(prev) !== JSON.stringify(requests) ? requests : prev);
+    } catch (err) {
+      const fallback = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
+      setCollectionRequests(prev => JSON.stringify(prev) !== JSON.stringify(fallback) ? fallback : prev);
+    }
+  };
+
   useEffect(() => {
     loadRequests();
-    const timer = setInterval(loadRequests, 8000);
+    loadCollectionRequests();
+    const timer = setInterval(() => {
+      loadRequests();
+      loadCollectionRequests();
+    }, 8000);
     return () => clearInterval(timer);
   }, []);
 
@@ -46,7 +64,58 @@ export default function UserDashboard({ username, userData, onLogout }) {
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [collectionForm, setCollectionForm] = useState({
+    site: '',
+    wasteType: 'Food Waste',
+    weightKg: '120',
+    notes: ''
+  });
   const [submitting, setSubmitting] = useState(false);
+  const [collectionSubmitting, setCollectionSubmitting] = useState(false);
+
+  const handleCollectionSubmit = async (e) => {
+    e.preventDefault();
+    setCollectionSubmitting(true);
+
+    try {
+      const payload = {
+        site: collectionForm.site.trim(),
+        wasteType: collectionForm.wasteType.trim(),
+        weightKg: Number(collectionForm.weightKg),
+        notes: collectionForm.notes.trim(),
+        collectedDate: new Date().toISOString()
+      };
+
+      if (!payload.site || !payload.wasteType || !payload.weightKg || payload.weightKg <= 0) {
+        throw new Error('Site, waste type, and valid weight are required.');
+      }
+
+      const response = await api.requests.createCollection(payload);
+      const stored = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
+      const next = [{
+        id: response.request?._id || `COLL-${Date.now()}`,
+        site: payload.site,
+        wasteType: payload.wasteType,
+        weightKg: payload.weightKg,
+        collectedDate: new Date().toISOString().slice(0, 10),
+        status: 'Awaiting Partner',
+        assignedPartner: null,
+        notes: payload.notes
+      }, ...stored];
+      localStorage.setItem('greengold_collection_requests', JSON.stringify(next));
+
+      setCollectionForm({ site: '', wasteType: 'Food Waste', weightKg: '120', notes: '' });
+      setShowCollectionModal(false);
+      setShowSuccessModal(true);
+      setActiveTab('my_requests');
+      await loadRequests();
+    } catch (err) {
+      alert(`Waste Collection Request Failed: ${err.message}`);
+    } finally {
+      setCollectionSubmitting(false);
+    }
+  };
 
   const handleBinRequestSubmit = async (e) => {
     e.preventDefault();
@@ -103,6 +172,19 @@ export default function UserDashboard({ username, userData, onLogout }) {
     }
   });
 
+  const combinedRequestHistory = [
+    ...realRequests.map(req => ({ ...req, requestKind: 'BIN' })),
+    ...collectionRequests.map(req => ({
+      ...req,
+      requestKind: 'COLLECTION',
+      requestNumber: req.requestNumber || req.id || req._id || 'COLL-NEW',
+      town: req.town || req.site || 'Site',
+      city: req.city || userCity,
+      address: req.address || req.site || 'Pending site details',
+      status: req.status || 'Awaiting Partner'
+    }))
+  ];
+
   return (
     <div className="app-container" style={{ display: 'flex', minHeight: '100vh', background: '#F8FAF6', fontFamily: 'var(--font-body)' }}>
       
@@ -127,6 +209,39 @@ export default function UserDashboard({ username, userData, onLogout }) {
             >
               Continue to My Requests »
             </button>
+          </div>
+        </div>
+      )}
+
+      {showCollectionModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: '18px', width: '100%', maxWidth: '480px', padding: '24px', boxShadow: '0 20px 50px rgba(15, 23, 42, 0.25)' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Request Waste Collection</h3>
+            <form onSubmit={handleCollectionSubmit}>
+              <div style={{ display: 'grid', gap: '14px' }}>
+                <div>
+                  <label htmlFor="collection-site" style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Site Name</label>
+                  <input id="collection-site" value={collectionForm.site} onChange={(e) => setCollectionForm({ ...collectionForm, site: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1' }} placeholder="e.g. North Ridge Apartments" />
+                </div>
+                <div>
+                  <label htmlFor="collection-type" style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Waste Type</label>
+                  <input id="collection-type" value={collectionForm.wasteType} onChange={(e) => setCollectionForm({ ...collectionForm, wasteType: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1' }} />
+                </div>
+                <div>
+                  <label htmlFor="collection-weight" style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Estimated Weight</label>
+                  <input id="collection-weight" type="number" min="1" value={collectionForm.weightKg} onChange={(e) => setCollectionForm({ ...collectionForm, weightKg: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1' }} />
+                </div>
+                <div>
+                  <label htmlFor="collection-notes" style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Notes</label>
+                  <textarea id="collection-notes" value={collectionForm.notes} onChange={(e) => setCollectionForm({ ...collectionForm, notes: e.target.value })} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', resize: 'vertical' }} placeholder="Optional access details" />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button type="button" className="btn-eco-secondary" onClick={() => setShowCollectionModal(false)} style={{ padding: '10px 16px' }}>Cancel</button>
+                <button type="submit" className="login-btn" disabled={collectionSubmitting} style={{ width: 'auto', padding: '10px 16px' }}>{collectionSubmitting ? 'Submitting...' : 'Submit Request'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -170,6 +285,19 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
             <button
               type="button"
+              onClick={() => setShowCollectionModal(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '12px',
+                fontSize: '14px', fontWeight: '700', border: '1px solid rgba(16,185,129,0.5)', cursor: 'pointer', textAlign: 'left',
+                background: '#064E3B', color: '#ECFDF5', transition: 'all 0.2s ease'
+              }}
+            >
+              <IconPlus size={20} />
+              Request Waste Collection
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('my_requests')}
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '12px',
@@ -181,9 +309,9 @@ export default function UserDashboard({ username, userData, onLogout }) {
             >
               <IconBox size={20} />
               My Requests & Status
-              {realRequests.length > 0 && (
+              {(realRequests.length + collectionRequests.length) > 0 && (
                 <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
-                  {realRequests.length}
+                  {realRequests.length + collectionRequests.length}
                 </span>
               )}
             </button>
@@ -258,6 +386,17 @@ export default function UserDashboard({ username, userData, onLogout }) {
             ========================================================================= */}
         {activeTab === 'request_bin' && (
           <div className="soft-card" style={{ maxWidth: '800px', padding: '36px', background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+              <button
+                type="button"
+                className="btn-eco-secondary"
+                onClick={() => setShowCollectionModal(true)}
+                style={{ width: 'auto', height: '42px', justifyContent: 'center', borderRadius: '12px' }}
+              >
+                Request Waste Collection
+              </button>
+            </div>
+
             <form onSubmit={handleBinRequestSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div>
@@ -389,37 +528,45 @@ export default function UserDashboard({ username, userData, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {realRequests.length === 0 ? (
+                  {combinedRequestHistory.length === 0 ? (
                     <tr>
                       <td colSpan="6" style={{ textAlign: 'center', color: '#64748B', padding: '32px' }}>
-                        No deployment requests submitted yet. Click <strong>"Request Smart Bin"</strong> to create one.
+                        No deployment requests submitted yet. Click <strong>"Request Smart Bin"</strong> or <strong>"Request Waste Collection"</strong> to create one.
                       </td>
                     </tr>
                   ) : (
-                    realRequests.map(req => (
-                      <tr key={req._id || req.requestNumber}>
-                        <td><strong>{req.requestNumber}</strong></td>
-                        <td>{req.town}, {req.city}</td>
-                        <td><strong>{req.numberOfBins} Bins</strong></td>
-                        <td>{req.address}</td>
+                    combinedRequestHistory.map(req => (
+                      <tr key={`${req.requestKind}-${req._id || req.requestNumber || req.id}`}>
+                        <td><strong>{req.requestNumber || req.id || req._id || 'N/A'}</strong></td>
+                        <td>{req.town || req.site || 'Pending'}, {req.city || userCity}</td>
+                        <td><strong>{req.numberOfBins || req.weightKg || 1} {req.requestKind === 'COLLECTION' ? 'kg' : 'Bins'}</strong></td>
+                        <td>{req.address || req.site || 'Pending site details'}</td>
                         <td>
-                          <span 
-                            style={{
-                              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '800',
-                              background: req.status === 'APPROVED' || req.status === 'ASSIGNED' ? '#ECFDF5' : req.status === 'DECLINED' ? '#FEE2E2' : '#EFF6FF',
-                              color: req.status === 'APPROVED' || req.status === 'ASSIGNED' ? '#047857' : req.status === 'DECLINED' ? '#991B1B' : '#1E40AF',
-                              border: `1px solid ${req.status === 'APPROVED' || req.status === 'ASSIGNED' ? '#6EE7B7' : req.status === 'DECLINED' ? '#FCA5A5' : '#BFDBFE'}`
-                            }}
-                          >
-                            {req.status}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '200px' }}>
+                            <span 
+                              style={{
+                                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '800',
+                                background: req.status === 'APPROVED' || req.status === 'ASSIGNED' || req.status === 'WAITING_COLLECTION' ? '#ECFDF5' : req.status === 'DECLINED' ? '#FEE2E2' : '#EFF6FF',
+                                color: req.status === 'APPROVED' || req.status === 'ASSIGNED' || req.status === 'WAITING_COLLECTION' ? '#047857' : req.status === 'DECLINED' ? '#991B1B' : '#1E40AF',
+                                border: `1px solid ${req.status === 'APPROVED' || req.status === 'ASSIGNED' || req.status === 'WAITING_COLLECTION' ? '#6EE7B7' : req.status === 'DECLINED' ? '#FCA5A5' : '#BFDBFE'}`
+                              }}
+                            >
+                              {req.status || 'Awaiting Partner'}
+                            </span>
+                            <RequestProgressTracker
+                              status={req.status || 'REQUESTED'}
+                              variant="customer"
+                              compact={true}
+                              label="Request status"
+                            />
+                          </div>
                           {req.declineReason && (
                             <div style={{ fontSize: '11px', color: '#DC2626', marginTop: '6px', fontWeight: '600' }}>
                               Decline Reason: "{req.declineReason}"
                             </div>
                           )}
                         </td>
-                        <td>{req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'Today'}</td>
+                        <td>{req.createdAt ? new Date(req.createdAt).toLocaleDateString() : req.collectedDate || 'Today'}</td>
                       </tr>
                     ))
                   )}
@@ -510,6 +657,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
         )}
 
       </main>
+      <DashboardAssistant dashboardName="user" accent="#10B981" />
     </div>
   );
 }

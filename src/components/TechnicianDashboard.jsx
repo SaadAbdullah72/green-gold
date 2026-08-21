@@ -1,547 +1,388 @@
-import React, { useMemo, useState } from 'react';
-import { TECHNICAL_STAFF_DATA } from '../mockData';
-import { 
-  IconDashboard, IconTruck, IconBox, IconPlus, 
-  IconSettings, IconLab, IconChart, IconBell, IconUser 
-} from './Icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { api } from '../api';
+import { IconBox, IconTruck, IconUser } from './Icons';
+import DashboardAssistant from './DashboardAssistant';
+import RequestProgressTracker from './RequestProgressTracker';
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard Home', icon: <IconDashboard size={18} /> },
-  { id: 'jobs', label: 'Assigned Jobs', icon: <IconTruck size={18} /> },
-  { id: 'inventory', label: 'Smart Bin Inventory', icon: <IconBox size={18} /> },
-  { id: 'installs', label: 'Installation Requests', icon: <IconPlus size={18} /> },
-  { id: 'maintenance', label: 'Maintenance', icon: <IconSettings size={18} /> },
-  { id: 'diagnostics', label: 'Diagnostics', icon: <IconLab size={18} /> },
-  { id: 'calibration', label: 'Calibration', icon: <IconChart size={18} /> },
-  { id: 'orders', label: 'Work Orders', icon: <IconBox size={18} /> },
-  { id: 'parts', label: 'Spare Parts', icon: <IconBox size={18} /> },
-  { id: 'notifications', label: 'Notifications', icon: <IconBell size={18} /> },
-  { id: 'profile', label: 'Profile & Settings', icon: <IconUser size={18} /> }
-];
-
+const workerProfile = {
+  name: 'Ahmed Nawaz',
+  employeeId: 'T-104',
+  primaryPhone: '+923252724238',
+  secondaryPhone: '+923227244238'
+};
 
 export default function TechnicianDashboard({ onLogout }) {
-  const [activeView, setActiveView] = useState('dashboard');
-  const [jobs, setJobs] = useState(TECHNICAL_STAFF_DATA.jobs);
-  const [inventory, setInventory] = useState(TECHNICAL_STAFF_DATA.inventory);
-  const [installRequests, setInstallRequests] = useState(TECHNICAL_STAFF_DATA.installRequests);
-  const [maintenanceTasks, setMaintenanceTasks] = useState(TECHNICAL_STAFF_DATA.maintenanceTasks);
-  const [workOrders, setWorkOrders] = useState(TECHNICAL_STAFF_DATA.workOrders);
-  const [parts, setParts] = useState(TECHNICAL_STAFF_DATA.parts);
-  const [notifications] = useState(TECHNICAL_STAFF_DATA.notifications);
-  const [selectedJobId, setSelectedJobId] = useState(TECHNICAL_STAFF_DATA.jobs[0]?.id ?? null);
+  const [activeTab, setActiveTab] = useState('assigned_jobs');
+  const [jobs, setJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [now, setNow] = useState(Date.now());
 
-  const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedJobId) || jobs[0], [jobs, selectedJobId]);
+  const normalizeJob = (job) => {
+    const request = job?.request || {};
+    const requestNumber = request.requestNumber || 'REQ-2026-0004';
+    const status = job?.status || 'ASSIGNED';
 
-  const handleJobAction = (jobId, action) => {
-    setJobs((prev) =>
-      prev.map((job) => {
-        if (job.id !== jobId) return job;
-        const nextStatus = action === 'Complete' ? 'Completed' : action === 'Pause' ? 'Paused' : action === 'Accept' ? 'In Progress' : job.status;
-        return { ...job, status: nextStatus, lastAction: action };
-      })
-    );
-    setSelectedJobId(jobId);
+    return {
+      _id: job?._id || job?.id || String(Math.random()),
+      status,
+      requestNumber,
+      organizationName: request.organizationName || 'Customer Portal',
+      location: `${request.address || 'Plot 18, Blue Area'}, ${request.city || 'Islamabad'}`,
+      contactPerson: request.contactPerson || 'Customer Portal',
+      phone: request.phone || '+92 300 1234567',
+      binsAssigned: job?.binsAssigned || 2,
+      responseDeadline: job?.responseDeadline || new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      updatedAt: job?.updatedAt || new Date().toISOString(),
+      delayReason: job?.delayReason || null
+    };
   };
 
-  const handleInstallAction = (id) => {
-    setInstallRequests((prev) => prev.map((item) => (item.id === id ? { ...item, status: 'Accepted' } : item)));
+  const loadJobs = async () => {
+    try {
+      setLoadingJobs(true);
+      const res = await api.technical.getJobs();
+      const nextJobs = Array.isArray(res?.jobs) ? res.jobs : [];
+      setJobs(nextJobs.map(normalizeJob));
+    } catch (error) {
+      console.error('Failed to load technician jobs:', error);
+      setJobs([]);
+    } finally {
+      setLoadingJobs(false);
+    }
   };
 
-  const handleMaintenanceAction = (id) => {
-    setMaintenanceTasks((prev) => prev.map((item) => (item.id === id ? { ...item, status: 'In Progress' } : item)));
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const activeAssignedJobs = useMemo(
+    () => jobs.filter((job) => ['ASSIGNED', 'ACCEPTED', 'IN_PROGRESS', 'PARTIALLY_DELAYED'].includes(job.status)),
+    [jobs]
+  );
+
+  const completedJobsHistory = useMemo(
+    () => jobs.filter((job) => job.status === 'COMPLETED'),
+    [jobs]
+  );
+
+  const handleStageUpdate = async (jobId, nextStatus) => {
+    try {
+      if (nextStatus === 'ACCEPTED') {
+        await api.technical.acceptJob(jobId);
+      } else if (nextStatus === 'IN_PROGRESS') {
+        await api.technical.startWork(jobId);
+      } else if (nextStatus === 'COMPLETED') {
+        await api.technical.completeWork(jobId, { binsInstalled: 2, serialNumbers: 'SN-GG-TRACKER', notes: 'Updated from progress tracker' });
+      }
+      await loadJobs();
+    } catch (error) {
+      console.error('Failed to update job stage:', error);
+    }
   };
 
-  const handlePartRequest = (id) => {
-    setParts((prev) => prev.map((item) => (item.id === id ? { ...item, stock: Math.max(0, item.stock - 1), status: item.stock > 1 ? 'Request Sent' : 'Low Stock' } : item)));
+  const handleAcceptJob = async (jobId) => {
+    try {
+      await api.technical.acceptJob(jobId);
+      await loadJobs();
+    } catch (error) {
+      console.error('Failed to accept job:', error);
+    }
   };
 
-  const initials = 'TS';
+  const getTimerText = (deadline) => {
+    const target = new Date(deadline).getTime();
+    const secondsLeft = Math.max(0, Math.floor((target - now) / 1000));
+    const mins = Math.floor(secondsLeft / 60);
+    const secs = String(secondsLeft % 60).padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
 
   return (
-    <div className="app-container">
-      <aside className="sidebar-left">
-        <div className="app-logo">
-          <div className="logo-icon">
-            <img src="/logo.png" alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#E5E7EB' }}>
+      <aside
+        style={{
+          width: '320px',
+          background: '#022F2B',
+          color: '#E6FFFB',
+          padding: '20px 18px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRight: '1px solid rgba(255,255,255,0.08)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 8px 20px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#0A403A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconBox size={22} color="#86EFAC" />
           </div>
-          <div className="logo-text">
-            <h1>GreenGoldOS</h1>
-            <span>Technical Bins Staff</span>
-          </div>
-        </div>
-
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '12px', flexGrow: 1 }}>
           <div>
-            <h4 className="menu-label">Field Ops</h4>
-            <ul className="menu-list">
-              {navItems.map((item) => (
-                <li key={item.id}>
-                  <button className={`menu-btn ${activeView === item.id ? 'active' : ''}`} onClick={() => setActiveView(item.id)}>
-                    <span className="menu-btn-content">
-                      <span style={{ width: '18px', display: 'inline-flex', justifyContent: 'center' }}>{item.icon}</span>
-                      {item.label}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="profile-card" onClick={onLogout} style={{ cursor: 'pointer' }} title="Click to log out">
-            <div className="profile-avatar">{initials}</div>
-            <div className="profile-info">
-              <span className="name">Field Crew Lead</span>
-              <span className="role" style={{ color: 'var(--gold-light)', fontWeight: '600' }}>Logout ⮞</span>
-            </div>
+            <div style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1.2, color: '#FFFFFF', fontFamily: 'Georgia, serif' }}>GreenGold OS</div>
           </div>
         </div>
+
+        <div style={{ padding: '6px 8px 18px', color: '#7EE7C4', textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: '12px', fontWeight: 800 }}>
+          Technical Workforce
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('assigned_jobs')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              background: activeTab === 'assigned_jobs' ? '#10B981' : 'transparent',
+              color: activeTab === 'assigned_jobs' ? '#FFFFFF' : '#A7F3D0',
+              fontWeight: 700,
+              fontSize: '14px'
+            }}
+          >
+            <IconTruck size={20} color={activeTab === 'assigned_jobs' ? '#FFFFFF' : '#A7F3D0'} />
+            <span>Assigned Jobs Queue</span>
+            {activeAssignedJobs.length > 0 && (
+              <span style={{ marginLeft: 'auto', background: '#34D399', color: '#064E3B', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 800 }}>
+                {activeAssignedJobs.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('history')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              background: activeTab === 'history' ? '#10B981' : 'transparent',
+              color: activeTab === 'history' ? '#FFFFFF' : '#A7F3D0',
+              fontWeight: 700,
+              fontSize: '14px'
+            }}
+          >
+            <IconUser size={20} color={activeTab === 'history' ? '#FFFFFF' : '#A7F3D0'} />
+            <span>Completed Jobs History</span>
+          </button>
+        </div>
+
+        <div style={{ marginTop: 'auto', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ fontSize: '11px', color: '#34D399', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+            Technical Worker Profile
+          </div>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>{workerProfile.name}</div>
+          <div style={{ fontSize: '13px', color: '#F9C74F', fontWeight: 700, marginTop: '2px' }}>Employee ID: {workerProfile.employeeId}</div>
+          <div style={{ fontSize: '12px', color: '#A7F3D0', marginTop: '8px' }}>Primary: {workerProfile.primaryPhone}</div>
+          <div style={{ fontSize: '12px', color: '#A7F3D0' }}>Secondary: {workerProfile.secondaryPhone}</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onLogout}
+          style={{
+            marginTop: '18px',
+            width: '100%',
+            background: 'transparent',
+            color: '#A7F3D0',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            fontSize: '13px',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          Logout Portal »
+        </button>
       </aside>
 
-      <main className="main-content">
-        <div className="view-header">
-          <div>
-            <h2>Field Operations Command Center</h2>
-            <p>Install, inspect, calibrate, and maintain smart bins with full telemetry visibility.</p>
-          </div>
-          <div>
-            <span className="status-pill approved" style={{ fontSize: '12px', padding: '6px 12px', fontWeight: '700' }}>
-              Crew Online
-            </span>
-          </div>
-        </div>
+      <main style={{ flex: 1, padding: '28px 36px 32px', background: '#F3F4F6' }}>
+        <header style={{ marginBottom: '24px' }}>
+          <h1 style={{ margin: 0, fontSize: '38px', lineHeight: 1.1, color: '#0F172A', fontFamily: 'Georgia, serif' }}>
+            Technical Worker Dispatch Console ({workerProfile.employeeId})
+          </h1>
+          <p style={{ margin: '8px 0 0', fontSize: '15px', color: '#475569' }}>
+            Logged in as <strong>{workerProfile.name}</strong> (Employee ID: <strong>{workerProfile.employeeId}</strong>). Real-time job acceptance & installation.
+          </p>
+        </header>
 
-        <div className="kpi-grid">
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Assigned Jobs</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect><path d="M8 11h8"></path><path d="M8 16h5"></path></svg>
-            </div>
-            <div className="kpi-value">{jobs.length}</div>
-            <div className="kpi-label">Current field assignments</div>
-          </div>
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Pending Installs</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"></path><path d="M3 12h18"></path></svg>
-            </div>
-            <div className="kpi-value">{installRequests.filter((item) => item.status === 'Pending').length}</div>
-            <div className="kpi-label">Awaiting crew acceptance</div>
-          </div>
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Completed Today</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5"></path></svg>
-            </div>
-            <div className="kpi-value">{jobs.filter((job) => job.status === 'Completed').length}</div>
-            <div className="kpi-label">Closed service events</div>
-          </div>
-          <div className="glass-panel kpi-card">
-            <div className="kpi-title">
-              <span>Offline Bins</span>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            </div>
-            <div className="kpi-value">{inventory.filter((bin) => bin.connectivity === 'Offline').length}</div>
-            <div className="kpi-label">Require field recovery</div>
-          </div>
-        </div>
-
-        {activeView === 'dashboard' && (
-          <div className="mgmt-sub-view active" style={{ display: 'grid', gap: '24px' }}>
-            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3>Assigned Jobs & Details</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.7fr', gap: '20px' }}>
-                <div>
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Job</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {jobs.map((job) => (
-                        <tr key={job.id} onClick={() => setSelectedJobId(job.id)} style={{ cursor: 'pointer' }}>
-                          <td>
-                            <strong>{job.id}</strong>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{job.org}</div>
-                          </td>
-                          <td>{job.priority}</td>
-                          <td>{job.status}</td>
-                          <td>
-                            <button className="action-btn approve" onClick={(e) => { e.stopPropagation(); handleJobAction(job.id, 'Accept'); }}>
-                              Accept
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '20px', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '12px', fontWeight: '700' }}>Live Job Detail</h4>
-                  {selectedJob ? (
-                    <>
-                      <p style={{ marginBottom: '8px', color: 'var(--text-primary)' }}><strong>{selectedJob.id}</strong> · {selectedJob.workflow}</p>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '12px' }}>{selectedJob.description}</p>
-                      <div style={{ display: 'grid', gap: '10px', fontSize: '13px', color: 'var(--text-primary)' }}>
-                        <div><strong>Organization:</strong> {selectedJob.org}</div>
-                        <div><strong>Bin:</strong> {selectedJob.binId}</div>
-                        <div><strong>GPS:</strong> {selectedJob.gps}</div>
-                        <div><strong>Schedule:</strong> {selectedJob.schedule}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '16px' }}>
-                        <button className="action-btn approve" onClick={() => handleJobAction(selectedJob.id, 'Start')}>Start</button>
-                        <button className="action-btn approve" onClick={() => handleJobAction(selectedJob.id, 'Pause')}>Pause</button>
-                        <button className="action-btn approve" onClick={() => handleJobAction(selectedJob.id, 'Complete')}>Complete</button>
-                        <button className="action-btn deny" onClick={() => handleJobAction(selectedJob.id, 'Issue')}>Report Issue</button>
-                      </div>
-                    </>
-                  ) : (
-                    <p style={{ color: 'var(--text-secondary)' }}>No active assignment selected.</p>
-                  )}
-                </div>
+        {activeTab === 'assigned_jobs' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {loadingJobs ? (
+              <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '40px 30px', textAlign: 'center', color: '#475569' }}>
+                Loading assigned jobs...
               </div>
-            </div>
-
-            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3 style={{ color: 'var(--text-primary)' }}>Notifications</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {notifications.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px 16px', background: '#F8FAFC' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong style={{ color: 'var(--text-primary)' }}>{item.title}</strong>
-                      <span className={`status-pill ${item.severity === 'critical' ? 'warning' : 'approved'}`} style={{ fontSize: '10px' }}>{item.severity}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>{item.detail}</div>
-                  </div>
-                ))}
+            ) : activeAssignedJobs.length === 0 ? (
+              <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '48px 24px', textAlign: 'center', color: '#475569' }}>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', marginBottom: '6px' }}>No Active Jobs Assigned</div>
+                <div>When new work is assigned, it will appear here instantly.</div>
               </div>
-            </div>
-          </div>
-        )}
+            ) : (
+              activeAssignedJobs.map((job) => {
+                const isAssignedPending = job.status === 'ASSIGNED';
+                const isWorking = job.status === 'ACCEPTED' || job.status === 'IN_PROGRESS';
 
-        {activeView === 'jobs' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Assigned Jobs & Details</h3>
-              <div className="table-wrapper">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Organization</th>
-                      <th>Priority</th>
-                      <th>Bin</th>
-                      <th>GPS / Schedule</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map((job) => (
-                      <tr key={job.id}>
-                        <td><strong>{job.id}</strong></td>
-                        <td>{job.org}</td>
-                        <td>{job.priority}</td>
-                        <td>{job.binId}</td>
-                        <td>{job.gps} · {job.schedule}</td>
-                        <td>{job.status}</td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <button className="action-btn approve" onClick={() => handleJobAction(job.id, 'Accept')}>Accept</button>
-                            <button className="action-btn approve" onClick={() => handleJobAction(job.id, 'Start')}>Start</button>
-                            <button className="action-btn approve" onClick={() => handleJobAction(job.id, 'Complete')}>Complete</button>
-                            <button className="action-btn deny" onClick={() => handleJobAction(job.id, 'Issue')}>Issue</button>
+                return (
+                  <div key={job._id} style={{ background: '#FFFFFF', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '22px 22px 18px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.08em', color: '#047857', textTransform: 'uppercase' }}>
+                          Request #{job.requestNumber}
+                        </div>
+                        <h2 style={{ margin: '4px 0 0', fontSize: '24px', fontWeight: 800, color: '#0F172A', fontFamily: 'Georgia, serif' }}>
+                          {job.organizationName}
+                        </h2>
+                        <div style={{ marginTop: '6px', fontSize: '13px', color: '#64748B' }}>
+                          Location: {job.location}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: 800,
+                            background: isWorking ? '#ECFDF5' : isAssignedPending ? '#FEF3C7' : '#EFF6FF',
+                            color: isWorking ? '#047857' : isAssignedPending ? '#B45309' : '#1D4ED8',
+                            border: `1px solid ${isWorking ? '#6EE7B7' : isAssignedPending ? '#FCD34D' : '#BFDBFE'}`
+                          }}
+                        >
+                          STATUS: {job.status}
+                        </span>
+                        {isAssignedPending && (
+                          <div style={{ marginTop: '8px', color: '#DC2626', fontSize: '13px', fontWeight: 900 }}>
+                            Timer: {getTimerText(job.responseDeadline)} Left
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'inventory' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Smart Bin Inventory</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Bin ID</th>
-                    <th>QR / RFID</th>
-                    <th>Facility</th>
-                    <th>Battery / Signal</th>
-                    <th>Health / Connectivity</th>
-                    <th>Firmware</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {inventory.map((bin) => (
-                    <tr key={bin.id}>
-                      <td><strong>{bin.id}</strong><div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{bin.organization}</div></td>
-                      <td>{bin.qr} · {bin.rfid}</td>
-                      <td>{bin.facility}</td>
-                      <td>{bin.battery}% · {bin.signal}%</td>
-                      <td>{bin.health} · {bin.connectivity}</td>
-                      <td>{bin.firmware}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'installs' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Installation Requests</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Request</th>
-                    <th>Org</th>
-                    <th>Workflow</th>
-                    <th>Schedule</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {installRequests.map((item) => (
-                    <tr key={item.id}>
-                      <td><strong>{item.id}</strong></td>
-                      <td>{item.org}</td>
-                      <td>{item.workflow}</td>
-                      <td>{item.schedule}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span className={`status-pill ${item.status === 'Pending' ? 'warning' : 'approved'}`}>{item.status}</span>
-                          <button className="action-btn approve" onClick={() => handleInstallAction(item.id)}>Advance</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'maintenance' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Maintenance Workflow</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Task</th>
-                    <th>Bin</th>
-                    <th>Issue</th>
-                    <th>Schedule</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {maintenanceTasks.map((item) => (
-                    <tr key={item.id}>
-                      <td><strong>{item.id}</strong></td>
-                      <td>{item.binId}</td>
-                      <td>{item.issue}</td>
-                      <td>{item.schedule}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span className={`status-pill ${item.status === 'Pending' ? 'warning' : 'approved'}`}>{item.status}</span>
-                          <button className="action-btn approve" onClick={() => handleMaintenanceAction(item.id)}>Start</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'diagnostics' && (
-          <div className="mgmt-sub-view active" style={{ display: 'grid', gap: '24px' }}>
-            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: '800' }}>Diagnostics & Telemetry</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                {[
-                  { label: 'Battery', value: '88%', tone: '#D97706' },
-                  { label: 'Signal', value: '82%', tone: '#059669' },
-                  { label: 'Weight Sensor', value: 'Stable', tone: '#059669' },
-                  { label: 'Fill Level', value: '63%', tone: '#2563EB' },
-                  { label: 'Temperature', value: '24°C', tone: '#0F172A' },
-                  { label: 'Humidity', value: '58%', tone: '#059669' }
-                ].map((metric) => (
-                  <div key={metric.label} className="soft-card" style={{ border: '1px solid var(--border-color)', borderRadius: '16px', padding: '20px', background: '#F8FAFC', margin: 0 }}>
-                    <span className="pill-badge" style={{ fontSize: '10.5px', marginBottom: '8px' }}>{metric.label}</span>
-                    <div style={{ fontSize: '28px', fontWeight: '800', color: metric.tone, marginTop: '6px' }}>{metric.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '16px', fontSize: '18px', fontWeight: '800' }}>Firmware & Health</h3>
-              <div style={{ display: 'grid', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}>
-                <div><span style={{ color: 'var(--text-secondary)' }}>Firmware:</span> <strong>v3.4.1</strong></div>
-                <div><span style={{ color: 'var(--text-secondary)' }}>Overall health score:</span> <strong style={{ color: '#059669' }}>93%</strong></div>
-                <div><span style={{ color: 'var(--text-secondary)' }}>Connectivity:</span> <strong style={{ color: '#2563EB' }}>Stable, strong uplink</strong></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'calibration' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Calibration & Sensor Monitoring</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Sensor</th>
-                    <th>Reading</th>
-                    <th>Calibration</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Weight Sensor</td>
-                    <td>63kg</td>
-                    <td>Offset +1.3%</td>
-                    <td><span className="status-pill approved">Calibrated</span></td>
-                  </tr>
-                  <tr>
-                    <td>Fill Level</td>
-                    <td>68%</td>
-                    <td>Baseline synced</td>
-                    <td><span className="status-pill approved">Stable</span></td>
-                  </tr>
-                  <tr>
-                    <td>Temperature</td>
-                    <td>24°C</td>
-                    <td>Auto-corrected</td>
-                    <td><span className="status-pill warning">Monitor</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'orders' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Work Orders & Service History</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Tech</th>
-                    <th>Issue</th>
-                    <th>Action / Parts</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {workOrders.map((order) => (
-                    <tr key={order.id}>
-                      <td>{order.date}</td>
-                      <td>{order.tech}</td>
-                      <td>{order.issue}</td>
-                      <td>{order.action} · {order.parts}</td>
-                      <td>{order.duration}</td>
-                      <td><span className="status-pill approved">{order.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'parts' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel">
-              <h3>Spare Parts & Replacement Requests</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Part</th>
-                    <th>Stock</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parts.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.name}</td>
-                      <td>{item.stock}</td>
-                      <td>{item.location}</td>
-                      <td>{item.status}</td>
-                      <td><button className="action-btn approve" onClick={() => handlePartRequest(item.id)}>Request</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeView === 'notifications' && (
-          <div className="mgmt-sub-view active">
-            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px' }}>Operational Alerts</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {notifications.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', background: '#F8FAFC' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong style={{ color: 'var(--text-primary)', fontSize: '15px' }}>{item.title}</strong>
-                      <span className={`status-pill ${item.severity === 'critical' ? 'warning' : 'approved'}`} style={{ fontSize: '11px' }}>{item.severity}</span>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '13.5px', marginTop: '6px', lineHeight: '1.5' }}>{item.detail}</div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bins Quota</div>
+                        <div style={{ marginTop: '4px', fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>{job.binsAssigned} Units</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Contact Person</div>
+                        <div style={{ marginTop: '4px', fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>{job.contactPerson}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Customer Phone</div>
+                        <div style={{ marginTop: '4px', fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>{job.phone}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px' }}>
+                      <RequestProgressTracker
+                        status={job.status}
+                        variant="technical"
+                        interactive={job.status !== 'COMPLETED'}
+                        onStageChange={(stageKey) => handleStageUpdate(job._id, stageKey)}
+                        compact={false}
+                        label="Installation progress"
+                      />
+                    </div>
+
+                    {job.delayReason && (
+                      <div style={{ marginTop: '14px', padding: '10px 14px', borderRadius: '10px', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', fontSize: '13px', fontWeight: 700 }}>
+                        Delay Note: {job.delayReason}
+                      </div>
+                    )}
+
+                    {isAssignedPending && (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptJob(job._id)}
+                          style={{
+                            background: '#22C55E',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '12px 24px',
+                            fontSize: '15px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            boxShadow: '0 8px 20px rgba(34, 197, 94, 0.25)'
+                          }}
+                        >
+                          Accept Assignment »
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                );
+              })
+            )}
           </div>
         )}
 
-        {activeView === 'profile' && (
-          <div className="mgmt-sub-view active" style={{ display: 'grid', gap: '24px' }}>
-            <div className="glass-panel table-panel" style={{ padding: '28px' }}>
-              <h3 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px' }}>Profile & Settings</h3>
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <label style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600' }}>CREW LEAD</label>
-                  <input className="login-input" value="Alex Mercer" readOnly style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
-                </div>
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <label style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600' }}>PRIMARY ZONE</label>
-                  <input className="login-input" value="North Area" readOnly style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
-                </div>
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <label style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: '600' }}>MOBILE SYNC</label>
-                  <input className="login-input" value="Enabled · Offline sync queued" readOnly style={{ background: '#F8FAFC', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
-                </div>
-              </div>
+        {activeTab === 'history' && (
+          <div style={{ background: '#FFFFFF', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '28px' }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: '20px', fontWeight: 800, color: '#0F172A', fontFamily: 'Georgia, serif' }}>
+              Completed Installation Jobs
+            </h2>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ background: '#022F2B', color: '#FFFFFF' }}>
+                    <th style={{ padding: '12px 14px', textAlign: 'left' }}>Job Ref</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'left' }}>Customer Organization</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'left' }}>Bins Installed</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'left' }}>IoT Serial #</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'left' }}>Status</th>
+                    <th style={{ padding: '12px 14px', textAlign: 'left' }}>Date Completed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completedJobsHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" style={{ padding: '28px 14px', textAlign: 'center', color: '#64748B' }}>
+                        No completed installation jobs recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    completedJobsHistory.map((job) => (
+                      <tr key={job._id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                        <td style={{ padding: '12px 14px' }}>{job.requestNumber}</td>
+                        <td style={{ padding: '12px 14px' }}>{job.organizationName}</td>
+                        <td style={{ padding: '12px 14px' }}>{job.binsAssigned} Units</td>
+                        <td style={{ padding: '12px 14px' }}>{job._id.slice(0, 8).toUpperCase()}</td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{ display: 'inline-block', padding: '5px 10px', borderRadius: '8px', background: '#ECFDF5', color: '#047857', border: '1px solid #6EE7B7', fontSize: '11px', fontWeight: 800 }}>
+                            COMPLETED
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>{new Date(job.updatedAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
       </main>
+      <DashboardAssistant dashboardName="technician" accent="#10B981" />
     </div>
   );
 }

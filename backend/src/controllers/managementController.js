@@ -1,6 +1,7 @@
 import { ServiceRequest } from '../models/ServiceRequest.js';
 import { User } from '../models/User.js';
 import { JobAssignment } from '../models/JobAssignment.js';
+import { CollectorAssignment } from '../models/CollectorAssignment.js';
 import { calculateRequiredWorkers } from './requestController.js';
 
 export const getAllRequests = async (req, res) => {
@@ -43,6 +44,43 @@ export const getAllRequests = async (req, res) => {
     }));
 
     return res.json({ success: true, count: requests.length, requests });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getCollectionQueue = async (req, res) => {
+  try {
+    const requests = await ServiceRequest.find({ requestType: 'WASTE_COLLECTION' }).sort({ createdAt: -1 }).lean();
+
+    const normalizeStatus = (item) => {
+      if (item.assignedCollectorId || item.status === 'ROUTED_FOR_COLLECTION' || item.status === 'ASSIGNED_TO_COLLECTOR') {
+        return 'Assigned to Collector';
+      }
+      if (item.status === 'WAITING_COLLECTION') return 'Awaiting Partner';
+      if (item.status === 'COMPLETED') return 'Completed';
+      return item.status || 'Awaiting Partner';
+    };
+
+    return res.json({
+      success: true,
+      count: requests.length,
+      requests: requests.map((item) => ({
+        id: item._id,
+        _id: item._id,
+        site: item.siteName || item.organizationName,
+        wasteType: item.wasteType,
+        weightKg: item.weightKg,
+        collectedDate: item.collectedDate ? new Date(item.collectedDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        status: normalizeStatus(item),
+        assignedPartner: item.assignedCollectorId || null,
+        assignedCollector: item.assignedCollectorId || null,
+        requestId: item._id,
+        notes: item.notes || '',
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      }))
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -104,6 +142,74 @@ export const getTechnicalWorkers = async (req, res) => {
   try {
     const workers = await User.find({ role: 'TECHNICAL' }).select('-passwordHash');
     return res.json({ success: true, count: workers.length, workers });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getCollectors = async (req, res) => {
+  try {
+    const collectors = await User.find({ role: 'COLLECTOR' }).select('-passwordHash');
+    return res.json({ success: true, count: collectors.length, collectors });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const assignCollectorToPickup = async (req, res) => {
+  try {
+    const { collectorId, pickupId, siteName, locationName, address, town, city, lat, lng, fillLevel, timeFullMinutes, urgency, binId, requestId } = req.body;
+
+    if (!collectorId) {
+      return res.status(400).json({ success: false, message: 'Please select a collector to assign.' });
+    }
+
+    const collector = await User.findById(collectorId);
+    if (!collector || collector.role !== 'COLLECTOR') {
+      return res.status(404).json({ success: false, message: 'Collector account not found.' });
+    }
+
+    const targetRequestId = requestId || pickupId;
+
+    if (targetRequestId) {
+      const targetRequest = await ServiceRequest.findById(targetRequestId).catch(() => null);
+      if (targetRequest) {
+        targetRequest.assignedCollectorId = collectorId;
+        targetRequest.status = 'ROUTED_FOR_COLLECTION';
+        await targetRequest.save();
+      }
+    }
+
+    const assignment = await CollectorAssignment.findOneAndUpdate(
+      { pickupId, collectorId },
+      {
+        collectorId,
+        assignedBy: req.user?._id || null,
+        pickupId,
+        requestId: requestId || targetRequestId || null,
+        siteName: siteName || 'Assigned Pickup',
+        locationName: locationName || siteName || 'Management Assigned Route',
+        address: address || 'Islamabad',
+        town: town || 'F-7',
+        city: city || 'Islamabad',
+        lat: Number(lat) || 33.6844,
+        lng: Number(lng) || 73.0479,
+        fillLevel: Number(fillLevel) || 0,
+        timeFullMinutes: Number(timeFullMinutes) || 0,
+        urgency: urgency || 'Medium',
+        binId: binId || pickupId,
+        status: 'ASSIGNED'
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    await User.findByIdAndUpdate(collectorId, { workerStatus: 'ASSIGNED' });
+
+    return res.status(201).json({
+      success: true,
+      message: `${collector.fullName} assigned to pickup ${pickupId}.`,
+      assignment
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

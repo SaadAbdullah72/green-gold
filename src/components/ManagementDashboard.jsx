@@ -1,36 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { TECH_CREWS, LOGISTICS_PARTNERS, FACTORY_REPORTS } from '../mockData';
 import { api } from '../api';
+import DashboardAssistant from './DashboardAssistant';
 
 export default function ManagementDashboard({
-  username,
+  username = 'System Admin',
   onLogout,
-  activeSubTab,
-  setActiveSubTab,
-  stats,
-  activeSites,
-  installRequests,
-  batchesAwaitingCert,
-  collectedWasteQueue,
-  logs,
-  factoryPeriod,
-  setFactoryPeriod,
-  handleApproveReq,
-  handleDenyReq,
-  handleCertifyCarbon,
-  handleAssignLogistics,
-  showTechModal,
-  setShowTechModal,
-  confirmApproveReq,
-  showLogisticsModal,
-  setShowLogisticsModal,
-  confirmAssignLogistics
+  activeSubTab: propActiveSubTab = 'approvals',
+  setActiveSubTab: propSetActiveSubTab,
+  stats = {
+    activeBins: 0,
+    totalWasteDivertedKg: 0,
+    certifiedCarbonCreditsMt: 0,
+    pendingCarbonCreditsMt: 0,
+    recycledPlasticsKg: 0,
+  },
+  activeSites = [],
+  installRequests = [],
+  batchesAwaitingCert = [],
+  collectedWasteQueue = [],
+  logs = [],
+  factoryPeriod: propFactoryPeriod = 'weekly',
+  setFactoryPeriod: propSetFactoryPeriod,
+  handleApproveReq = () => {},
+  handleDenyReq = () => {},
+  handleCertifyCarbon = () => {},
+  handleAssignLogistics = () => {},
+  showTechModal = false,
+  setShowTechModal = () => {},
+  confirmApproveReq = () => {},
+  showLogisticsModal = false,
+  setShowLogisticsModal = () => {},
+  confirmAssignLogistics = () => {}
 }) {
+  const [localActiveSubTab, setLocalActiveSubTab] = useState(propActiveSubTab || 'approvals');
+  const [localFactoryPeriod, setLocalFactoryPeriod] = useState(propFactoryPeriod || 'weekly');
+  const [localInstallRequests, setLocalInstallRequests] = useState(Array.isArray(installRequests) ? installRequests : []);
+  const [localCollectedWasteQueue, setLocalCollectedWasteQueue] = useState(Array.isArray(collectedWasteQueue) ? collectedWasteQueue : []);
+  const [localBatchesAwaitingCert, setLocalBatchesAwaitingCert] = useState(Array.isArray(batchesAwaitingCert) ? batchesAwaitingCert : []);
+
+  const activeSubTab = propSetActiveSubTab ? propActiveSubTab : localActiveSubTab;
+  const setActiveSubTab = propSetActiveSubTab || setLocalActiveSubTab;
+  const factoryPeriod = propSetFactoryPeriod ? propFactoryPeriod : localFactoryPeriod;
+  const setFactoryPeriod = propSetFactoryPeriod || setLocalFactoryPeriod;
+
+  useEffect(() => {
+    setLocalInstallRequests(Array.isArray(installRequests) ? installRequests : []);
+  }, [installRequests]);
+
+  useEffect(() => {
+    setLocalBatchesAwaitingCert(Array.isArray(batchesAwaitingCert) ? batchesAwaitingCert : []);
+  }, [batchesAwaitingCert]);
+
   // Real Backend Data State
   const [dbRequests, setDbRequests] = useState([]);
   const [dbWorkers, setDbWorkers] = useState([]);
   const [dbAuditLogs, setDbAuditLogs] = useState([]);
+  const [dbCollectionQueue, setDbCollectionQueue] = useState([]);
   const [loadingDb, setLoadingDb] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedQueue = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
+      const mergedQueue = [
+        ...(Array.isArray(storedQueue) ? storedQueue : []),
+        ...(Array.isArray(dbCollectionQueue) ? dbCollectionQueue : []),
+        ...((Array.isArray(collectedWasteQueue) ? collectedWasteQueue : []).filter((item) => ![...Array.isArray(storedQueue) ? storedQueue : [], ...Array.isArray(dbCollectionQueue) ? dbCollectionQueue : []].some((queuedItem) => queuedItem.id === item.id || queuedItem._id === item.id || queuedItem._id === item._id)))
+      ];
+      if (mergedQueue.length > 0) {
+        setLocalCollectedWasteQueue(mergedQueue);
+        return;
+      }
+    } catch (error) {
+      // fall through to prop-based queue
+    }
+
+    if (Array.isArray(collectedWasteQueue) && collectedWasteQueue.length > 0) {
+      setLocalCollectedWasteQueue(collectedWasteQueue);
+    }
+  }, [collectedWasteQueue, dbCollectionQueue]);
 
   // Mandatory Decline Modal State
   const [showDeclineModal, setShowDeclineModal] = useState(false);
@@ -45,6 +93,12 @@ export default function ManagementDashboard({
   const [binsQuota, setBinsQuota] = useState(2);
   const [assignMessage, setAssignMessage] = useState('');
 
+  const [showCollectorAssignModal, setShowCollectorAssignModal] = useState(false);
+  const [selectedPickupToAssign, setSelectedPickupToAssign] = useState(null);
+  const [selectedCollectorId, setSelectedCollectorId] = useState('');
+  const [collectorAssignMessage, setCollectorAssignMessage] = useState('');
+  const [dbCollectors, setDbCollectors] = useState([]);
+
   const loadManagementData = async (isInitial = false) => {
     try {
       const reqRes = await api.management.getRequests();
@@ -55,6 +109,16 @@ export default function ManagementDashboard({
       const workerRes = await api.management.getWorkers();
       if (workerRes.workers) {
         setDbWorkers(prev => JSON.stringify(prev) !== JSON.stringify(workerRes.workers) ? workerRes.workers : prev);
+      }
+
+      const collectorRes = await api.management.getCollectors();
+      if (collectorRes.collectors) {
+        setDbCollectors(prev => JSON.stringify(prev) !== JSON.stringify(collectorRes.collectors) ? collectorRes.collectors : prev);
+      }
+
+      const collectionQueueRes = await api.management.getCollectionQueue();
+      if (collectionQueueRes.requests) {
+        setDbCollectionQueue(prev => JSON.stringify(prev) !== JSON.stringify(collectionQueueRes.requests) ? collectionQueueRes.requests : prev);
       }
 
       const auditRes = await api.audit.getLogs();
@@ -87,6 +151,70 @@ export default function ManagementDashboard({
       }
     } catch (err) {
       alert(`Approve Error: ${err.message}`);
+    }
+  };
+
+  const handleAssignLogisticsAction = (pickupId) => {
+    const pickup = safeCollectedWasteQueue.find(item => item.id === pickupId) || safeCollectedWasteQueue[0];
+    setSelectedPickupToAssign(pickup || { id: pickupId, site: 'Unknown pickup', locationName: 'Unknown site' });
+    setSelectedCollectorId('');
+    setCollectorAssignMessage('');
+    setShowCollectorAssignModal(true);
+    if (typeof handleAssignLogistics === 'function') {
+      handleAssignLogistics(pickupId);
+    }
+  };
+
+  const handleCollectorAssignSubmit = async () => {
+    if (!selectedPickupToAssign || !selectedCollectorId) {
+      alert('Please select a collector for this pickup assignment.');
+      return;
+    }
+
+    try {
+      const res = await api.management.assignCollector(selectedPickupToAssign.id, selectedCollectorId, {
+        siteName: selectedPickupToAssign.site || 'Assigned Pickup',
+        locationName: selectedPickupToAssign.locationName || selectedPickupToAssign.site || 'Assigned Pickup',
+        address: selectedPickupToAssign.address || 'Islamabad',
+        town: selectedPickupToAssign.town || 'F-7',
+        city: selectedPickupToAssign.city || 'Islamabad',
+        lat: selectedPickupToAssign.lat || 33.6844,
+        lng: selectedPickupToAssign.lng || 73.0479,
+        fillLevel: selectedPickupToAssign.fillLevel || 0,
+        timeFullMinutes: selectedPickupToAssign.timeFullMinutes || 0,
+        urgency: selectedPickupToAssign.urgency || 'Medium',
+        binId: selectedPickupToAssign.binId || selectedPickupToAssign.id,
+        requestId: selectedPickupToAssign.requestId || null
+      });
+
+      setCollectorAssignMessage(res.message || 'Collector assigned successfully.');
+      const nextQueue = safeCollectedWasteQueue.map(item => item.id === selectedPickupToAssign.id ? { ...item, status: 'Assigned to Collector', assignedCollector: selectedCollectorId } : item);
+      setLocalCollectedWasteQueue(nextQueue);
+
+      try {
+        const storedQueue = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
+        const updatedStoredQueue = Array.isArray(storedQueue)
+          ? storedQueue.map(item => item.id === selectedPickupToAssign.id ? { ...item, status: 'Assigned to Collector', assignedPartner: selectedCollectorId } : item)
+          : [];
+        localStorage.setItem('greengold_collection_requests', JSON.stringify(updatedStoredQueue));
+      } catch (error) {
+        console.warn('Failed to sync collection queue to localStorage:', error);
+      }
+
+      setTimeout(() => {
+        setShowCollectorAssignModal(false);
+        setCollectorAssignMessage('');
+      }, 1200);
+    } catch (err) {
+      alert(`Collector Assignment Error: ${err.message}`);
+    }
+  };
+
+  const handleCertifyCarbonAction = (batchId) => {
+    const nextBatches = localBatchesAwaitingCert.filter(batch => batch.id !== batchId);
+    setLocalBatchesAwaitingCert(nextBatches);
+    if (typeof handleCertifyCarbon === 'function') {
+      handleCertifyCarbon(batchId);
     }
   };
 
@@ -131,9 +259,23 @@ export default function ManagementDashboard({
   const initials = username.split(/[ _]/).map(w => w[0]).join("").toUpperCase().substring(0, 2);
 
   // Compute pending alert badges for each dashboard sub-tab
-  const pendingApprovalsCount = installRequests.filter(r => r.status === 'Pending').length;
-  const pendingLogisticsCount = collectedWasteQueue.filter(w => w.status === 'Awaiting Partner').length;
-  const pendingCarbonCount = batchesAwaitingCert.filter(b => b.status === 'Awaiting Certification').length;
+  const normalizeCollectionStatus = (value) => {
+    if (!value) return 'Awaiting Partner';
+    const normalized = String(value).trim();
+    if (normalized === 'WAITING_COLLECTION' || normalized === 'Awaiting Partner') return 'Awaiting Partner';
+    if (normalized === 'ROUTED_FOR_COLLECTION' || normalized === 'Assigned to Collector' || normalized === 'Assigned to Partner') return 'Assigned to Collector';
+    return normalized;
+  };
+
+  const safeInstallRequests = Array.isArray(installRequests) ? installRequests : [];
+  const safeCollectedWasteQueue = Array.isArray(localCollectedWasteQueue) && localCollectedWasteQueue.length > 0 ? localCollectedWasteQueue : (Array.isArray(collectedWasteQueue) ? collectedWasteQueue : []);
+  const safeBatchesAwaitingCert = Array.isArray(localBatchesAwaitingCert) && localBatchesAwaitingCert.length > 0 ? localBatchesAwaitingCert : (Array.isArray(batchesAwaitingCert) ? batchesAwaitingCert : []);
+  const pendingApprovalsCount = safeInstallRequests.filter(r => r.status === 'Pending').length;
+  const pendingLogisticsCount = safeCollectedWasteQueue.filter(w => {
+    const status = normalizeCollectionStatus(w.status || w.assignmentStatus || w.requestStatus);
+    return status === 'Awaiting Partner' || status === 'Assigned to Collector';
+  }).length;
+  const pendingCarbonCount = safeBatchesAwaitingCert.filter(b => b.status === 'Awaiting Certification').length;
 
   return (
     <div className="app-container">
@@ -527,27 +669,35 @@ export default function ManagementDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {collectedWasteQueue.length === 0 ? (
+                      {safeCollectedWasteQueue.length === 0 ? (
                         <tr>
                           <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
                             All collected waste loads have been dispatched to factories.
                           </td>
                         </tr>
                       ) : (
-                        collectedWasteQueue.map(item => (
-                          <tr key={item.id}>
-                            <td><strong>{item.id}</strong></td>
-                            <td><strong>{item.site}</strong></td>
-                            <td><strong style={{ color: 'var(--gold-light)' }}>{item.weightKg} kg</strong></td>
-                            <td>{item.wasteType}</td>
-                            <td>{item.collectedDate}</td>
-                            <td>
-                              <button className="action-btn approve" onClick={() => handleAssignLogistics(item.id)}>
-                                Assign Logistics Partner
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                        safeCollectedWasteQueue.map(item => {
+                          const rowStatus = normalizeCollectionStatus(item.status || item.assignmentStatus || item.requestStatus);
+                          return (
+                            <tr key={item.id || item._id}>
+                              <td><strong>{item.id || item._id}</strong></td>
+                              <td><strong>{item.site || item.locationName || 'Collection site'}</strong></td>
+                              <td><strong style={{ color: 'var(--gold-light)' }}>{item.weightKg || 0} kg</strong></td>
+                              <td>{item.wasteType || 'Waste Collection'}</td>
+                              <td>{item.collectedDate || 'N/A'}</td>
+                              <td>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 700, color: rowStatus === 'Assigned to Collector' ? '#047857' : '#B45309' }}>
+                                    {rowStatus}
+                                  </span>
+                                  <button className="action-btn approve" onClick={() => handleAssignLogisticsAction(item.id || item._id)}>
+                                    Assign Collector
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -581,14 +731,14 @@ export default function ManagementDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {batchesAwaitingCert.length === 0 ? (
+                      {safeBatchesAwaitingCert.length === 0 ? (
                         <tr>
                           <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
                             No compost batches awaiting certification.
                           </td>
                         </tr>
                       ) : (
-                        batchesAwaitingCert.map(batch => (
+                        safeBatchesAwaitingCert.map(batch => (
                           <tr key={batch.id}>
                             <td><strong>{batch.id}</strong></td>
                             <td>
@@ -602,7 +752,7 @@ export default function ManagementDashboard({
                               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>NPK: {batch.npkRatio} | pH: {batch.ph}</div>
                             </td>
                             <td>
-                              <button className="action-btn approve" onClick={() => handleCertifyCarbon(batch.id)}>
+                              <button className="action-btn approve" onClick={() => handleCertifyCarbonAction(batch.id)}>
                                 Certify & Mint Credits
                               </button>
                             </td>
@@ -741,6 +891,8 @@ export default function ManagementDashboard({
         )}
 
       </main>
+
+      <DashboardAssistant dashboardName="management" accent="#10B981" />
 
       {/* =========================================================================
           MODAL A: MANDATORY DECLINE REASON MODAL
@@ -928,47 +1080,63 @@ export default function ManagementDashboard({
       {/* =========================================================================
           MODAL 2: ASSIGN LOGISTICS PARTNER OVERLAY
           ========================================================================= */}
-      {showLogisticsModal && (
+      {showCollectorAssignModal && selectedPickupToAssign && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
-          <div className="glass-panel login-card" style={{ maxWidth: '500px' }}>
-            <h3 style={{ fontSize: '20px', color: '#fff', marginBottom: '10px' }}>Assign Logistics Carrier</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              Select a transport service partner to haul collected waste directly to compost processing factories.
+          <div className="soft-card" style={{ maxWidth: '540px', width: '100%', padding: '32px', background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              WASTE COLLECTION ASSIGNMENT
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1E293B', marginBottom: '8px' }}>
+              Assign Collector to {selectedPickupToAssign.locationName || selectedPickupToAssign.site || selectedPickupToAssign.id}
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '20px', lineHeight: '1.4' }}>
+              Selected pickup: <strong>{selectedPickupToAssign.binId || selectedPickupToAssign.id}</strong> • Fill: <strong>{selectedPickupToAssign.fillLevel || 0}%</strong> • Urgency: <strong>{selectedPickupToAssign.urgency || 'Medium'}</strong>
             </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {LOGISTICS_PARTNERS.map(partner => (
-                <div 
-                  key={partner.id} 
-                  className="glass-card-interactive"
-                  onClick={() => confirmAssignLogistics(partner)}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
-                  <div>
-                    <h4 style={{ fontSize: '14px', color: '#fff' }}>{partner.name}</h4>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Fleet: {partner.fleet} | contact: {partner.contact}</p>
-                  </div>
-                  <span className="status-pill approved" style={{ fontSize: '10px', background: 'rgba(16,185,129,0.1)', color: 'var(--primary)', borderColor: 'rgba(16,185,129,0.2)' }}>
-                    {partner.rate}
-                  </span>
-                </div>
-              ))}
+
+            {collectorAssignMessage && (
+              <div style={{ padding: '12px', background: '#ECFDF5', border: '1px solid #6EE7B7', color: '#065F46', borderRadius: '10px', fontSize: '13px', fontWeight: '700', marginBottom: '16px', textAlign: 'center' }}>
+                {collectorAssignMessage}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Select Available Collector
+              </label>
+              <select
+                className="modern-input"
+                value={selectedCollectorId}
+                onChange={(e) => setSelectedCollectorId(e.target.value)}
+                style={{ width: '100%', height: '46px' }}
+                aria-label="Select available collector"
+              >
+                <option value="">-- Choose Collector --</option>
+                {dbCollectors.map(collector => (
+                  <option key={collector._id} value={collector._id}>
+                    {collector.fullName} (ID: {collector.employeeId || 'C-101'}) — Status: {collector.workerStatus || 'IDLE'}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <button 
-              className="guest-bypass-btn" 
-              onClick={() => { setShowLogisticsModal(false); }}
-              style={{ width: '100%', marginTop: '20px', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
-            >
-              Cancel Dispatch
-            </button>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn-eco-secondary"
+                onClick={() => setShowCollectorAssignModal(false)}
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-eco-primary"
+                onClick={handleCollectorAssignSubmit}
+                style={{ padding: '10px 18px', fontSize: '13px' }}
+              >
+                Assign Collector »
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -26,6 +26,49 @@ const MEMORY_REQUESTS = [
   }
 ];
 
+export const createWasteCollectionRequest = async (req, res) => {
+  try {
+    const { site, wasteType, weightKg, notes, collectedDate } = req.body;
+
+    if (!site || !wasteType || !weightKg || Number(weightKg) <= 0) {
+      return res.status(400).json({ success: false, message: 'Site, waste type, and a valid weight are required.' });
+    }
+
+    const count = await ServiceRequest.countDocuments({ requestType: 'WASTE_COLLECTION' });
+    const requestNumber = `COLL-${String(count + 1).padStart(4, '0')}`;
+
+    const request = await ServiceRequest.create({
+      requestNumber,
+      userId: req.user?._id || req.body.userId,
+      requestType: 'WASTE_COLLECTION',
+      organizationName: site,
+      contactPerson: req.user?.fullName || 'Customer',
+      phone: req.user?.phone || 'N/A',
+      email: req.user?.email || 'customer@greengold.org',
+      address: site,
+      town: req.user?.city || 'Islamabad',
+      city: req.user?.city || 'Islamabad',
+      siteName: site,
+      wasteType,
+      weightKg: Number(weightKg),
+      collectedDate: collectedDate ? new Date(collectedDate) : new Date(),
+      notes: notes || '',
+      status: 'WAITING_COLLECTION',
+      requiredWorkers: 1,
+      numberOfBins: 1,
+      binType: 'Waste Collection Pickup'
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Waste collection request submitted successfully.',
+      request
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const createRequest = async (req, res) => {
   try {
     const {
@@ -139,6 +182,35 @@ export const getMyRequests = async (req, res) => {
     return res.json({ success: true, count: requests.length, requests: requests || MEMORY_REQUESTS });
   } catch (error) {
     return res.json({ success: true, count: MEMORY_REQUESTS.length, requests: MEMORY_REQUESTS });
+  }
+};
+
+export const getMyWasteCollectionRequests = async (req, res) => {
+  try {
+    const requests = await ServiceRequest.find({
+      userId: req.user?._id,
+      requestType: 'WASTE_COLLECTION'
+    }).sort({ createdAt: -1 }).lean();
+
+    return res.json({
+      success: true,
+      count: requests.length,
+      requests: requests.map((item) => ({
+        id: item._id,
+        _id: item._id,
+        site: item.siteName || item.organizationName,
+        wasteType: item.wasteType,
+        weightKg: item.weightKg,
+        collectedDate: item.collectedDate ? new Date(item.collectedDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        status: item.status,
+        notes: item.notes || '',
+        assignedPartner: item.assignedCollectorId || null,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
