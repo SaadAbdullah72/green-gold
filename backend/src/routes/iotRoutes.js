@@ -7,7 +7,10 @@ let liveBinTelemetry = {
     binId: 'BIN-001',
     weightKg: 2.85,
     fillLevel: 65,
-    status: 'NORMAL', // NORMAL (0-60%), ALMOST FULL (61-85%), FULL (86-100%)
+    maintenance: false,
+    faultReason: null,
+    gasPpm: 120,
+    status: 'NORMAL', // NORMAL (0-60%), ALMOST FULL (61-85%), FULL (86-100%), MAINTENANCE_REQUIRED
     locationName: 'Riphah Campus, Islamabad',
     lat: 33.6844,
     lng: 73.0479,
@@ -17,45 +20,73 @@ let liveBinTelemetry = {
   }
 };
 
-// 1. ESP32 / Proteus Telemetry Ingestion Endpoint
+// 1. ESP32 / Arduino Proteus Telemetry Ingestion Endpoint
 // POST /api/iot/telemetry
 router.post('/telemetry', (req, res) => {
   try {
-    const { binId, weightKg, fillLevel, rfidTag, status, lat, lng, event } = req.body;
+    const { 
+      binId, 
+      weightKg, 
+      fillLevel, 
+      rfidTag, 
+      status, 
+      maintenance, 
+      faultReason, 
+      gasPpm,
+      lat, 
+      lng, 
+      event 
+    } = req.body;
 
     const targetBinId = binId || 'BIN-001';
     const numWeight = parseFloat(weightKg) || 0;
     const numFill = parseInt(fillLevel) || 0;
+    const isMaintenance = maintenance === true || maintenance === 'true' || status === 'MAINTENANCE_REQUIRED';
+    const numGas = parseInt(gasPpm) || 120;
 
     let computedStatus = 'NORMAL';
-    if (numFill >= 86) {
+    if (isMaintenance) {
+      computedStatus = 'MAINTENANCE_REQUIRED';
+    } else if (numFill >= 86) {
       computedStatus = 'FULL';
     } else if (numFill >= 61) {
       computedStatus = 'ALMOST FULL';
+    }
+
+    let defaultEvent = 'Routine Sensor Reading';
+    if (isMaintenance) {
+      defaultEvent = `MAINTENANCE ALERT: ${faultReason || 'Hardware Malfunction / Tamper Detected'}`;
+    } else if (numFill >= 86) {
+      defaultEvent = 'ALERT: BIN FULL - COLLECTOR DISPATCH REQUIRED';
+    } else if (numGas > 400) {
+      defaultEvent = 'HAZARD ALERT: HIGH GAS/SMOKE DETECTED';
     }
 
     const telemetryData = {
       binId: targetBinId,
       weightKg: numWeight,
       fillLevel: numFill,
+      maintenance: isMaintenance,
+      faultReason: isMaintenance ? (faultReason || 'Sensor/Lid Malfunction') : null,
+      gasPpm: numGas,
       status: status || computedStatus,
       locationName: 'Riphah Campus, Islamabad',
       lat: lat || 33.6844,
       lng: lng || 73.0479,
       rfidLastScanned: rfidTag || null,
       lastUpdated: new Date().toISOString(),
-      event: event || (numFill >= 86 ? 'ALERT: BIN FILLED' : 'Routine Sensor Reading')
+      event: event || defaultEvent
     };
 
     liveBinTelemetry[targetBinId] = telemetryData;
 
-    console.log(`[IoT Telemetry] Received from ${targetBinId}:`, telemetryData);
+    console.log(`[IoT Telemetry Ingest] ${targetBinId} -> Fill: ${numFill}%, Weight: ${numWeight}kg, Status: ${telemetryData.status}`);
 
     return res.json({
       success: true,
       message: 'Telemetry received successfully',
       telemetry: telemetryData,
-      alertTriggered: numFill >= 86
+      alertTriggered: numFill >= 86 || isMaintenance || numGas > 400
     });
   } catch (error) {
     console.error('[IoT Telemetry Error]:', error);
