@@ -62,19 +62,8 @@ export default function ManagementDashboard({
   const [loadingDb, setLoadingDb] = useState(false);
 
   useEffect(() => {
-    if (Array.isArray(dbCollectionQueue) && dbCollectionQueue.length > 0) {
-      setLocalCollectedWasteQueue(dbCollectionQueue);
-    } else {
-      try {
-        const storedQueue = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
-        if (storedQueue.length > 0) {
-          setLocalCollectedWasteQueue(storedQueue);
-          return;
-        }
-      } catch (e) {}
-      setLocalCollectedWasteQueue(Array.isArray(collectedWasteQueue) ? collectedWasteQueue : []);
-    }
-  }, [dbCollectionQueue, collectedWasteQueue]);
+    setLocalCollectedWasteQueue(Array.isArray(dbCollectionQueue) ? dbCollectionQueue : []);
+  }, [dbCollectionQueue]);
 
   // Live IoT Smart Bin Telemetry Poller
   const fetchLiveIoTData = async () => {
