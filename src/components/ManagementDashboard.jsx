@@ -57,28 +57,54 @@ export default function ManagementDashboard({
   const [dbWorkers, setDbWorkers] = useState([]);
   const [dbAuditLogs, setDbAuditLogs] = useState([]);
   const [dbCollectionQueue, setDbCollectionQueue] = useState([]);
+  const [liveBins, setLiveBins] = useState([]);
+  const [clearingData, setClearingData] = useState(false);
   const [loadingDb, setLoadingDb] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedQueue = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
-      const mergedQueue = [
-        ...(Array.isArray(storedQueue) ? storedQueue : []),
-        ...(Array.isArray(dbCollectionQueue) ? dbCollectionQueue : []),
-        ...((Array.isArray(collectedWasteQueue) ? collectedWasteQueue : []).filter((item) => ![...Array.isArray(storedQueue) ? storedQueue : [], ...Array.isArray(dbCollectionQueue) ? dbCollectionQueue : []].some((queuedItem) => queuedItem.id === item.id || queuedItem._id === item.id || queuedItem._id === item._id)))
-      ];
-      if (mergedQueue.length > 0) {
-        setLocalCollectedWasteQueue(mergedQueue);
-        return;
-      }
-    } catch (error) {
-      // fall through to prop-based queue
+    if (Array.isArray(dbCollectionQueue) && dbCollectionQueue.length > 0) {
+      setLocalCollectedWasteQueue(dbCollectionQueue);
+    } else {
+      try {
+        const storedQueue = JSON.parse(localStorage.getItem('greengold_collection_requests') || '[]');
+        if (storedQueue.length > 0) {
+          setLocalCollectedWasteQueue(storedQueue);
+          return;
+        }
+      } catch (e) {}
+      setLocalCollectedWasteQueue(Array.isArray(collectedWasteQueue) ? collectedWasteQueue : []);
     }
+  }, [dbCollectionQueue, collectedWasteQueue]);
 
-    if (Array.isArray(collectedWasteQueue) && collectedWasteQueue.length > 0) {
-      setLocalCollectedWasteQueue(collectedWasteQueue);
+  // Live IoT Smart Bin Telemetry Poller
+  const fetchLiveIoTData = async () => {
+    try {
+      const res = await api.iot.getBins();
+      if (res && res.bins) {
+        setLiveBins(res.bins);
+      }
+    } catch (e) {
+      // ignore
     }
-  }, [collectedWasteQueue, dbCollectionQueue]);
+  };
+
+  // Reset & Clear Previous Test Requests
+  const handleClearAllStaleRequests = async () => {
+    if (!window.confirm('Clear all previous IoT bin requests for a fresh clean demonstration?')) return;
+    try {
+      setClearingData(true);
+      localStorage.removeItem('greengold_collection_requests');
+      const res = await fetch('/api/iot/reset-requests', { method: 'POST' });
+      await res.json();
+      await loadManagementData(true);
+      await fetchLiveIoTData();
+      alert('All previous test requests cleared! Now trigger Proteus to see a fresh live request.');
+    } catch (err) {
+      alert('Reset error: ' + err.message);
+    } finally {
+      setClearingData(false);
+    }
+  };
 
   // Mandatory Decline Modal State
   const [showDeclineModal, setShowDeclineModal] = useState(false);
@@ -134,7 +160,11 @@ export default function ManagementDashboard({
 
   useEffect(() => {
     loadManagementData(true);
-    const timer = setInterval(() => loadManagementData(false), 6000);
+    fetchLiveIoTData();
+    const timer = setInterval(() => {
+      loadManagementData(false);
+      fetchLiveIoTData();
+    }, 2500);
     return () => clearInterval(timer);
   }, []);
 
@@ -394,6 +424,234 @@ export default function ManagementDashboard({
             <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--primary)', lineHeight: '1.1', marginBottom: '8px' }}>{stats.recycledPlasticsKg} kg</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Cleanliness Grade A</div>
           </div>
+        </div>
+
+        {/* =========================================================================
+            LIVE IOT SMART BIN TELEMETRY & REAL-TIME ALARM HUB
+            ========================================================================= */}
+        <div style={{
+          marginBottom: '28px',
+          padding: '22px 26px',
+          background: liveBins.some(b => b.fillLevel >= 86 || b.maintenance) 
+            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%)' 
+            : 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 95, 70, 0.03) 100%)',
+          borderRadius: '20px',
+          border: liveBins.some(b => b.fillLevel >= 86 || b.maintenance)
+            ? '2px solid rgba(239, 68, 68, 0.5)'
+            : '1px solid var(--border-color)',
+          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Header row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                background: liveBins.some(b => b.fillLevel >= 86 || b.maintenance) ? '#EF4444' : '#10B981',
+                boxShadow: liveBins.some(b => b.fillLevel >= 86 || b.maintenance) ? '0 0 12px #EF4444' : '0 0 8px #10B981',
+                animation: 'pulse 1.8s infinite'
+              }}></div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>Live Smart Bin Telemetry Monitor</span>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                    Proteus Hardware Bridge Sync
+                  </span>
+                </h3>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button 
+                onClick={handleClearAllStaleRequests}
+                disabled={clearingData}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #E2E8F0',
+                  background: '#FFFFFF',
+                  color: '#64748B',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Reset previous test tickets for a clean demonstration"
+              >
+                {clearingData ? 'Clearing...' : '🧹 Clear Old Test Requests'}
+              </button>
+            </div>
+          </div>
+
+          {/* Cards for each live bin */}
+          {liveBins.length === 0 ? (
+            <div style={{ padding: '16px', background: 'var(--bg-surface)', borderRadius: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              ⚡ Waiting for incoming telemetry from Proteus simulation bridge...
+            </div>
+          ) : (
+            liveBins.map(bin => {
+              const isFull = (bin.fillLevel || 0) >= 86;
+              const isMaint = bin.maintenance || bin.status === 'MAINTENANCE_REQUIRED';
+              const fillPct = bin.fillLevel || 0;
+
+              return (
+                <div key={bin.binId} style={{
+                  padding: '18px 22px',
+                  background: 'var(--bg-surface)',
+                  borderRadius: '16px',
+                  border: isFull ? '1.5px solid #EF4444' : isMaint ? '1.5px solid #F59E0B' : '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px'
+                }}>
+                  {/* Row 1: ID, status, metrics */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        padding: '6px 12px',
+                        borderRadius: '10px',
+                        background: isFull ? '#FEE2E2' : isMaint ? '#FEF3C7' : '#D1FAE5',
+                        color: isFull ? '#991B1B' : isMaint ? '#92400E' : '#065F46',
+                        fontWeight: '900',
+                        fontSize: '15px',
+                        letterSpacing: '0.04em'
+                      }}>
+                        {bin.binId}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
+                          {bin.locationName || 'Riphah Campus, Islamabad'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          Last Sync: {bin.lastUpdated ? new Date(bin.lastUpdated).toLocaleTimeString() : 'Just now'} | Event: {bin.event || 'Routine Telemetry'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.05em' }}>WEIGHT</div>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>{bin.weightKg || 0} kg</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.05em' }}>GAS SENSOR</div>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: (bin.gasPpm > 400) ? '#EF4444' : 'var(--text-primary)' }}>{bin.gasPpm || 120} ppm</div>
+                      </div>
+                      <div>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '7px 16px',
+                          borderRadius: '8px',
+                          fontWeight: '800',
+                          fontSize: '12px',
+                          background: isFull ? '#EF4444' : isMaint ? '#F59E0B' : '#10B981',
+                          color: '#FFFFFF',
+                          boxShadow: isFull ? '0 4px 10px rgba(239, 68, 68, 0.35)' : 'none'
+                        }}>
+                          {isFull ? '🚨 BIN FULL (90%+)' : isMaint ? '⚠️ MAINTENANCE REQ' : '🟢 NORMAL STATUS'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Progress bar for fill level */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
+                      <span style={{ color: isFull ? '#EF4444' : 'var(--text-secondary)' }}>
+                        Capacity Fill Level: <strong>{fillPct}%</strong>
+                      </span>
+                      <span style={{ color: isFull ? '#EF4444' : 'var(--text-muted)' }}>
+                        {isFull ? '⚠️ Capacity Exceeded -> Automatic Pickup Ticket Created' : 'Threshold Alert: 86%'}
+                      </span>
+                    </div>
+                    <div style={{ width: '100%', height: '10px', background: '#E2E8F0', borderRadius: '20px', overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${fillPct}%`,
+                        height: '100%',
+                        borderRadius: '20px',
+                        background: isFull 
+                          ? 'linear-gradient(90deg, #F87171 0%, #DC2626 100%)' 
+                          : fillPct >= 61 
+                            ? 'linear-gradient(90deg, #FBBF24 0%, #D97706 100%)' 
+                            : 'linear-gradient(90deg, #34D399 0%, #059669 100%)',
+                        transition: 'width 0.4s ease'
+                      }}></div>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Action alert banner if full or maintenance */}
+                  {isFull && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'rgba(239, 68, 68, 0.09)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      padding: '12px 18px',
+                      borderRadius: '12px'
+                    }}>
+                      <div style={{ fontSize: '13px', color: '#991B1B', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>♻️ Alert Active: Bin reached {fillPct}% capacity. Logistics waste collection ticket is ready for driver assignment.</span>
+                      </div>
+                      <button
+                        onClick={() => setActiveSubTab('logistics')}
+                        style={{
+                          background: '#EF4444',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          padding: '7px 16px',
+                          borderRadius: '8px',
+                          fontWeight: '800',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
+                        }}
+                      >
+                        Assign Waste Collector ⮞
+                      </button>
+                    </div>
+                  )}
+
+                  {isMaint && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'rgba(245, 158, 11, 0.09)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      padding: '12px 18px',
+                      borderRadius: '12px'
+                    }}>
+                      <div style={{ fontSize: '13px', color: '#92400E', fontWeight: '800' }}>
+                        ⚠️ Hardware Fault: {bin.faultReason || 'Lid Jammed / Tamper Triggered'}. Technical inspection ticket created.
+                      </div>
+                      <button
+                        onClick={() => setActiveSubTab('approvals')}
+                        style={{
+                          background: '#F59E0B',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          padding: '7px 16px',
+                          borderRadius: '8px',
+                          fontWeight: '800',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(245, 158, 11, 0.4)'
+                        }}
+                      >
+                        Assign Technical Staff ⮞
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Sub-Tab Navigation Bar */}

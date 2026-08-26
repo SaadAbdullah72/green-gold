@@ -45,7 +45,7 @@ def main():
     parser = argparse.ArgumentParser(description="GreenGold OS Proteus Telemetry Bridge")
     parser.add_argument("--port", default="COM2", help="Serial port to listen on (e.g. COM2)")
     parser.add_argument("--baud", type=int, default=9600, help="Baud rate (default: 9600)")
-    parser.add_argument("--api", default="http://localhost:5000/api/iot/telemetry", help="GreenGold OS Backend API URL")
+    parser.add_argument("--api", default="https://green-gold-dusky.vercel.app/api/iot/telemetry", help="GreenGold OS Backend API URL")
     parser.add_argument("--demo", action="store_true", help="Run in mock/demo mode without physical/virtual COM port")
 
     args = parser.parse_args()
@@ -59,25 +59,72 @@ def main():
     print("=" * 70)
 
     if args.demo:
-        print("[INFO] Running in Demo Mode (Simulating Proteus Serial stream)...")
-        modes = [
-            {"binId": "BIN-001", "fillLevel": 45, "weightKg": 1.80, "gasPpm": 120, "maintenance": False, "status": "NORMAL"},
-            {"binId": "BIN-001", "fillLevel": 70, "weightKg": 3.20, "gasPpm": 180, "maintenance": False, "status": "ALMOST FULL"},
-            {"binId": "BIN-001", "fillLevel": 92, "weightKg": 4.50, "gasPpm": 210, "maintenance": False, "status": "FULL"},
-            {"binId": "BIN-001", "fillLevel": 92, "weightKg": 4.50, "gasPpm": 210, "maintenance": True, "faultReason": "LID_JAMMED / TILT_DETECTED", "status": "MAINTENANCE_REQUIRED"},
-            {"binId": "BIN-001", "fillLevel": 0, "weightKg": 0.0, "gasPpm": 90, "maintenance": False, "rfidTag": "COLLECTOR-STAFF-01", "status": "NORMAL"},
-        ]
-        idx = 0
+        print("\n🎮 [INTERACTIVE DEMO CONTROLLER ACTIVATED]")
+        print("Choose an event to send to GreenGold OS Backend:")
+        print("  [1] 🟢 Send NORMAL State (Fill: 40%, Weight: 1.8kg)")
+        print("  [2] 🔴 Send BIN FULL Alert (Fill: 95%, Weight: 8.5kg) -> Triggers Waste Collector Ticket in Management")
+        print("  [3] 🟡 Send MAINTENANCE Fault (Lid Jammed / Tilt) -> Triggers Technical Team Ticket in Management")
+        print("  [4] 🎫 Send RFID Staff Scan (Bin Emptied -> Reset 0%)")
+        print("  [5] 🔄 Auto-Loop Mode (Cycles all modes every 4s)")
+        print("  [q] Quit")
+        print("=" * 70)
+
         while True:
-            sample = modes[idx % len(modes)]
-            print(f"\n[Proteus Demo Stream -> Serial TX]: {json.dumps(sample)}")
+            try:
+                choice = input("\n👉 Enter choice [1, 2, 3, 4, 5, or q]: ").strip()
+            except (KeyboardInterrupt, EOFError):
+                print("\n[INFO] Exiting...")
+                break
+
+            if choice == '1':
+                sample = {"binId": "BIN-001", "fillLevel": 40, "weightKg": 1.80, "gasPpm": 120, "maintenance": False, "status": "NORMAL"}
+            elif choice == '2':
+                sample = {"binId": "BIN-001", "fillLevel": 95, "weightKg": 8.50, "gasPpm": 210, "maintenance": False, "status": "FULL"}
+            elif choice == '3':
+                sample = {"binId": "BIN-001", "fillLevel": 60, "weightKg": 3.00, "gasPpm": 150, "maintenance": True, "faultReason": "LID_JAMMED / TILT_DETECTED", "status": "MAINTENANCE_REQUIRED"}
+            elif choice == '4':
+                sample = {"binId": "BIN-001", "fillLevel": 0, "weightKg": 0.0, "gasPpm": 80, "maintenance": False, "rfidTag": "COLLECTOR-STAFF-01", "status": "NORMAL"}
+            elif choice == '5':
+                print("[INFO] Starting Auto-Loop Mode (Press Ctrl+C to stop)...")
+                loop_modes = [
+                    {"binId": "BIN-001", "fillLevel": 45, "weightKg": 1.80, "gasPpm": 120, "maintenance": False, "status": "NORMAL"},
+                    {"binId": "BIN-001", "fillLevel": 95, "weightKg": 8.50, "gasPpm": 210, "maintenance": False, "status": "FULL"},
+                    {"binId": "BIN-001", "fillLevel": 60, "weightKg": 3.00, "gasPpm": 150, "maintenance": True, "faultReason": "LID_JAMMED / TILT_DETECTED", "status": "MAINTENANCE_REQUIRED"},
+                    {"binId": "BIN-001", "fillLevel": 0, "weightKg": 0.0, "gasPpm": 80, "maintenance": False, "rfidTag": "COLLECTOR-STAFF-01", "status": "NORMAL"}
+                ]
+                try:
+                    for s in loop_modes:
+                        print(f"\n[Proteus TX]: {json.dumps(s)}")
+                        success, res = send_telemetry_to_api(args.api, s)
+                        if success:
+                            extra = f" | AutoTicket: {res.get('generatedRequestType')}" if res.get('generatedRequestId') else ""
+                            print(f"  ↳ ✅ Dispatched! Status: {s.get('status')}{extra}")
+                        else:
+                            print(f"  ↳ ❌ Failed: {res}")
+                        time.sleep(4)
+                except KeyboardInterrupt:
+                    print("\n[INFO] Auto-Loop stopped.")
+                continue
+            elif choice.lower() == 'q':
+                print("[INFO] Exiting demo.")
+                break
+            else:
+                print("⚠️ Invalid choice! Please enter 1, 2, 3, 4, 5, or q.")
+                continue
+
+            print(f"\n[Proteus Simulated Serial TX]: {json.dumps(sample)}")
             success, res = send_telemetry_to_api(args.api, sample)
             if success:
-                print(f"✅ [API 200 OK] Server Processed: Status={sample.get('status')} | AlertTriggered={res.get('alertTriggered')}")
+                extra = f" | AutoTicket Created: {res.get('generatedRequestType')} (ID: {res.get('generatedRequestId')})" if res.get('generatedRequestId') else ""
+                print(f"✅ [API 200 OK] Backend Received: Status={sample.get('status')}{extra}")
+                if choice == '2':
+                    print("  👉 Check Management Dashboard -> 'Assign Logistics' Tab to assign a Collector!")
+                elif choice == '3':
+                    print("  👉 Check Management Dashboard -> 'Bin Requests' Tab to assign a Technical Worker!")
             else:
                 print(f"❌ [API Error] {res}")
-            idx += 1
-            time.sleep(4)
+
+        return
 
     # Physical / Virtual Serial Port Mode
     try:
@@ -106,18 +153,51 @@ def main():
             if not line:
                 continue
 
-            print(f"[Proteus Raw Serial]: {line}")
+            print(f"\n[Proteus Raw Serial]: {line}", flush=True)
 
-            if line.startswith('{') and line.endswith('}'):
+            # Clean up line and extract JSON content
+            cleaned_line = line.replace('\\:', ':').replace('\\,', ',').replace('\\"', '"').replace('\\}', '}').replace('\\{', '{')
+            
+            payload = None
+            if '{' in cleaned_line and '}' in cleaned_line:
+                start_idx = cleaned_line.find('{')
+                end_idx = cleaned_line.rfind('}') + 1
+                json_candidate = cleaned_line[start_idx:end_idx]
+                
                 try:
-                    payload = json.loads(line)
-                    success, res = send_telemetry_to_api(args.api, payload)
-                    if success:
-                        print(f"  ↳ ✅ Dispatched to GreenGold OS API! Status: {payload.get('status')} | Response: {res.get('message')}")
-                    else:
-                        print(f"  ↳ ❌ API Dispatch Failed: {res}")
+                    payload = json.loads(json_candidate)
                 except json.JSONDecodeError:
-                    print("  ↳ ⚠️ Incomplete or invalid JSON line received, skipping...")
+                    # Regex fallback extractor
+                    import re
+                    fill_m = re.search(r'fillLevel[\"\':\s]+(\d+)', cleaned_line, re.I)
+                    weight_m = re.search(r'weightKg[\"\':\s]+([\d\.]+)', cleaned_line, re.I)
+                    status_m = re.search(r'status[\"\':\s]+[\"\']?([A-Z_ ]+)[\"\']?', cleaned_line, re.I)
+                    bin_m = re.search(r'binId[\"\':\s]+[\"\']?([A-Z0-9\-_]+)[\"\']?', cleaned_line, re.I)
+                    maint_m = re.search(r'maintenance[\"\':\s]+(true|false)', cleaned_line, re.I)
+
+                    if fill_m or status_m:
+                        fill_val = int(fill_m.group(1)) if fill_m else 0
+                        status_val = status_m.group(1).strip() if status_m else ("FULL" if fill_val >= 86 else "NORMAL")
+                        payload = {
+                            "binId": bin_m.group(1) if bin_m else "BIN-001",
+                            "fillLevel": fill_val,
+                            "weightKg": float(weight_m.group(1)) if weight_m else 0.0,
+                            "gasPpm": 120,
+                            "maintenance": maint_m.group(1).lower() == "true" if maint_m else False,
+                            "status": status_val
+                        }
+
+            if payload:
+                success, res = send_telemetry_to_api(args.api, payload)
+                if success:
+                    extra_info = ""
+                    if isinstance(res, dict) and res.get("generatedRequestId"):
+                        extra_info = f" | AutoTicket: {res.get('generatedRequestType')} (ID: {res.get('generatedRequestId')})"
+                    print(f"  ↳ ✅ Dispatched to GreenGold OS API! Status: {payload.get('status')}{extra_info}")
+                else:
+                    print(f"  ↳ ❌ API Dispatch Failed: {res}")
+            else:
+                print("  ↳ ⚠️ Incomplete or invalid JSON line received, skipping...")
 
         except KeyboardInterrupt:
             print("\n[INFO] Stopped by user.")

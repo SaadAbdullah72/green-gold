@@ -1,3 +1,6 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
+#line 1 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
 /*
  * ============================================================================
  * GreenGold OS - Smart IoT Bin Simulation Firmware (Arduino UNO / Proteus)
@@ -39,6 +42,11 @@ const char* BIN_ID = "BIN-001";
 unsigned long lastTelemetryTime = 0;
 const unsigned long TELEMETRY_INTERVAL = 3000; // Send telemetry every 3 seconds
 
+#line 42 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
+void setup();
+#line 75 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
+void loop();
+#line 42 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
 void setup() {
   // Initialize Serial Communication for Telemetry
   Serial.begin(9600);
@@ -184,3 +192,4 @@ void loop() {
 
   delay(200); // Small loop delay
 }
+

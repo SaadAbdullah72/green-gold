@@ -1,3 +1,5 @@
+# 1 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
+# 1 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino"
 /*
  * ============================================================================
  * GreenGold OS - Smart IoT Bin Simulation Firmware (Arduino UNO / Proteus)
@@ -18,22 +20,22 @@
  * ============================================================================
  */
 
-#include <LiquidCrystal.h>
+# 22 "c:\\Users\\Hp\\Desktop\\GreenGold Os\\firmware\\smart_bin_proteus\\smart_bin_proteus.ino" 2
 
 // Initialize 16x2 LCD (RS, E, D4, D5, D6, D7)
 LiquidCrystal lcd(12, 11, 4, 5, 6, 7);
 
 // Pin Assignments
-const int PIN_FILL_POT     = A0;  // RV1: Fill Level Potentiometer
-const int PIN_WEIGHT_POT   = A1;  // RV2: Weight Potentiometer
-const int PIN_GAS_POT      = A2;  // RV3: Gas / Smoke Potentiometer
-const int PIN_FAULT_SW     = 8;   // SW1: Maintenance Trigger Switch (Active LOW)
-const int PIN_RFID_SW      = 9;   // SW2: RFID Emulation Trigger (Active LOW)
+const int PIN_FILL_POT = A0; // RV1: Fill Level Potentiometer
+const int PIN_WEIGHT_POT = A1; // RV2: Weight Potentiometer
+const int PIN_GAS_POT = A2; // RV3: Gas / Smoke Potentiometer
+const int PIN_FAULT_SW = 8; // SW1: Maintenance Trigger Switch (Active LOW)
+const int PIN_RFID_SW = 9; // SW2: RFID Emulation Trigger (Active LOW)
 
-const int PIN_LED_GREEN    = 2;   // Normal Status LED
-const int PIN_LED_RED      = 3;   // Bin Full Alert LED
-const int PIN_LED_YELLOW   = 10;  // Maintenance Alert LED
-const int PIN_BUZZER       = 13;  // Alarm Buzzer
+const int PIN_LED_GREEN = 2; // Normal Status LED
+const int PIN_LED_RED = 3; // Bin Full Alert LED
+const int PIN_LED_YELLOW = 10; // Maintenance Alert LED
+const int PIN_BUZZER = 13; // Alarm Buzzer
 
 const char* BIN_ID = "BIN-001";
 unsigned long lastTelemetryTime = 0;
@@ -50,46 +52,46 @@ void setup() {
   lcd.print("  GreenGold OS  ");
   lcd.setCursor(0, 1);
   lcd.print("Smart Bin Boot..");
-  
-  // Configure GPIO Pins
-  pinMode(PIN_LED_GREEN, OUTPUT);
-  pinMode(PIN_LED_RED, OUTPUT);
-  pinMode(PIN_LED_YELLOW, OUTPUT);
-  pinMode(PIN_BUZZER, OUTPUT);
 
-  pinMode(PIN_FAULT_SW, INPUT_PULLUP);
-  pinMode(PIN_RFID_SW, INPUT_PULLUP);
+  // Configure GPIO Pins
+  pinMode(PIN_LED_GREEN, 0x1);
+  pinMode(PIN_LED_RED, 0x1);
+  pinMode(PIN_LED_YELLOW, 0x1);
+  pinMode(PIN_BUZZER, 0x1);
+
+  pinMode(PIN_FAULT_SW, 0x2);
+  pinMode(PIN_RFID_SW, 0x2);
 
   // Initial LED Test
-  digitalWrite(PIN_LED_GREEN, HIGH);
-  digitalWrite(PIN_LED_RED, HIGH);
-  digitalWrite(PIN_LED_YELLOW, HIGH);
+  digitalWrite(PIN_LED_GREEN, 0x1);
+  digitalWrite(PIN_LED_RED, 0x1);
+  digitalWrite(PIN_LED_YELLOW, 0x1);
   delay(1000);
-  digitalWrite(PIN_LED_GREEN, LOW);
-  digitalWrite(PIN_LED_RED, LOW);
-  digitalWrite(PIN_LED_YELLOW, LOW);
+  digitalWrite(PIN_LED_GREEN, 0x0);
+  digitalWrite(PIN_LED_RED, 0x0);
+  digitalWrite(PIN_LED_YELLOW, 0x0);
 
   lcd.clear();
 }
 
 void loop() {
   // 1. Read Analog Sensors
-  int rawFill   = analogRead(PIN_FILL_POT);   // 0 to 1023
+  int rawFill = analogRead(PIN_FILL_POT); // 0 to 1023
   int rawWeight = analogRead(PIN_WEIGHT_POT); // 0 to 1023
-  int rawGas    = analogRead(PIN_GAS_POT);    // 0 to 1023
+  int rawGas = analogRead(PIN_GAS_POT); // 0 to 1023
 
   // Map values to engineering units
   int fillPercent = map(rawFill, 0, 1023, 0, 100);
-  fillPercent = constrain(fillPercent, 0, 100);
+  fillPercent = ((fillPercent)<(0)?(0):((fillPercent)>(100)?(100):(fillPercent)));
 
   float weightKg = (float)map(rawWeight, 0, 1023, 0, 1000) / 100.0; // 0.00 to 10.00 kg
-  weightKg = constrain(weightKg, 0.0, 15.0);
+  weightKg = ((weightKg)<(0.0)?(0.0):((weightKg)>(15.0)?(15.0):(weightKg)));
 
   int gasPpm = map(rawGas, 0, 1023, 50, 1000); // 50 to 1000 ppm
 
   // 2. Read Digital Triggers
-  bool isMaintenanceFault = (digitalRead(PIN_FAULT_SW) == LOW);
-  bool isRfidScanned      = (digitalRead(PIN_RFID_SW) == LOW);
+  bool isMaintenanceFault = (digitalRead(PIN_FAULT_SW) == 0x0);
+  bool isRfidScanned = (digitalRead(PIN_RFID_SW) == 0x0);
 
   // 3. Determine Bin Status & Control Actuators
   String binStatus = "NORMAL";
@@ -98,39 +100,39 @@ void loop() {
   if (isMaintenanceFault) {
     binStatus = "MAINTENANCE_REQUIRED";
     faultReason = "LID_JAMMED / SENSOR_FAULT";
-    
+
     // Actuators
-    digitalWrite(PIN_LED_GREEN, LOW);
-    digitalWrite(PIN_LED_RED, LOW);
-    digitalWrite(PIN_LED_YELLOW, HIGH);
-    digitalWrite(PIN_BUZZER, HIGH);
-  } 
+    digitalWrite(PIN_LED_GREEN, 0x0);
+    digitalWrite(PIN_LED_RED, 0x0);
+    digitalWrite(PIN_LED_YELLOW, 0x1);
+    digitalWrite(PIN_BUZZER, 0x1);
+  }
   else if (fillPercent >= 86) {
     binStatus = "FULL";
-    
+
     // Actuators
-    digitalWrite(PIN_LED_GREEN, LOW);
-    digitalWrite(PIN_LED_RED, HIGH);
-    digitalWrite(PIN_LED_YELLOW, LOW);
-    digitalWrite(PIN_BUZZER, HIGH);
-  } 
+    digitalWrite(PIN_LED_GREEN, 0x0);
+    digitalWrite(PIN_LED_RED, 0x1);
+    digitalWrite(PIN_LED_YELLOW, 0x0);
+    digitalWrite(PIN_BUZZER, 0x1);
+  }
   else if (fillPercent >= 61) {
     binStatus = "ALMOST FULL";
-    
+
     // Actuators
-    digitalWrite(PIN_LED_GREEN, HIGH);
-    digitalWrite(PIN_LED_RED, LOW);
-    digitalWrite(PIN_LED_YELLOW, HIGH);
-    digitalWrite(PIN_BUZZER, LOW);
-  } 
+    digitalWrite(PIN_LED_GREEN, 0x1);
+    digitalWrite(PIN_LED_RED, 0x0);
+    digitalWrite(PIN_LED_YELLOW, 0x1);
+    digitalWrite(PIN_BUZZER, 0x0);
+  }
   else {
     binStatus = "NORMAL";
-    
+
     // Actuators
-    digitalWrite(PIN_LED_GREEN, HIGH);
-    digitalWrite(PIN_LED_RED, LOW);
-    digitalWrite(PIN_LED_YELLOW, LOW);
-    digitalWrite(PIN_BUZZER, LOW);
+    digitalWrite(PIN_LED_GREEN, 0x1);
+    digitalWrite(PIN_LED_RED, 0x0);
+    digitalWrite(PIN_LED_YELLOW, 0x0);
+    digitalWrite(PIN_BUZZER, 0x0);
   }
 
   // 4. Update LCD Screen
