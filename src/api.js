@@ -272,6 +272,14 @@ export const api = {
       return await handleResponse(res);
     },
 
+    acceptAssignment: async (assignmentId) => {
+      const res = await fetch(`${API_BASE}/collector/assignments/${assignmentId}/accept`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
     completeAssignment: async (assignmentId) => {
       const res = await fetch(`${API_BASE}/collector/assignments/${assignmentId}/complete`, {
         method: 'PATCH',

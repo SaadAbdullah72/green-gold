@@ -51,35 +51,52 @@ export const getAllRequests = async (req, res) => {
 
 export const getCollectionQueue = async (req, res) => {
   try {
-    const requests = await ServiceRequest.find({ requestType: 'WASTE_COLLECTION' }).sort({ createdAt: -1 }).lean();
+    const rawRequests = await ServiceRequest.find({ requestType: 'WASTE_COLLECTION' })
+      .populate('assignedCollectorId', 'fullName email phone workerStatus')
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const normalizeStatus = (item) => {
-      if (item.assignedCollectorId || item.status === 'ROUTED_FOR_COLLECTION' || item.status === 'ASSIGNED_TO_COLLECTOR') {
-        return 'Assigned to Collector';
+    const requests = await Promise.all(rawRequests.map(async (item) => {
+      let assignment = null;
+      if (item.assignedCollectorId) {
+        assignment = await CollectorAssignment.findOne({
+          $or: [{ requestId: item._id }, { pickupId: item._id }]
+        }).sort({ createdAt: -1 }).lean();
       }
-      if (item.status === 'WAITING_COLLECTION') return 'Awaiting Partner';
-      if (item.status === 'COMPLETED') return 'Completed';
-      return item.status || 'Awaiting Partner';
-    };
 
-    return res.json({
-      success: true,
-      count: requests.length,
-      requests: requests.map((item) => ({
+      let dynamicStatus = 'Awaiting Partner';
+      if (item.status === 'COMPLETED' || (assignment && assignment.status === 'COMPLETED')) {
+        dynamicStatus = 'Completed';
+      } else if (assignment && (assignment.status === 'IN_PROGRESS' || assignment.status === 'ACCEPTED')) {
+        dynamicStatus = 'In Progress (On Route)';
+      } else if (item.assignedCollectorId || (assignment && assignment.status === 'ASSIGNED')) {
+        dynamicStatus = 'Assigned to Collector (Waiting for Response)';
+      } else if (item.status === 'WAITING_COLLECTION') {
+        dynamicStatus = 'Awaiting Partner';
+      }
+
+      return {
         id: item._id,
         _id: item._id,
         site: item.siteName || item.organizationName,
         wasteType: item.wasteType,
         weightKg: item.weightKg,
-        collectedDate: item.collectedDate ? new Date(item.collectedDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-        status: normalizeStatus(item),
+        collectedDate: item.collectedDate ? new Date(item.collectedDate).toISOString().slice(0, 10) : new Date(item.createdAt).toISOString().slice(0, 10),
+        status: dynamicStatus,
+        assignedCollectorName: item.assignedCollectorId ? item.assignedCollectorId.fullName : null,
         assignedPartner: item.assignedCollectorId || null,
         assignedCollector: item.assignedCollectorId || null,
         requestId: item._id,
         notes: item.notes || '',
         createdAt: item.createdAt,
         updatedAt: item.updatedAt
-      }))
+      };
+    }));
+
+    return res.json({
+      success: true,
+      count: requests.length,
+      requests
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -149,7 +166,22 @@ export const getTechnicalWorkers = async (req, res) => {
 
 export const getCollectors = async (req, res) => {
   try {
-    const collectors = await User.find({ role: 'COLLECTOR' }).select('-passwordHash');
+    const rawCollectors = await User.find({ role: 'COLLECTOR' }).select('-passwordHash').lean();
+    
+    const collectors = await Promise.all(rawCollectors.map(async (col) => {
+      const activeCount = await CollectorAssignment.countDocuments({
+        collectorId: col._id,
+        status: { $in: ['ASSIGNED', 'IN_PROGRESS', 'ACCEPTED'] }
+      });
+
+      return {
+        ...col,
+        activeTasksCount: activeCount,
+        workerStatus: activeCount > 0 ? 'BUSY' : 'IDLE',
+        status: activeCount > 0 ? 'BUSY' : 'IDLE'
+      };
+    }));
+
     return res.json({ success: true, count: collectors.length, collectors });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

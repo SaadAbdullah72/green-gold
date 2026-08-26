@@ -415,234 +415,6 @@ export default function ManagementDashboard({
           </div>
         </div>
 
-        {/* =========================================================================
-            LIVE IOT SMART BIN TELEMETRY & REAL-TIME ALARM HUB
-            ========================================================================= */}
-        <div style={{
-          marginBottom: '28px',
-          padding: '22px 26px',
-          background: liveBins.some(b => b.fillLevel >= 86 || b.maintenance) 
-            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%)' 
-            : 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 95, 70, 0.03) 100%)',
-          borderRadius: '20px',
-          border: liveBins.some(b => b.fillLevel >= 86 || b.maintenance)
-            ? '2px solid rgba(239, 68, 68, 0.5)'
-            : '1px solid var(--border-color)',
-          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Header row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '14px',
-                height: '14px',
-                borderRadius: '50%',
-                background: liveBins.some(b => b.fillLevel >= 86 || b.maintenance) ? '#EF4444' : '#10B981',
-                boxShadow: liveBins.some(b => b.fillLevel >= 86 || b.maintenance) ? '0 0 12px #EF4444' : '0 0 8px #10B981',
-                animation: 'pulse 1.8s infinite'
-              }}></div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span>Live Smart Bin Telemetry Monitor</span>
-                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                    Proteus Hardware Bridge Sync
-                  </span>
-                </h3>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <button 
-                onClick={handleClearAllStaleRequests}
-                disabled={clearingData}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
-                  background: '#FFFFFF',
-                  color: '#64748B',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-                title="Reset previous test tickets for a clean demonstration"
-              >
-                {clearingData ? 'Clearing...' : '🧹 Clear Old Test Requests'}
-              </button>
-            </div>
-          </div>
-
-          {/* Cards for each live bin */}
-          {liveBins.length === 0 ? (
-            <div style={{ padding: '16px', background: 'var(--bg-surface)', borderRadius: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-              ⚡ Waiting for incoming telemetry from Proteus simulation bridge...
-            </div>
-          ) : (
-            liveBins.map(bin => {
-              const isFull = (bin.fillLevel || 0) >= 86;
-              const isMaint = bin.maintenance || bin.status === 'MAINTENANCE_REQUIRED';
-              const fillPct = bin.fillLevel || 0;
-
-              return (
-                <div key={bin.binId} style={{
-                  padding: '18px 22px',
-                  background: 'var(--bg-surface)',
-                  borderRadius: '16px',
-                  border: isFull ? '1.5px solid #EF4444' : isMaint ? '1.5px solid #F59E0B' : '1px solid var(--border-color)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '14px'
-                }}>
-                  {/* Row 1: ID, status, metrics */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{
-                        padding: '6px 12px',
-                        borderRadius: '10px',
-                        background: isFull ? '#FEE2E2' : isMaint ? '#FEF3C7' : '#D1FAE5',
-                        color: isFull ? '#991B1B' : isMaint ? '#92400E' : '#065F46',
-                        fontWeight: '900',
-                        fontSize: '15px',
-                        letterSpacing: '0.04em'
-                      }}>
-                        {bin.binId}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
-                          {bin.locationName || 'Riphah Campus, Islamabad'}
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          Last Sync: {bin.lastUpdated ? new Date(bin.lastUpdated).toLocaleTimeString() : 'Just now'} | Event: {bin.event || 'Routine Telemetry'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.05em' }}>WEIGHT</div>
-                        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>{bin.weightKg || 0} kg</div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.05em' }}>GAS SENSOR</div>
-                        <div style={{ fontSize: '16px', fontWeight: '800', color: (bin.gasPpm > 400) ? '#EF4444' : 'var(--text-primary)' }}>{bin.gasPpm || 120} ppm</div>
-                      </div>
-                      <div>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '7px 16px',
-                          borderRadius: '8px',
-                          fontWeight: '800',
-                          fontSize: '12px',
-                          background: isFull ? '#EF4444' : isMaint ? '#F59E0B' : '#10B981',
-                          color: '#FFFFFF',
-                          boxShadow: isFull ? '0 4px 10px rgba(239, 68, 68, 0.35)' : 'none'
-                        }}>
-                          {isFull ? '🚨 BIN FULL (90%+)' : isMaint ? '⚠️ MAINTENANCE REQ' : '🟢 NORMAL STATUS'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: Progress bar for fill level */}
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
-                      <span style={{ color: isFull ? '#EF4444' : 'var(--text-secondary)' }}>
-                        Capacity Fill Level: <strong>{fillPct}%</strong>
-                      </span>
-                      <span style={{ color: isFull ? '#EF4444' : 'var(--text-muted)' }}>
-                        {isFull ? '⚠️ Capacity Exceeded -> Automatic Pickup Ticket Created' : 'Threshold Alert: 86%'}
-                      </span>
-                    </div>
-                    <div style={{ width: '100%', height: '10px', background: '#E2E8F0', borderRadius: '20px', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${fillPct}%`,
-                        height: '100%',
-                        borderRadius: '20px',
-                        background: isFull 
-                          ? 'linear-gradient(90deg, #F87171 0%, #DC2626 100%)' 
-                          : fillPct >= 61 
-                            ? 'linear-gradient(90deg, #FBBF24 0%, #D97706 100%)' 
-                            : 'linear-gradient(90deg, #34D399 0%, #059669 100%)',
-                        transition: 'width 0.4s ease'
-                      }}></div>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Action alert banner if full or maintenance */}
-                  {isFull && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      background: 'rgba(239, 68, 68, 0.09)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      padding: '12px 18px',
-                      borderRadius: '12px'
-                    }}>
-                      <div style={{ fontSize: '13px', color: '#991B1B', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>♻️ Alert Active: Bin reached {fillPct}% capacity. Logistics waste collection ticket is ready for driver assignment.</span>
-                      </div>
-                      <button
-                        onClick={() => setActiveSubTab('logistics')}
-                        style={{
-                          background: '#EF4444',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          padding: '7px 16px',
-                          borderRadius: '8px',
-                          fontWeight: '800',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
-                        }}
-                      >
-                        Assign Waste Collector ⮞
-                      </button>
-                    </div>
-                  )}
-
-                  {isMaint && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      background: 'rgba(245, 158, 11, 0.09)',
-                      border: '1px solid rgba(245, 158, 11, 0.3)',
-                      padding: '12px 18px',
-                      borderRadius: '12px'
-                    }}>
-                      <div style={{ fontSize: '13px', color: '#92400E', fontWeight: '800' }}>
-                        ⚠️ Hardware Fault: {bin.faultReason || 'Lid Jammed / Tamper Triggered'}. Technical inspection ticket created.
-                      </div>
-                      <button
-                        onClick={() => setActiveSubTab('approvals')}
-                        style={{
-                          background: '#F59E0B',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          padding: '7px 16px',
-                          borderRadius: '8px',
-                          fontWeight: '800',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 8px rgba(245, 158, 11, 0.4)'
-                        }}
-                      >
-                        Assign Technical Staff ⮞
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
         {/* Sub-Tab Navigation Bar */}
         <div className="mgmt-tabs">
           <button 
@@ -795,55 +567,56 @@ export default function ManagementDashboard({
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                               <div>
                                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                  REQUEST #{req.requestNumber}
+                                  Req #{req.requestNumber}
                                 </span>
-                                <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: '2px 0 0 0' }}>
+                                <h4 style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
                                   {req.organizationName}
                                 </h4>
-                                <div style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>
-                                  Placement Location: {req.address}, {req.town}, {req.city} • Bins Quota: <strong>{req.numberOfBins} Units</strong>
+                                <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                                  📍 {req.address}, {req.town}, {req.city}
                                 </div>
                               </div>
 
                               <div style={{ textAlign: 'right' }}>
-                                <span className={`status-badge ${req.status.toLowerCase()}`} style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' }}>
-                                  OVERALL STATUS: {req.status === 'Completed' ? 'COMPLETED / FULLY INSTALLED' : req.status}
+                                <span style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', background: req.status === 'Completed' ? '#D1FAE5' : '#EFF6FF', color: req.status === 'Completed' ? '#065F46' : '#1D4ED8' }}>
+                                  {req.status === 'Completed' ? '✔ Completed' : `Staffing: ${totalAssigned}/${req.requiredWorkers || 1}`}
                                 </span>
-                                <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', marginTop: '6px' }}>
-                                  Progress: {completedCount} of {req.requiredWorkers || 2} Workers Done ({progressPct}%)
-                                </div>
                               </div>
                             </div>
 
-                            {/* Progress bar */}
-                            <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px' }}>
-                              <div style={{ width: `${progressPct}%`, height: '100%', background: req.status === 'Completed' ? '#047857' : '#10B981', transition: 'width 0.3s ease' }}></div>
+                            {/* PROGRESS BAR */}
+                            <div style={{ marginTop: '12px', marginBottom: '16px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
+                                <span style={{ color: '#0F172A' }}>Overall Installation Progress</span>
+                                <span style={{ color: '#047857' }}>{progressPct}% Completed ({completedCount}/{totalAssigned || req.requiredWorkers || 1} tasks done)</span>
+                              </div>
+                              <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+                                <div style={{ width: `${progressPct}%`, height: '100%', background: '#10B981', transition: 'width 0.3s ease' }}></div>
+                              </div>
                             </div>
 
-                            {/* Assigned Technical Members Real-Time Status Table */}
-                            <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '16px', border: '1px solid #E2E8F0' }}>
-                              <div style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>
-                                Assigned Technical Members Real-Time Status
-                              </div>
-
+                            {/* ASSIGNED WORKERS CARD LIST */}
+                            <div style={{ marginTop: '16px', background: '#F8FAFC', borderRadius: '12px', padding: '16px', border: '1px solid #E2E8F0' }}>
+                              <h5 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Assigned Technical Crew
+                              </h5>
                               {assignedList.length === 0 ? (
-                                <div style={{ fontSize: '13px', color: '#64748B', fontStyle: 'italic' }}>
-                                  No technical workers assigned yet. Click "Assign Worker" button in the table above to dispatch installation crew.
+                                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
+                                  No technical workers assigned yet. Click "Assign Worker" above to dispatch staff.
                                 </div>
                               ) : (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                                   {assignedList.map((item, idx) => {
                                     const w = item.worker || {};
-                                    const wStatus = item.status || 'ASSIGNED';
-                                    
+                                    const wStatus = item.status;
                                     let badgeBg = '#FEF3C7';
-                                    let badgeColor = '#D97706';
-                                    let badgeText = 'Waiting for Technical Member Confirmation';
+                                    let badgeColor = '#92400E';
+                                    let badgeText = 'Waiting for Worker Response';
 
                                     if (wStatus === 'ACCEPTED') {
-                                      badgeBg = '#ECFDF5';
-                                      badgeColor = '#047857';
-                                      badgeText = 'Confirmed / Availability Confirmed';
+                                      badgeBg = '#E0F2FE';
+                                      badgeColor = '#0369A1';
+                                      badgeText = 'Duty Accepted (Preparing)';
                                     } else if (wStatus === 'IN_PROGRESS') {
                                       badgeBg = '#EFF6FF';
                                       badgeColor = '#1E40AF';
@@ -899,10 +672,31 @@ export default function ManagementDashboard({
           <div className="mgmt-sub-view active">
             <div className="mgmt-grid-1col">
               <div className="glass-panel table-panel">
-                <h3>Collected Waste Awaiting Logistics Routing</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '15px' }}>
-                  Bins emptied in the field. Dispatch a truck/fleet to route these loads to compost recycling plants.
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <div>
+                    <h3 style={{ margin: 0 }}>Collected Waste Awaiting Logistics Routing</h3>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                      Bins filled/emptied in the field. Dispatch a collector to route these loads to compost recycling plants.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleClearAllStaleRequests}
+                    disabled={clearingData}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E2E8F0',
+                      background: '#FFFFFF',
+                      color: '#64748B',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {clearingData ? 'Clearing...' : '🧹 Clear Test Queue'}
+                  </button>
+                </div>
+
                 <div className="table-wrapper">
                   <table className="admin-table">
                     <thead>
@@ -911,20 +705,47 @@ export default function ManagementDashboard({
                         <th>Site Origin</th>
                         <th>Collected Weight</th>
                         <th>Waste Type</th>
-                        <th>Date Collected</th>
-                        <th>Action</th>
+                        <th>Date</th>
+                        <th>Action & Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {safeCollectedWasteQueue.length === 0 ? (
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                            All collected waste loads have been dispatched to factories.
+                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
+                            All collected waste loads have been dispatched to factories. No pending pickups.
                           </td>
                         </tr>
                       ) : (
                         safeCollectedWasteQueue.map(item => {
                           const rowStatus = normalizeCollectionStatus(item.status || item.assignmentStatus || item.requestStatus);
+                          const isAssigned = rowStatus.includes('Assigned to Collector') || rowStatus.includes('Waiting for Response');
+                          const isInProgress = rowStatus.includes('In Progress') || rowStatus.includes('On Route');
+                          const isCompleted = rowStatus === 'Completed';
+                          const isAwaiting = !isAssigned && !isInProgress && !isCompleted;
+
+                          let badgeBg = '#FEF3C7';
+                          let badgeColor = '#92400E';
+                          let badgeText = rowStatus;
+
+                          if (isAssigned) {
+                            badgeBg = '#EFF6FF';
+                            badgeColor = '#1D4ED8';
+                            badgeText = `Assigned to ${item.assignedCollectorName || 'Collector'} (Waiting for Response)`;
+                          } else if (isInProgress) {
+                            badgeBg = '#FEF3C7';
+                            badgeColor = '#B45309';
+                            badgeText = `In Progress: ${item.assignedCollectorName || 'Collector'} (On Route)`;
+                          } else if (isCompleted) {
+                            badgeBg = '#D1FAE5';
+                            badgeColor = '#065F46';
+                            badgeText = '✔ Completed (Waste Picked Up)';
+                          } else {
+                            badgeBg = '#FEF3C7';
+                            badgeColor = '#92400E';
+                            badgeText = 'Waiting for Assignment';
+                          }
+
                           return (
                             <tr key={item.id || item._id}>
                               <td><strong>{item.id || item._id}</strong></td>
@@ -934,12 +755,34 @@ export default function ManagementDashboard({
                               <td>{item.collectedDate || 'N/A'}</td>
                               <td>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 700, color: rowStatus === 'Assigned to Collector' ? '#047857' : '#B45309' }}>
-                                    {rowStatus}
+                                  <span style={{ 
+                                    display: 'inline-block', 
+                                    padding: '6px 12px', 
+                                    borderRadius: '8px', 
+                                    fontSize: '11px', 
+                                    fontWeight: 800, 
+                                    background: badgeBg, 
+                                    color: badgeColor,
+                                    border: `1px solid ${isAssigned ? '#BFDBFE' : isCompleted ? '#A7F3D0' : '#FDE68A'}`
+                                  }}>
+                                    {badgeText}
                                   </span>
-                                  <button className="action-btn approve" onClick={() => handleAssignLogisticsAction(item.id || item._id)}>
-                                    Assign Collector
-                                  </button>
+
+                                  {isAwaiting && (
+                                    <button className="action-btn approve" onClick={() => handleAssignLogisticsAction(item.id || item._id)}>
+                                      Assign Collector
+                                    </button>
+                                  )}
+
+                                  {isAssigned && (
+                                    <button 
+                                      className="action-btn" 
+                                      style={{ background: '#3B82F6', color: 'white', border: 'none' }} 
+                                      onClick={() => handleAssignLogisticsAction(item.id || item._id)}
+                                    >
+                                      Reassign Collector
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1358,11 +1201,14 @@ export default function ManagementDashboard({
                 aria-label="Select available collector"
               >
                 <option value="">-- Choose Collector --</option>
-                {dbCollectors.map(collector => (
-                  <option key={collector._id} value={collector._id}>
-                    {collector.fullName} (ID: {collector.employeeId || 'C-101'}) — Status: {collector.workerStatus || 'IDLE'}
-                  </option>
-                ))}
+                {dbCollectors.map(collector => {
+                  const isBusy = collector.status === 'BUSY' || collector.workerStatus === 'BUSY' || (collector.activeTasksCount > 0);
+                  return (
+                    <option key={collector._id} value={collector._id}>
+                      {collector.fullName} (ID: {collector.employeeId || 'C-101'}) — [{isBusy ? '🔴 BUSY (On Duty)' : '🟢 IDLE (Available)'}]
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

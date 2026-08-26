@@ -73,6 +73,10 @@ export default function CollectorDashboard({ onLogout }) {
 
   useEffect(() => {
     loadRoute();
+    const interval = setInterval(() => {
+      loadRoute();
+    }, 3000);
+    return () => clearInterval(interval);
   }, [collectorId]);
 
   useEffect(() => {
@@ -107,10 +111,26 @@ export default function CollectorDashboard({ onLogout }) {
     setNotes('');
   };
 
+  const handleAcceptAssignment = async (pickup) => {
+    try {
+      const targetId = pickup._id || pickup.assignmentId || pickup.id;
+      const res = await api.collector.acceptAssignment(targetId);
+      setMessage(res.message || 'Duty accepted! Moving to pickup site.');
+      setRoute((prev) => ({
+        ...prev,
+        pickups: (prev?.pickups || []).map((item) => 
+          (item._id || item.assignmentId || item.id) === targetId ? { ...item, status: 'IN_PROGRESS' } : item
+        ),
+      }));
+    } catch (error) {
+      setMessage(error.message || 'Could not accept pickup duty');
+    }
+  };
+
   const handleProgressStageUpdate = async (pickup, nextStage) => {
     try {
-      if (nextStage === 'ACCEPTED') {
-        setMessage('Collector accepted the route assignment and is moving to the pickup site.');
+      if (nextStage === 'ACCEPTED' || nextStage === 'IN_PROGRESS') {
+        await handleAcceptAssignment(pickup);
         return;
       }
 
@@ -129,11 +149,12 @@ export default function CollectorDashboard({ onLogout }) {
 
   const handleCollect = async (pickup) => {
     try {
-      const result = await api.collector.completeAssignment(pickup._id || pickup.assignmentId || pickup.id);
-      setMessage(result.message || 'Pickup marked as collected');
+      const targetId = pickup._id || pickup.assignmentId || pickup.id;
+      const result = await api.collector.completeAssignment(targetId);
+      setMessage(result.message || 'Pickup marked as collected and task completed!');
       setRoute((prev) => ({
         ...prev,
-        pickups: (prev?.pickups || []).filter((item) => (item._id || item.assignmentId || item.id) !== (pickup._id || pickup.assignmentId || pickup.id)),
+        pickups: (prev?.pickups || []).filter((item) => (item._id || item.assignmentId || item.id) !== targetId),
       }));
     } catch (error) {
       setMessage(error.message || 'Could not complete pickup');
@@ -249,9 +270,63 @@ export default function CollectorDashboard({ onLogout }) {
                       />
                     </div>
 
-                    <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      <button type="button" onClick={() => handleCollect(pickup)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', padding: '9px 12px', fontWeight: 800, cursor: 'pointer' }}>Mark Collected</button>
-                      <button type="button" onClick={() => handleFlagContamination(pickup)} style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', borderRadius: '10px', padding: '9px 12px', fontWeight: 800, cursor: 'pointer' }}>Flag Contamination</button>
+                    <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {pickup.status === 'ASSIGNED' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptAssignment(pickup)}
+                          style={{
+                            background: '#3B82F6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 16px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                          }}
+                        >
+                          ✅ Accept Duty (Start Route)
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleCollect(pickup)}
+                          style={{
+                            background: '#10B981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 16px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                          }}
+                        >
+                          🏁 Mark Collected / Done Task
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleFlagContamination(pickup)}
+                        style={{
+                          background: '#FEF3C7',
+                          color: '#92400E',
+                          border: '1px solid #FCD34D',
+                          borderRadius: '10px',
+                          padding: '10px 14px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Flag Contamination
+                      </button>
                     </div>
                   </div>
                 ))}
