@@ -57,7 +57,6 @@ export default function ManagementDashboard({
   const [dbWorkers, setDbWorkers] = useState([]);
   const [dbAuditLogs, setDbAuditLogs] = useState([]);
   const [dbCollectionQueue, setDbCollectionQueue] = useState([]);
-  const [liveBins, setLiveBins] = useState([]);
   const [clearingData, setClearingData] = useState(false);
   const [loadingDb, setLoadingDb] = useState(false);
 
@@ -65,29 +64,16 @@ export default function ManagementDashboard({
     setLocalCollectedWasteQueue(Array.isArray(dbCollectionQueue) ? dbCollectionQueue : []);
   }, [dbCollectionQueue]);
 
-  // Live IoT Smart Bin Telemetry Poller
-  const fetchLiveIoTData = async () => {
-    try {
-      const res = await api.iot.getBins();
-      if (res && res.bins) {
-        setLiveBins(res.bins);
-      }
-    } catch (e) {
-      // ignore
-    }
-  };
-
   // Reset & Clear Previous Test Requests
   const handleClearAllStaleRequests = async () => {
-    if (!window.confirm('Clear all previous IoT bin requests for a fresh clean demonstration?')) return;
+    if (!window.confirm('Clear all previous test requests for a fresh clean demonstration?')) return;
     try {
       setClearingData(true);
       localStorage.removeItem('greengold_collection_requests');
       const res = await fetch('/api/iot/reset-requests', { method: 'POST' });
       await res.json();
       await loadManagementData(true);
-      await fetchLiveIoTData();
-      alert('All previous test requests cleared! Now trigger Proteus to see a fresh live request.');
+      alert('All test requests cleared successfully!');
     } catch (err) {
       alert('Reset error: ' + err.message);
     } finally {
@@ -149,10 +135,8 @@ export default function ManagementDashboard({
 
   useEffect(() => {
     loadManagementData(true);
-    fetchLiveIoTData();
     const timer = setInterval(() => {
       loadManagementData(false);
-      fetchLiveIoTData();
     }, 2500);
     return () => clearInterval(timer);
   }, []);
