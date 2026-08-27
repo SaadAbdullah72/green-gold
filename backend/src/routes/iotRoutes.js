@@ -1,5 +1,6 @@
 import express from 'express';
 import { ServiceRequest } from '../models/ServiceRequest.js';
+import { CollectorAssignment } from '../models/CollectorAssignment.js';
 import { User } from '../models/User.js';
 import { Notification } from '../models/Notification.js';
 
@@ -254,13 +255,23 @@ router.post('/reset-requests', async (req, res) => {
   try {
     await ServiceRequest.deleteMany({
       $or: [
+        { requestType: 'WASTE_COLLECTION' },
         { organizationName: { $regex: /BIN-|Smart Bin|Maintenance Fault/i } },
         { siteName: { $regex: /BIN-|Smart Bin/i } },
         { description: { $regex: /IOT ALERT/i } },
         { notes: { $regex: /AUTO-DISPATCH/i } }
       ]
     });
-    return res.json({ success: true, message: 'All previous IoT test requests cleared successfully!' });
+    await CollectorAssignment.deleteMany({});
+    await Notification.deleteMany({
+      $or: [
+        { type: 'BIN_FULL_ALERT' },
+        { type: 'MAINTENANCE_ALERT' }
+      ]
+    });
+    await User.updateMany({ role: 'COLLECTOR' }, { workerStatus: 'IDLE' });
+
+    return res.json({ success: true, message: 'All previous IoT test requests and assignments cleared successfully!' });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
