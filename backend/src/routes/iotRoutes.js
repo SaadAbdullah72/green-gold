@@ -35,6 +35,52 @@ async function getSystemUserId() {
   }
 }
 
+// 0. GET Active / Deployed Smart Bins Endpoint for Proteus Bridge & External Systems
+// GET /api/iot/active-bins
+router.get('/active-bins', async (req, res) => {
+  try {
+    const sites = await ServiceRequest.find({
+      requestType: 'BIN_DEPLOYMENT',
+      status: { $nin: ['DECLINED', 'CANCELLED'] }
+    }).sort({ createdAt: 1 }).lean();
+
+    const binList = [];
+    sites.forEach((site, sIdx) => {
+      const clientIdx = site.clientIndex || (sIdx + 1);
+      const clientStr = String(clientIdx).padStart(2, '0');
+      const binIds = (site.deployedBinIds && site.deployedBinIds.length > 0)
+        ? site.deployedBinIds
+        : [`BIN-${clientStr}-01`];
+      
+      const coords = site.location?.coordinates || [73.0479, 33.6844];
+
+      binIds.forEach(bId => {
+        binList.push({
+          binId: bId,
+          clientIndex: clientIdx,
+          organizationName: site.organizationName,
+          contactPerson: site.contactPerson,
+          phone: site.phone,
+          address: site.address,
+          town: site.town,
+          city: site.city || 'Islamabad',
+          lat: coords[1],
+          lng: coords[0],
+          status: site.status === 'Completed' ? 'ACTIVE' : site.status
+        });
+      });
+    });
+
+    return res.json({
+      success: true,
+      count: binList.length,
+      bins: binList
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 1. ESP32 / Arduino Proteus Telemetry Ingestion Endpoint
 // POST /api/iot/telemetry
 router.post('/telemetry', async (req, res) => {
@@ -53,7 +99,7 @@ router.post('/telemetry', async (req, res) => {
       event 
     } = req.body;
 
-    const targetBinId = binId || 'BIN-001';
+    const targetBinId = binId || 'BIN-01-01';
     const numWeight = parseFloat(weightKg) || 0;
     const numFill = parseInt(fillLevel) || 0;
     const isMaintenance = maintenance === true || maintenance === 'true' || status === 'MAINTENANCE_REQUIRED';
@@ -77,20 +123,36 @@ router.post('/telemetry', async (req, res) => {
       defaultEvent = 'HAZARD ALERT: HIGH GAS/SMOKE DETECTED';
     }
 
-    // Resolve multi-client location details from DB or presets
+    // 100% Dynamic Database Lookup for Client Site Allotment
     let matchedSite = await ServiceRequest.findOne({
       requestType: 'BIN_DEPLOYMENT',
       $or: [
         { deployedBinIds: targetBinId },
-        { binPrefix: targetBinId.slice(0, 6) }
+        { binPrefix: targetBinId.slice(0, 6) },
+        { requestNumber: { $regex: new RegExp(targetBinId, 'i') } }
       ]
     }).lean().catch(() => null);
 
-    let siteName = 'Smart Bin ' + targetBinId;
-    let orgName = 'Smart Bin ' + targetBinId;
-    let siteAddress = 'Riphah International University, Sector I-14';
-    let siteTown = 'I-14';
+    if (!matchedSite) {
+      // Try resolving by client index number (e.g. BIN-04-01 -> clientIndex: 4)
+      const match = targetBinId.match(/BIN-(\d+)/i);
+      if (match) {
+        const clientIdx = parseInt(match[1], 10);
+        matchedSite = await ServiceRequest.findOne({
+          requestType: 'BIN_DEPLOYMENT',
+          clientIndex: clientIdx
+        }).lean().catch(() => null);
+      }
+    }
+
+    let siteName = `Smart Bin ${targetBinId}`;
+    let orgName = `Smart Bin Facility (${targetBinId})`;
+    let siteAddress = 'Main Campus Placement Site';
+    let siteTown = 'Islamabad';
     let siteCity = 'Islamabad';
+    let siteContactPerson = 'Site Operations Incharge';
+    let sitePhone = '+92 300 0000000';
+    let siteEmail = 'iot-logistics@greengold.org';
     let siteLat = lat || 33.6844;
     let siteLng = lng || 73.0479;
 
@@ -100,34 +162,13 @@ router.post('/telemetry', async (req, res) => {
       siteAddress = matchedSite.address || siteAddress;
       siteTown = matchedSite.town || siteTown;
       siteCity = matchedSite.city || siteCity;
+      siteContactPerson = matchedSite.contactPerson || siteContactPerson;
+      sitePhone = matchedSite.phone || sitePhone;
+      siteEmail = matchedSite.email || siteEmail;
       if (matchedSite.location?.coordinates && matchedSite.location.coordinates.length === 2) {
         siteLng = matchedSite.location.coordinates[0];
         siteLat = matchedSite.location.coordinates[1];
       }
-    } else if (targetBinId.startsWith('BIN-01')) {
-      orgName = 'Serena Hotel Islamabad';
-      siteName = `Serena Hotel Islamabad (${targetBinId})`;
-      siteAddress = 'Club Road, Sector G-5/1';
-      siteTown = 'G-5';
-      siteCity = 'Islamabad';
-      siteLat = 33.7206;
-      siteLng = 73.1070;
-    } else if (targetBinId.startsWith('BIN-02')) {
-      orgName = 'Bahria Town Phase 7';
-      siteName = `Bahria Town Phase 7 (${targetBinId})`;
-      siteAddress = 'Corniche Road, River View Commercial';
-      siteTown = 'Phase 7';
-      siteCity = 'Rawalpindi';
-      siteLat = 33.5255;
-      siteLng = 73.1098;
-    } else if (targetBinId.startsWith('BIN-03')) {
-      orgName = 'PAF Complex Sector E-9';
-      siteName = `PAF Complex Sector E-9 (${targetBinId})`;
-      siteAddress = 'PAF Complex, Margalla Road, Sector E-9';
-      siteTown = 'E-9';
-      siteCity = 'Islamabad';
-      siteLat = 33.7145;
-      siteLng = 73.0238;
     }
 
     const telemetryData = {

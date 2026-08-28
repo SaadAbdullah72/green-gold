@@ -41,6 +41,22 @@ def send_telemetry_to_api(api_url, payload_dict):
     except Exception as e:
         return False, str(e)
 
+def fetch_active_bins_from_api(api_url):
+    try:
+        base_api = api_url.replace('/telemetry', '/active-bins')
+        req = urllib.request.Request(
+            base_api,
+            headers={'User-Agent': 'GreenGold-ProteusBridge/1.0'}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            res_body = response.read().decode('utf-8')
+            res_json = json.loads(res_body)
+            if res_json.get('success') and res_json.get('bins'):
+                return res_json['bins']
+    except Exception:
+        pass
+    return []
+
 def main():
     parser = argparse.ArgumentParser(description="GreenGold OS Proteus Telemetry Bridge")
     parser.add_argument("--port", default="COM2", help="Serial port to listen on (e.g. COM2)")
@@ -55,39 +71,71 @@ def main():
     print(" 🌿 GREENGOLD OS - PROTEUS HARDWARE TELEMETRY BRIDGE")
     print("=" * 70)
 
-    # Interactive Target Bin & Client Facility Selection
+    # 100% Dynamic Database Fetch for Active Bins
+    print("[*] Fetching active deployed smart bins from GreenGold OS database...")
+    db_bins = fetch_active_bins_from_api(args.api)
+
     target_bin_id = args.bin_id
-    target_client_name = "Serena Hotel Islamabad"
+    target_client_name = "Dynamic Smart Bin Facility"
 
     if not target_bin_id:
-        print("\n📍 SELECT SIMULATION TARGET SMART BIN & CLIENT FACILITY:")
-        print("  [1] 🏨 Serena Hotel Islamabad  -> (BIN-01-01) - Club Road, Sector G-5")
-        print("  [2] 🏘️ Bahria Town Phase 7    -> (BIN-02-01) - Corniche Road, Rawalpindi")
-        print("  [3] ✈️ PAF Complex Sector E-9  -> (BIN-03-01) - Margalla Road Campus")
-        print("  [4] ✏️ Custom Bin ID           -> Enter custom ID")
+        print("\n📍 REAL-TIME DEPLOYED SMART BINS (DATABASE SYNC):")
+        
+        if db_bins and len(db_bins) > 0:
+            for idx, b in enumerate(db_bins, 1):
+                print(f"  [{idx}] 🏷️ {b.get('organizationName')} -> ({b.get('binId')}) | 📍 {b.get('town', 'Islamabad')}, {b.get('city', '')}")
+            custom_opt_idx = len(db_bins) + 1
+            print(f"  [{custom_opt_idx}] ✏️ Enter ANY Custom Bin ID (e.g. BIN-04-01, BIN-05-01)")
+        else:
+            print("  [1] 🏨 Serena Hotel Islamabad  -> (BIN-01-01) - Sector G-5")
+            print("  [2] 🏘️ Bahria Town Phase 7    -> (BIN-02-01) - Rawalpindi")
+            print("  [3] ✈️ PAF Complex Sector E-9  -> (BIN-03-01) - Sector E-9")
+            print("  [4] ✏️ Enter Custom Bin ID")
+
         print("-" * 70)
 
         try:
-            choice = input("👉 Enter choice [1-4, Default=1]: ").strip()
+            choice = input(f"👉 Enter selection [or type Custom Bin ID]: ").strip()
         except (KeyboardInterrupt, EOFError):
             choice = "1"
 
-        if choice == "2":
-            target_bin_id = "BIN-02-01"
-            target_client_name = "Bahria Town Phase 7"
-        elif choice == "3":
-            target_bin_id = "BIN-03-01"
-            target_client_name = "PAF Complex Sector E-9"
-        elif choice == "4":
-            custom_id = input("👉 Enter Custom Bin ID (e.g. BIN-04-01): ").strip()
-            target_bin_id = custom_id if custom_id else "BIN-01-01"
-            target_client_name = f"Custom Facility ({target_bin_id})"
-        else:
-            target_bin_id = "BIN-01-01"
-            target_client_name = "Serena Hotel Islamabad"
+        # Check if user selected one of the dynamic DB bins
+        selected_from_db = False
+        if db_bins and len(db_bins) > 0:
+            try:
+                num_choice = int(choice)
+                if 1 <= num_choice <= len(db_bins):
+                    picked = db_bins[num_choice - 1]
+                    target_bin_id = picked.get('binId')
+                    target_client_name = picked.get('organizationName', 'Smart Bin Facility')
+                    selected_from_db = True
+            except ValueError:
+                pass
+
+        if not selected_from_db:
+            if choice.upper().startswith("BIN-"):
+                target_bin_id = choice.upper()
+                target_client_name = f"Custom Facility ({target_bin_id})"
+            elif choice == "2" and (not db_bins or len(db_bins) == 0):
+                target_bin_id = "BIN-02-01"
+                target_client_name = "Bahria Town Phase 7"
+            elif choice == "3" and (not db_bins or len(db_bins) == 0):
+                target_bin_id = "BIN-03-01"
+                target_client_name = "PAF Complex Sector E-9"
+            elif choice == "4" or choice == str(len(db_bins) + 1 if db_bins else "4") or choice.lower() == "c":
+                try:
+                    custom_id = input("👉 Enter Exact Bin ID (e.g. BIN-04-01): ").strip()
+                except (KeyboardInterrupt, EOFError):
+                    custom_id = "BIN-01-01"
+                target_bin_id = custom_id.upper() if custom_id else "BIN-01-01"
+                target_client_name = f"Custom Facility ({target_bin_id})"
+            else:
+                target_bin_id = "BIN-01-01"
+                target_client_name = "Serena Hotel Islamabad"
 
     print("\n" + "=" * 70)
-    print(f" 🎯 Target Bin ID : {target_bin_id} ({target_client_name})")
+    print(f" 🎯 Target Bin ID : {target_bin_id}")
+    print(f" 🏢 Facility Name : {target_client_name}")
     print(f" 🌐 Target API    : {args.api}")
     print(f" 🔌 Serial Port   : {args.port} @ {args.baud} Baud")
     print("=" * 70)
@@ -173,6 +221,11 @@ def main():
         ser = serial.Serial(args.port, args.baud, timeout=2)
         print(f"✅ Serial connection established on {args.port}.")
         print(f"⚡ Simulating Target: {target_client_name} ({target_bin_id})")
+        # Transmit target bin ID to Proteus UART
+        try:
+            ser.write(f'{{"setBinId":"{target_bin_id}"}}\n'.encode())
+        except Exception:
+            pass
         print("⚡ Waiting for Proteus UART JSON transmissions (Press Ctrl+C to stop)...")
     except Exception as e:
         print(f"\n❌ Could not open serial port {args.port}: {e}")
