@@ -85,14 +85,33 @@ export default function TechnicianDashboard({ onLogout }) {
     }
   };
 
-  const handleAcceptJob = async (jobId) => {
+  const handleStartWork = async (jobId) => {
     try {
-      await api.technical.acceptJob(jobId);
+      await api.technical.startWork(jobId);
       await loadJobs();
     } catch (error) {
-      console.error('Failed to accept job:', error);
+      console.error('Failed to start job:', error);
+      alert('Error starting work: ' + error.message);
     }
   };
+
+  const handleCompleteWork = async (jobId) => {
+    try {
+      await api.technical.completeWork(jobId, { binsInstalled: 2, notes: 'Smart bins deployed and verified by technician' });
+      await loadJobs();
+    } catch (error) {
+      console.error('Failed to complete job:', error);
+      alert('Error completing work: ' + error.message);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+    const pollTimer = setInterval(() => {
+      loadJobs();
+    }, 3000);
+    return () => clearInterval(pollTimer);
+  }, []);
 
   const getTimerText = (deadline) => {
     const target = new Date(deadline).getTime();
@@ -307,27 +326,86 @@ export default function TechnicianDashboard({ onLogout }) {
                       </div>
                     )}
 
-                    {isAssignedPending && (
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '18px', flexWrap: 'wrap' }}>
+                      {isAssignedPending && (
                         <button
                           type="button"
-                          onClick={() => handleAcceptJob(job._id)}
+                          onClick={() => handleStageUpdate(job._id, 'ACCEPTED')}
                           style={{
-                            background: '#22C55E',
+                            background: '#10B981',
                             color: '#FFFFFF',
                             border: 'none',
                             borderRadius: '12px',
                             padding: '12px 24px',
-                            fontSize: '15px',
+                            fontSize: '14px',
                             fontWeight: 800,
                             cursor: 'pointer',
-                            boxShadow: '0 8px 20px rgba(34, 197, 94, 0.25)'
+                            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.25)'
                           }}
                         >
-                          Accept Assignment »
+                          ✅ Accept Assignment »
                         </button>
-                      </div>
-                    )}
+                      )}
+
+                      {job.status === 'ACCEPTED' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleStartWork(job._id)}
+                            style={{
+                              background: '#3B82F6',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              borderRadius: '12px',
+                              padding: '12px 20px',
+                              fontSize: '14px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              boxShadow: '0 8px 20px rgba(59, 130, 246, 0.25)'
+                            }}
+                          >
+                            📍 Reached Destination (Start Work) »
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCompleteWork(job._id)}
+                            style={{
+                              background: '#047857',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              borderRadius: '12px',
+                              padding: '12px 20px',
+                              fontSize: '14px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              boxShadow: '0 8px 20px rgba(4, 120, 87, 0.25)'
+                            }}
+                          >
+                            🏁 Complete Work & Allot Bins »
+                          </button>
+                        </>
+                      )}
+
+                      {job.status === 'IN_PROGRESS' && (
+                        <button
+                          type="button"
+                          onClick={() => handleCompleteWork(job._id)}
+                          style={{
+                            background: '#047857',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '12px 24px',
+                            fontSize: '14px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            boxShadow: '0 8px 20px rgba(4, 120, 87, 0.25)'
+                          }}
+                        >
+                          🏁 Complete Work & Allot Bins »
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })

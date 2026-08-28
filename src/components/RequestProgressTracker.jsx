@@ -80,7 +80,8 @@ export default function RequestProgressTracker({
           {stages.map((stage, index) => {
             const isComplete = index < currentIndex || (index === currentIndex && progressPercent >= stage.value);
             const isCurrent = index === currentIndex;
-            const isDisabled = index > currentIndex;
+            const isNext = index === currentIndex + 1;
+            const isDisabled = index < currentIndex; // Completed stages don't need re-clicking, but next/current stages are clickable!
 
             return (
               <button
@@ -90,19 +91,20 @@ export default function RequestProgressTracker({
                 disabled={isDisabled}
                 style={{
                   border: '1px solid',
-                  borderColor: isComplete ? '#10B981' : isCurrent ? '#0EA5E9' : '#CBD5E1',
-                  background: isComplete ? '#ECFDF5' : isCurrent ? '#EFF6FF' : '#F8FAFC',
-                  color: isComplete ? '#065F46' : isCurrent ? '#1D4ED8' : '#64748B',
+                  borderColor: isComplete ? '#10B981' : isNext ? '#10B981' : isCurrent ? '#0EA5E9' : '#CBD5E1',
+                  background: isComplete ? '#ECFDF5' : isNext ? '#F0FDF4' : isCurrent ? '#EFF6FF' : '#F8FAFC',
+                  color: isComplete ? '#065F46' : isNext ? '#047857' : isCurrent ? '#1D4ED8' : '#334155',
                   borderRadius: '10px',
                   padding: '8px 6px',
                   fontSize: '11px',
                   fontWeight: 800,
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  opacity: isDisabled ? 0.65 : 1,
+                  cursor: isDisabled ? 'default' : 'pointer',
+                  opacity: isDisabled ? 0.85 : 1,
+                  boxShadow: isNext ? '0 2px 8px rgba(16,185,129,0.2)' : 'none',
                   transition: 'all 0.2s ease'
                 }}
               >
-                {stage.label}
+                {isComplete ? '✓ ' : isNext ? '👉 ' : ''}{stage.label}
               </button>
             );
           })}
