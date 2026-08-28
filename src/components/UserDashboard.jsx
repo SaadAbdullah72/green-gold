@@ -1,10 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   IconBrandLogo, IconPlus, IconBox, IconUser, IconBell
 } from './Icons';
 import { api } from '../api';
 import DashboardAssistant from './DashboardAssistant';
 import RequestProgressTracker from './RequestProgressTracker';
+
+const clientMapPinIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:28px;height:28px;border-radius:50%;background:#10B981;border:3px solid #FFFFFF;box-shadow:0 6px 18px rgba(16,185,129,0.6);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:900;">📍</div>',
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
+
+function MapLocationSelector({ coords, onCoordsChange }) {
+  const map = useMapEvents({
+    click(e) {
+      onCoordsChange({ lat: e.latlng.lat, lng: e.latlng.lng });
+    }
+  });
+
+  useEffect(() => {
+    map.flyTo([coords.lat, coords.lng], map.getZoom());
+  }, [coords.lat, coords.lng, map]);
+
+  return (
+    <Marker
+      position={[coords.lat, coords.lng]}
+      icon={clientMapPinIcon}
+      draggable={true}
+      eventHandlers={{
+        dragend(e) {
+          const marker = e.target;
+          const pos = marker.getLatLng();
+          onCoordsChange({ lat: pos.lat, lng: pos.lng });
+        }
+      }}
+    >
+      <Popup>
+        <div style={{ fontWeight: 800, color: '#0F172A' }}>Selected Placement Location</div>
+        <div style={{ fontSize: '11px', color: '#64748B' }}>
+          Lat: {coords.lat.toFixed(4)}, Lng: {coords.lng.toFixed(4)}
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
 
 export default function UserDashboard({ username, userData, onLogout }) {
   // 3 Essential Navigation Tabs Requested by User: 'request_bin', 'my_requests', 'assigned_tech_contacts'
@@ -52,16 +96,64 @@ export default function UserDashboard({ username, userData, onLogout }) {
   const userCity = userData?.city || 'Islamabad';
   const userPhone = userData?.phone || '+92 300 1234567';
 
-  // Smart Bin Request Form State
+  // Smart Bin Request Form State with Map Location
+  const [selectedCoords, setSelectedCoords] = useState({ lat: 33.7206, lng: 73.1070 }); // Default Serena Hotel Islamabad
   const [binRequestForm, setBinRequestForm] = useState({
-    locationName: '',
+    locationName: 'G-5',
     category: 'Commercial / Hotel / Retail',
     contactNumber: userPhone,
-    fullAddress: '',
+    fullAddress: 'Club Road, Sector G-5/1, Islamabad',
     binsNeeded: '1',
     binCategory: 'IoT Ultrasonic Smart Bin (240L)',
     specialInstructions: ''
   });
+
+  const LOCATION_PRESETS = [
+    {
+      name: '🏨 Serena Hotel Islamabad',
+      town: 'G-5',
+      address: 'Club Road, Sector G-5/1, Islamabad',
+      lat: 33.7206,
+      lng: 73.1070
+    },
+    {
+      name: '🏘️ Bahria Town Phase 7',
+      town: 'Phase 7',
+      address: 'Corniche Road, River View Commercial, Bahria Town Phase 7, Rawalpindi',
+      lat: 33.5255,
+      lng: 73.1098
+    },
+    {
+      name: '✈️ PAF Complex Sector E-9',
+      town: 'E-9',
+      address: 'PAF Complex, Margalla Road, Sector E-9, Islamabad',
+      lat: 33.7145,
+      lng: 73.0238
+    },
+    {
+      name: '🎓 NUST H-12 Campus',
+      town: 'H-12',
+      address: 'NUST Main Campus, Gate 4, Sector H-12, Islamabad',
+      lat: 33.6425,
+      lng: 72.9904
+    },
+    {
+      name: '🏢 Beverly Centre Blue Area',
+      town: 'Blue Area',
+      address: 'Beverly Centre, 56-G, Jinnah Avenue, Blue Area, Islamabad',
+      lat: 33.7167,
+      lng: 73.0673
+    }
+  ];
+
+  const handleApplyPreset = (preset) => {
+    setSelectedCoords({ lat: preset.lat, lng: preset.lng });
+    setBinRequestForm(prev => ({
+      ...prev,
+      locationName: preset.town,
+      fullAddress: preset.address
+    }));
+  };
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
@@ -129,8 +221,8 @@ export default function UserDashboard({ username, userData, onLogout }) {
         address: binRequestForm.fullAddress || 'Sector F-7/2, Islamabad',
         town: binRequestForm.locationName || 'F-7',
         city: userCity || 'Islamabad',
-        latitude: 33.7294,
-        longitude: 73.0551,
+        latitude: selectedCoords.lat,
+        longitude: selectedCoords.lng,
         numberOfBins: parseInt(binRequestForm.binsNeeded, 10) || 1,
         binType: binRequestForm.binCategory || 'IoT Ultrasonic Smart Bin (240L)',
         specialInstructions: binRequestForm.specialInstructions,
@@ -471,13 +563,77 @@ export default function UserDashboard({ username, userData, onLogout }) {
                 </label>
                 <textarea
                   className="modern-input"
-                  rows="3"
+                  rows="2"
                   placeholder="Enter precise street address, building block, or loading bay instructions..."
                   value={binRequestForm.fullAddress}
                   onChange={(e) => setBinRequestForm({ ...binRequestForm, fullAddress: e.target.value })}
                   required
                   style={{ width: '100%', padding: '12px', borderRadius: '10px' }}
                 />
+              </div>
+
+              {/* =========================================================================
+                  INTERACTIVE MAP LOCATION PICKER & QUICK PRESETS
+                  ========================================================================= */}
+              <div style={{ marginBottom: '24px', background: '#F8FAFC', padding: '18px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      📍 Pinpoint Precise Site Location on Map
+                    </label>
+                    <span style={{ fontSize: '11px', color: '#64748B' }}>
+                      Click on map or drag pin to set exact coordinates for installation & collection crew.
+                    </span>
+                  </div>
+                  <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', color: '#065F46' }}>
+                    GPS: {selectedCoords.lat.toFixed(4)}, {selectedCoords.lng.toFixed(4)}
+                  </div>
+                </div>
+
+                {/* Quick Presets Buttons */}
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', marginBottom: '6px' }}>
+                    Quick Landmark Presets:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {LOCATION_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleApplyPreset(preset)}
+                        style={{
+                          background: selectedCoords.lat === preset.lat ? '#10B981' : '#FFFFFF',
+                          color: selectedCoords.lat === preset.lat ? '#FFFFFF' : '#1E293B',
+                          border: '1px solid #CBD5E1',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Interactive Leaflet Map Container */}
+                <div style={{ height: '240px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #CBD5E1' }}>
+                  <MapContainer
+                    center={[selectedCoords.lat, selectedCoords.lng]}
+                    zoom={14}
+                    style={{ height: '100%', width: '100%' }}
+                    scrollWheelZoom={false}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <MapLocationSelector coords={selectedCoords} onCoordsChange={setSelectedCoords} />
+                  </MapContainer>
+                </div>
               </div>
 
               <div style={{ marginBottom: '28px' }}>

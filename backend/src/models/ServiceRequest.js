@@ -73,6 +73,11 @@ const serviceRequestSchema = new mongoose.Schema(
     assignedWorkersCount: { type: Number, default: 0 },
     completedBins: { type: Number, default: 0 },
 
+    clientIndex: { type: Number },
+    binPrefix: { type: String },
+    deployedBinIds: [{ type: String }],
+    installedAt: { type: Date },
+
     declineReason: { type: String },
     declinedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     declinedAt: { type: Date }
@@ -81,5 +86,6 @@ const serviceRequestSchema = new mongoose.Schema(
 );
 
 serviceRequestSchema.index({ location: '2dsphere' });
+serviceRequestSchema.index({ deployedBinIds: 1 });
 
 export const ServiceRequest = mongoose.model('ServiceRequest', serviceRequestSchema);

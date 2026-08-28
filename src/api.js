@@ -213,6 +213,11 @@ export const api = {
         body: JSON.stringify({ workerId, binsAssigned })
       });
       return await handleResponse(res);
+    },
+
+    getActiveSites: async () => {
+      const res = await fetch(`${API_BASE}/management/active-sites`, { headers: getHeaders() });
+      return await handleResponse(res);
     }
   },
 

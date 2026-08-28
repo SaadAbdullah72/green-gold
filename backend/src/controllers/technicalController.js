@@ -134,16 +134,40 @@ export const completeWork = async (req, res) => {
     await User.findByIdAndUpdate(job.workerId, { workerStatus: 'IDLE' });
 
     // Check if ALL assigned jobs for this request are completed
-    const allAssignedJobs = await JobAssignment.find({ requestId: job.requestId });
-    const allCompleted = allAssignedJobs.length > 0 && allAssignedJobs.every(j => j.status === 'COMPLETED');
-
     if (allCompleted) {
-      await ServiceRequest.findByIdAndUpdate(job.requestId, { status: 'Completed' });
+      const targetReq = await ServiceRequest.findById(job.requestId);
+      if (targetReq) {
+        // Calculate client index if not already assigned
+        let clientIdx = targetReq.clientIndex;
+        if (!clientIdx) {
+          const completedCount = await ServiceRequest.countDocuments({
+            requestType: 'BIN_DEPLOYMENT',
+            status: 'Completed',
+            _id: { $ne: targetReq._id }
+          });
+          clientIdx = completedCount + 1;
+        }
+
+        const clientStr = String(clientIdx).padStart(2, '0');
+        const binPrefix = `BIN-${clientStr}`;
+        const totalBins = targetReq.numberOfBins || 1;
+        const deployedBinIds = [];
+        for (let i = 1; i <= totalBins; i++) {
+          deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
+        }
+
+        targetReq.status = 'Completed';
+        targetReq.clientIndex = clientIdx;
+        targetReq.binPrefix = binPrefix;
+        targetReq.deployedBinIds = deployedBinIds;
+        targetReq.installedAt = new Date();
+        await targetReq.save();
+      }
     }
 
     return res.json({
       success: true,
-      message: 'Task completed successfully',
+      message: 'Installation task completed successfully',
       isRequestCompleted: allCompleted,
       job
     });

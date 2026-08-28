@@ -1,7 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { TECH_CREWS, LOGISTICS_PARTNERS, FACTORY_REPORTS } from '../mockData';
 import { api } from '../api';
 import DashboardAssistant from './DashboardAssistant';
+
+const siteActivePinIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:32px;height:32px;border-radius:50%;background:#10B981;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(16,185,129,0.7);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;">🏢</div>',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
+function MapRecenter({ lat, lng }) {
+  const map = useMap();
+  useEffect(() => {
+    if (lat && lng) {
+      map.flyTo([lat, lng], 15, { duration: 1.2 });
+    }
+  }, [lat, lng, map]);
+  return null;
+}
 
 export default function ManagementDashboard({
   username = 'System Admin',
@@ -57,6 +77,8 @@ export default function ManagementDashboard({
   const [dbWorkers, setDbWorkers] = useState([]);
   const [dbAuditLogs, setDbAuditLogs] = useState([]);
   const [dbCollectionQueue, setDbCollectionQueue] = useState([]);
+  const [dbActiveSites, setDbActiveSites] = useState([]);
+  const [selectedSite, setSelectedSite] = useState(null);
   const [clearingData, setClearingData] = useState(false);
   const [loadingDb, setLoadingDb] = useState(false);
 
@@ -120,6 +142,14 @@ export default function ManagementDashboard({
       const collectionQueueRes = await api.management.getCollectionQueue();
       if (collectionQueueRes.requests) {
         setDbCollectionQueue(prev => JSON.stringify(prev) !== JSON.stringify(collectionQueueRes.requests) ? collectionQueueRes.requests : prev);
+      }
+
+      const sitesRes = await api.management.getActiveSites();
+      if (sitesRes.sites) {
+        setDbActiveSites(prev => JSON.stringify(prev) !== JSON.stringify(sitesRes.sites) ? sitesRes.sites : prev);
+        if (!selectedSite && sitesRes.sites.length > 0) {
+          setSelectedSite(sitesRes.sites[0]);
+        }
       }
 
       const auditRes = await api.audit.getLogs();
@@ -900,66 +930,276 @@ export default function ManagementDashboard({
         )}
 
         {/* ---------------------------------------------------------------------
-            SUB TAB VIEW 6: ACTIVE CONTRACTS LEDGER
+            SUB TAB VIEW 6: ACTIVE CLIENT SITES & SMART BINS LEDGER
             --------------------------------------------------------------------- */}
         {activeSubTab === 'sites' && (
           <div className="mgmt-sub-view active">
-            <div className="mgmt-grid-2col">
-              <div className="glass-panel table-panel">
-                <h3>Active Client Agreements</h3>
-                <div className="table-wrapper">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Site ID</th>
-                        <th>Client / Organization</th>
-                        <th>Provisioned Bins</th>
-                        <th>Sort Accuracy</th>
-                        <th>Compliance Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeSites.map(site => (
-                        <tr key={site.id}>
-                          <td><strong>{site.id}</strong></td>
-                          <td><strong>{site.name}</strong></td>
-                          <td>{site.bins} Smart Bins</td>
-                          <td>
-                            <strong style={{ color: 'var(--success)' }}>
-                              {site.sortAccuracy}%
-                            </strong>
-                          </td>
-                          <td>
-                            <span className="status-pill approved">
-                              {site.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {/* Top Summary Banner */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Active Clients</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>
+                  {dbActiveSites.length > 0 ? dbActiveSites.length : '3 Sites'}
                 </div>
+                <div style={{ fontSize: '11px', color: '#10B981', fontWeight: '700', marginTop: '2px' }}>● Provisioned & Verified</div>
               </div>
 
-              {/* Dynamic weekly recycling index chart mockup */}
-              <div className="glass-panel">
-                <h3>Sector Target Index</h3>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '15px' }}>
-                  Aggregated recycling efficiency over the last 4 periods.
-                </p>
-                <div className="chart-sim-wrapper">
-                  <div className="chart-bar" style={{ height: '62%' }} data-val="62%"></div>
-                  <div className="chart-bar" style={{ height: '74%' }} data-val="74%"></div>
-                  <div className="chart-bar" style={{ height: '85%' }} data-val="85%"></div>
-                  <div className="chart-bar" style={{ height: '94%', background: 'linear-gradient(to top, var(--primary), var(--primary-glow))' }} data-val="94%"></div>
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Deployed Smart Bins</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#047857', marginTop: '4px' }}>
+                  {dbActiveSites.length > 0 ? dbActiveSites.reduce((acc, s) => acc + (s.numberOfBins || 1), 0) : '6 Units'}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                  <span>WEEK 1</span>
-                  <span>WEEK 2</span>
-                  <span>WEEK 3</span>
-                  <span>WEEK 4 (CURR)</span>
-                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>BIN-01-XX, BIN-02-XX Standard</div>
               </div>
+
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Telemetry Connectivity</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#3B82F6', marginTop: '4px' }}>100% Online</div>
+                <div style={{ fontSize: '11px', color: '#3B82F6', fontWeight: '700', marginTop: '2px' }}>⚡ Proteus Bridge Sync Active</div>
+              </div>
+            </div>
+
+            {/* Split Screen: Left Cards List | Right Interactive Map & Details */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px', alignItems: 'start' }}>
+              
+              {/* Left Column: Client Sites List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                    Provisioned Client Facilities
+                  </h3>
+                  <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>
+                    Click a client to view location map
+                  </span>
+                </div>
+
+                {((dbActiveSites && dbActiveSites.length > 0) ? dbActiveSites : [
+                  {
+                    id: 'site-01',
+                    clientIndex: 1,
+                    clientCode: 'CLIENT-01',
+                    binPrefix: 'BIN-01',
+                    deployedBinIds: ['BIN-01-01', 'BIN-01-02'],
+                    organizationName: 'Serena Hotel Islamabad',
+                    contactPerson: 'Zulfiqar Ali (Operations Director)',
+                    phone: '+92 51 2874000',
+                    address: 'Club Road, Sector G-5/1',
+                    town: 'G-5',
+                    city: 'Islamabad',
+                    lat: 33.7206,
+                    lng: 73.1070,
+                    numberOfBins: 2,
+                    status: 'ACTIVE'
+                  },
+                  {
+                    id: 'site-02',
+                    clientIndex: 2,
+                    clientCode: 'CLIENT-02',
+                    binPrefix: 'BIN-02',
+                    deployedBinIds: ['BIN-02-01', 'BIN-02-02'],
+                    organizationName: 'Bahria Town Phase 7',
+                    contactPerson: 'Malik Taimoor (Horticulture Lead)',
+                    phone: '+92 51 5705801',
+                    address: 'Corniche Road, River View Commercial',
+                    town: 'Phase 7',
+                    city: 'Rawalpindi',
+                    lat: 33.5255,
+                    lng: 73.1098,
+                    numberOfBins: 2,
+                    status: 'ACTIVE'
+                  },
+                  {
+                    id: 'site-03',
+                    clientIndex: 3,
+                    clientCode: 'CLIENT-03',
+                    binPrefix: 'BIN-03',
+                    deployedBinIds: ['BIN-03-01', 'BIN-03-02'],
+                    organizationName: 'PAF Complex Sector E-9',
+                    contactPerson: 'Wing Cmdr. Tariq (Station Ops)',
+                    phone: '+92 51 9507111',
+                    address: 'PAF Complex, Margalla Road, Sector E-9',
+                    town: 'E-9',
+                    city: 'Islamabad',
+                    lat: 33.7145,
+                    lng: 73.0238,
+                    numberOfBins: 2,
+                    status: 'ACTIVE'
+                  }
+                ]).map((site) => {
+                  const isSelected = selectedSite && (selectedSite.id === site.id || selectedSite._id === site._id || selectedSite.organizationName === site.organizationName);
+                  const binList = site.deployedBinIds || [`${site.binPrefix || 'BIN-01'}-01`];
+
+                  return (
+                    <div
+                      key={site.id || site._id}
+                      onClick={() => setSelectedSite(site)}
+                      style={{
+                        padding: '18px 20px',
+                        background: '#FFFFFF',
+                        borderRadius: '16px',
+                        border: isSelected ? '2px solid #10B981' : '1px solid #E2E8F0',
+                        boxShadow: isSelected ? '0 8px 24px rgba(16,185,129,0.18)' : '0 2px 8px rgba(0,0,0,0.02)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        position: 'relative'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <div>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: '#ECFDF5',
+                            color: '#047857',
+                            fontSize: '10px',
+                            fontWeight: '900',
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            marginBottom: '4px'
+                          }}>
+                            {site.clientCode || `CLIENT-${String(site.clientIndex || 1).padStart(2, '0')}`}
+                          </span>
+                          <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>
+                            {site.organizationName}
+                          </h4>
+                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                            📍 {site.address}, {site.town}, {site.city}
+                          </div>
+                        </div>
+
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          background: '#D1FAE5',
+                          color: '#065F46'
+                        }}>
+                          ● ACTIVE
+                        </span>
+                      </div>
+
+                      {/* Deployed Bin IDs List */}
+                      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #F1F5F9' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                          Deployed Smart Bins ({binList.length} Units):
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {binList.map((bId, bIdx) => (
+                            <span
+                              key={bIdx}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                background: '#F8FAFC',
+                                border: '1px solid #CBD5E1',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                color: '#1E293B'
+                              }}
+                            >
+                              🏷️ {bId}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right Column: Selected Site Interactive Map & Deep Inspection */}
+              <div style={{ position: 'sticky', top: '20px' }}>
+                {(() => {
+                  const currentSite = selectedSite || (dbActiveSites && dbActiveSites.length > 0 ? dbActiveSites[0] : {
+                    organizationName: 'Serena Hotel Islamabad',
+                    address: 'Club Road, Sector G-5/1, Islamabad',
+                    town: 'G-5',
+                    lat: 33.7206,
+                    lng: 73.1070,
+                    clientCode: 'CLIENT-01',
+                    deployedBinIds: ['BIN-01-01', 'BIN-01-02'],
+                    contactPerson: 'Zulfiqar Ali',
+                    phone: '+92 51 2874000',
+                    numberOfBins: 2
+                  });
+
+                  const currentLat = currentSite.lat || 33.7206;
+                  const currentLng = currentSite.lng || 73.1070;
+
+                  return (
+                    <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                        <div>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {currentSite.clientCode || 'CLIENT SITE'} • GPS TELEMETRY HUB
+                          </div>
+                          <h3 style={{ margin: '2px 0 0', fontSize: '18px', fontWeight: '900', color: '#0F172A' }}>
+                            {currentSite.organizationName}
+                          </h3>
+                        </div>
+                        <div style={{ padding: '6px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '10px', fontSize: '11px', fontWeight: '800', color: '#065F46' }}>
+                          GPS: {currentLat.toFixed(4)}, {currentLng.toFixed(4)}
+                        </div>
+                      </div>
+
+                      {/* Map Container */}
+                      <div style={{ height: '320px', width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid #CBD5E1', marginBottom: '18px' }}>
+                        <MapContainer
+                          center={[currentLat, currentLng]}
+                          zoom={15}
+                          style={{ height: '100%', width: '100%' }}
+                          scrollWheelZoom={false}
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <MapRecenter lat={currentLat} lng={currentLng} />
+                          <Marker position={[currentLat, currentLng]} icon={siteActivePinIcon}>
+                            <Popup>
+                              <div style={{ padding: '4px' }}>
+                                <strong style={{ color: '#0F172A', fontSize: '13px' }}>{currentSite.organizationName}</strong>
+                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>{currentSite.address}</div>
+                                <div style={{ marginTop: '6px', fontSize: '11px', fontWeight: '700', color: '#047857' }}>
+                                  Active Bins: {(currentSite.deployedBinIds || []).join(', ')}
+                                </div>
+                              </div>
+                            </Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
+
+                      {/* Site Details Card */}
+                      <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '14px', border: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+                        <div>
+                          <span style={{ color: '#64748B', fontWeight: '700', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Contact Person</span>
+                          <strong style={{ color: '#0F172A' }}>{currentSite.contactPerson || 'Site Supervisor'}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#64748B', fontWeight: '700', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Phone Number</span>
+                          <strong style={{ color: '#0F172A' }}>{currentSite.phone || '+92 300 0000000'}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#64748B', fontWeight: '700', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Street Placement</span>
+                          <strong style={{ color: '#0F172A' }}>{currentSite.address}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#64748B', fontWeight: '700', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Proteus Target Bin</span>
+                          <strong style={{ color: '#047857' }}>{(currentSite.deployedBinIds && currentSite.deployedBinIds[0]) || 'BIN-01-01'}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
             </div>
           </div>
         )}

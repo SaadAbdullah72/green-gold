@@ -305,3 +305,64 @@ export const assignJob = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getActiveSites = async (req, res) => {
+  try {
+    const rawSites = await ServiceRequest.find({
+      requestType: 'BIN_DEPLOYMENT',
+      status: { $in: ['Completed', 'APPROVED', 'ASSIGNED', 'IN_PROGRESS'] }
+    }).sort({ createdAt: 1 }).lean();
+
+    const sites = rawSites.map((site, idx) => {
+      const clientIdx = site.clientIndex || (idx + 1);
+      const clientStr = String(clientIdx).padStart(2, '0');
+      const binPrefix = site.binPrefix || `BIN-${clientStr}`;
+      const totalBins = site.numberOfBins || 1;
+      
+      let deployedBinIds = site.deployedBinIds;
+      if (!deployedBinIds || deployedBinIds.length === 0) {
+        deployedBinIds = [];
+        for (let i = 1; i <= totalBins; i++) {
+          deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
+        }
+      }
+
+      const coords = site.location?.coordinates || [73.0479, 33.6844];
+      const lng = coords[0];
+      const lat = coords[1];
+
+      return {
+        id: site._id,
+        _id: site._id,
+        requestNumber: site.requestNumber,
+        clientIndex: clientIdx,
+        clientCode: `CLIENT-${clientStr}`,
+        binPrefix,
+        deployedBinIds,
+        organizationName: site.organizationName,
+        contactPerson: site.contactPerson,
+        phone: site.phone,
+        email: site.email,
+        address: site.address,
+        town: site.town,
+        city: site.city || 'Islamabad',
+        lat,
+        lng,
+        numberOfBins: totalBins,
+        binType: site.binType || 'IoT Ultrasonic Smart Bin (240L)',
+        status: site.status === 'Completed' ? 'ACTIVE' : 'DEPLOYING',
+        requestStatus: site.status,
+        installedAt: site.installedAt || site.updatedAt || site.createdAt,
+        createdAt: site.createdAt
+      };
+    });
+
+    return res.json({
+      success: true,
+      count: sites.length,
+      sites
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

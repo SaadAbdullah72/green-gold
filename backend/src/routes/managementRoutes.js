@@ -2,6 +2,7 @@ import express from 'express';
 import { 
   getAllRequests, 
   getCollectionQueue,
+  getActiveSites,
   approveRequest, 
   declineRequest, 
   getTechnicalWorkers,
@@ -18,6 +19,7 @@ router.use(requireRole('MANAGEMENT'));
 
 router.get('/requests', getAllRequests);
 router.get('/collection-queue', getCollectionQueue);
+router.get('/active-sites', getActiveSites);
 router.patch('/requests/:id/approve', approveRequest);
 router.patch('/requests/:id/decline', declineRequest);
 
