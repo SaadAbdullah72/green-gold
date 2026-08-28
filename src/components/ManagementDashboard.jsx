@@ -961,7 +961,7 @@ export default function ManagementDashboard({
               <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Active Clients</div>
                 <div style={{ fontSize: '26px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>
-                  {dbActiveSites.length > 0 ? dbActiveSites.length : '3 Sites'}
+                  {dbActiveSites.length} {dbActiveSites.length === 1 ? 'Site' : 'Sites'}
                 </div>
                 <div style={{ fontSize: '11px', color: '#10B981', fontWeight: '700', marginTop: '2px' }}>● Provisioned & Verified</div>
               </div>
@@ -969,9 +969,9 @@ export default function ManagementDashboard({
               <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Deployed Smart Bins</div>
                 <div style={{ fontSize: '26px', fontWeight: '900', color: '#047857', marginTop: '4px' }}>
-                  {dbActiveSites.length > 0 ? dbActiveSites.reduce((acc, s) => acc + (s.numberOfBins || 1), 0) : '6 Units'}
+                  {dbActiveSites.reduce((acc, s) => acc + (s.numberOfBins || 1), 0)} Units
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>BIN-01-XX, BIN-02-XX Standard</div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Allotted Standard Bins</div>
               </div>
 
               <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
@@ -988,164 +988,117 @@ export default function ManagementDashboard({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
-                    Provisioned Client Facilities
+                    Provisioned Client Facilities ({dbActiveSites.length})
                   </h3>
                   <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>
                     Click a client to view location map
                   </span>
                 </div>
 
-                {((dbActiveSites && dbActiveSites.length > 0) ? dbActiveSites : [
-                  {
-                    id: 'site-01',
-                    clientIndex: 1,
-                    clientCode: 'CLIENT-01',
-                    binPrefix: 'BIN-01',
-                    deployedBinIds: ['BIN-01-01', 'BIN-01-02'],
-                    organizationName: 'Serena Hotel Islamabad',
-                    contactPerson: 'Zulfiqar Ali (Operations Director)',
-                    phone: '+92 51 2874000',
-                    address: 'Club Road, Sector G-5/1',
-                    town: 'G-5',
-                    city: 'Islamabad',
-                    lat: 33.7206,
-                    lng: 73.1070,
-                    numberOfBins: 2,
-                    status: 'ACTIVE'
-                  },
-                  {
-                    id: 'site-02',
-                    clientIndex: 2,
-                    clientCode: 'CLIENT-02',
-                    binPrefix: 'BIN-02',
-                    deployedBinIds: ['BIN-02-01', 'BIN-02-02'],
-                    organizationName: 'Bahria Town Phase 7',
-                    contactPerson: 'Malik Taimoor (Horticulture Lead)',
-                    phone: '+92 51 5705801',
-                    address: 'Corniche Road, River View Commercial',
-                    town: 'Phase 7',
-                    city: 'Rawalpindi',
-                    lat: 33.5255,
-                    lng: 73.1098,
-                    numberOfBins: 2,
-                    status: 'ACTIVE'
-                  },
-                  {
-                    id: 'site-03',
-                    clientIndex: 3,
-                    clientCode: 'CLIENT-03',
-                    binPrefix: 'BIN-03',
-                    deployedBinIds: ['BIN-03-01', 'BIN-03-02'],
-                    organizationName: 'PAF Complex Sector E-9',
-                    contactPerson: 'Wing Cmdr. Tariq (Station Ops)',
-                    phone: '+92 51 9507111',
-                    address: 'PAF Complex, Margalla Road, Sector E-9',
-                    town: 'E-9',
-                    city: 'Islamabad',
-                    lat: 33.7145,
-                    lng: 73.0238,
-                    numberOfBins: 2,
-                    status: 'ACTIVE'
-                  }
-                ]).map((site) => {
-                  const isSelected = selectedSite && (selectedSite.id === site.id || selectedSite._id === site._id || selectedSite.organizationName === site.organizationName);
-                  const binList = site.deployedBinIds || [`${site.binPrefix || 'BIN-01'}-01`];
+                {dbActiveSites.length === 0 ? (
+                  <div style={{ padding: '40px 24px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', textAlign: 'center', color: '#64748B' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>No Active Deployed Sites Yet</div>
+                    <div style={{ fontSize: '12px' }}>Once technical staff completes an installation, the deployed client site and its allotted bins will appear here automatically.</div>
+                  </div>
+                ) : (
+                  dbActiveSites.map((site) => {
+                    const isSelected = selectedSite && (selectedSite.id === site.id || selectedSite._id === site._id || selectedSite.organizationName === site.organizationName);
+                    const binList = site.deployedBinIds || [`${site.binPrefix || 'BIN-01'}-01`];
 
-                  return (
-                    <div
-                      key={site.id || site._id}
-                      onClick={() => setSelectedSite(site)}
-                      style={{
-                        padding: '18px 20px',
-                        background: '#FFFFFF',
-                        borderRadius: '16px',
-                        border: isSelected ? '2px solid #10B981' : '1px solid #E2E8F0',
-                        boxShadow: isSelected ? '0 8px 24px rgba(16,185,129,0.18)' : '0 2px 8px rgba(0,0,0,0.02)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        position: 'relative'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                        <div>
+                    return (
+                      <div
+                        key={site.id || site._id}
+                        onClick={() => setSelectedSite(site)}
+                        style={{
+                          padding: '18px 20px',
+                          background: '#FFFFFF',
+                          borderRadius: '16px',
+                          border: isSelected ? '2px solid #10B981' : '1px solid #E2E8F0',
+                          boxShadow: isSelected ? '0 8px 24px rgba(16,185,129,0.18)' : '0 2px 8px rgba(0,0,0,0.02)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <div>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              background: '#ECFDF5',
+                              color: '#047857',
+                              fontSize: '10px',
+                              fontWeight: '900',
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                              marginBottom: '4px'
+                            }}>
+                              {site.clientCode || `CLIENT-${String(site.clientIndex || 1).padStart(2, '0')}`}
+                            </span>
+                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>
+                              {site.organizationName}
+                            </h4>
+                            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                              📍 {site.address}, {site.town}, {site.city}
+                            </div>
+                          </div>
+
                           <span style={{
-                            display: 'inline-block',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: '#ECFDF5',
-                            color: '#047857',
-                            fontSize: '10px',
-                            fontWeight: '900',
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
-                            marginBottom: '4px'
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            background: '#D1FAE5',
+                            color: '#065F46'
                           }}>
-                            {site.clientCode || `CLIENT-${String(site.clientIndex || 1).padStart(2, '0')}`}
+                            ● ACTIVE
                           </span>
-                          <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>
-                            {site.organizationName}
-                          </h4>
-                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
-                            📍 {site.address}, {site.town}, {site.city}
+                        </div>
+
+                        {/* Deployed Bin IDs List */}
+                        <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #F1F5F9' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                            Deployed Smart Bins ({binList.length} Units):
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {binList.map((bId, bIdx) => (
+                              <span
+                                key={bIdx}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  background: '#F8FAFC',
+                                  border: '1px solid #CBD5E1',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  color: '#1E293B'
+                                }}
+                              >
+                                🏷️ {bId}
+                              </span>
+                            ))}
                           </div>
                         </div>
-
-                        <span style={{
-                          padding: '4px 10px',
-                          borderRadius: '8px',
-                          fontSize: '11px',
-                          fontWeight: '800',
-                          background: '#D1FAE5',
-                          color: '#065F46'
-                        }}>
-                          ● ACTIVE
-                        </span>
                       </div>
-
-                      {/* Deployed Bin IDs List */}
-                      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #F1F5F9' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                          Deployed Smart Bins ({binList.length} Units):
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {binList.map((bId, bIdx) => (
-                            <span
-                              key={bIdx}
-                              style={{
-                                padding: '4px 8px',
-                                borderRadius: '6px',
-                                background: '#F8FAFC',
-                                border: '1px solid #CBD5E1',
-                                fontSize: '11px',
-                                fontWeight: '800',
-                                color: '#1E293B'
-                              }}
-                            >
-                              🏷️ {bId}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
 
               {/* Right Column: Selected Site Interactive Map & Deep Inspection */}
               <div style={{ position: 'sticky', top: '20px' }}>
                 {(() => {
-                  const currentSite = selectedSite || (dbActiveSites && dbActiveSites.length > 0 ? dbActiveSites[0] : {
-                    organizationName: 'Serena Hotel Islamabad',
-                    address: 'Club Road, Sector G-5/1, Islamabad',
-                    town: 'G-5',
-                    lat: 33.7206,
-                    lng: 73.1070,
-                    clientCode: 'CLIENT-01',
-                    deployedBinIds: ['BIN-01-01', 'BIN-01-02'],
-                    contactPerson: 'Zulfiqar Ali',
-                    phone: '+92 51 2874000',
-                    numberOfBins: 2
-                  });
+                  const currentSite = selectedSite || (dbActiveSites && dbActiveSites.length > 0 ? dbActiveSites[0] : null);
+
+                  if (!currentSite) {
+                    return (
+                      <div style={{ background: '#FFFFFF', padding: '40px 24px', borderRadius: '20px', border: '1px solid #E2E8F0', textAlign: 'center', color: '#64748B' }}>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>No Site Selected</div>
+                        <div style={{ fontSize: '12px' }}>Complete a smart bin installation to inspect its live GPS location and telemetries.</div>
+                      </div>
+                    );
+                  }
 
                   const currentLat = currentSite.lat || 33.7206;
                   const currentLng = currentSite.lng || 73.1070;

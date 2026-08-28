@@ -310,7 +310,7 @@ export const getActiveSites = async (req, res) => {
   try {
     const rawSites = await ServiceRequest.find({
       requestType: 'BIN_DEPLOYMENT',
-      status: { $in: ['Completed', 'APPROVED', 'ASSIGNED', 'IN_PROGRESS'] }
+      status: { $in: ['COMPLETED', 'Completed'] }
     }).sort({ createdAt: 1 }).lean();
 
     const sites = rawSites.map((site, idx) => {
