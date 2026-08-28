@@ -492,14 +492,22 @@ export default function ManagementDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {dbRequests.length === 0 ? (
-                        <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
-                            No service requests found in database.
-                          </td>
-                        </tr>
-                      ) : (
-                        dbRequests.map(req => (
+                      {(() => {
+                        const pendingBinRequests = dbRequests.filter(req => {
+                          const s = String(req.status || '').toUpperCase();
+                          return s !== 'COMPLETED' && s !== 'DECLINED' && s !== 'CANCELLED';
+                        });
+                        if (pendingBinRequests.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
+                                No pending bin deployment requests. All installed requests are in <strong>Active Sites Ledger</strong>.
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return pendingBinRequests.map(req => (
                           <tr key={req._id}>
                             <td><strong>{req.requestNumber}</strong></td>
                             <td>
@@ -549,8 +557,8 @@ export default function ManagementDashboard({
                               </div>
                             </td>
                           </tr>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -561,16 +569,25 @@ export default function ManagementDashboard({
                     Active Approved Deployments & Technical Team Status
                   </h3>
                   <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '24px' }}>
-                    Real-time status tracking for approved bin deployment requests, assigned technical staff, and installation completion progress.
+                    Real-time status tracking for approved bin deployment requests currently being installed by field workforce.
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {dbRequests.filter(r => r.status === 'APPROVED' || r.status === 'ASSIGNING' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS' || r.status === 'Completed').length === 0 ? (
-                      <div style={{ padding: '36px', background: '#F8FAFC', borderRadius: '16px', textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
-                        No active approved bin deployment requests currently in field execution.
-                      </div>
-                    ) : (
-                      dbRequests.filter(r => r.status === 'APPROVED' || r.status === 'ASSIGNING' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS' || r.status === 'Completed').map(req => {
+                    {(() => {
+                      const activeDeployingRequests = dbRequests.filter(r => {
+                        const s = String(r.status || '').toUpperCase();
+                        return ['APPROVED', 'ASSIGNING', 'ASSIGNED', 'IN_PROGRESS'].includes(s);
+                      });
+
+                      if (activeDeployingRequests.length === 0) {
+                        return (
+                          <div style={{ padding: '36px', background: '#F8FAFC', borderRadius: '16px', textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
+                            No active approved bin deployment requests currently in field execution. (Completed requests are automatically moved to <strong>Active Sites Ledger</strong>).
+                          </div>
+                        );
+                      }
+
+                      return activeDeployingRequests.map(req => {
                         const assignedList = req.assignedWorkers || [];
                         const completedCount = assignedList.filter(w => w.status === 'COMPLETED').length;
                         const totalAssigned = assignedList.length;
@@ -592,8 +609,8 @@ export default function ManagementDashboard({
                               </div>
 
                               <div style={{ textAlign: 'right' }}>
-                                <span style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', background: req.status === 'Completed' ? '#D1FAE5' : '#EFF6FF', color: req.status === 'Completed' ? '#065F46' : '#1D4ED8' }}>
-                                  {req.status === 'Completed' ? '✔ Completed' : `Staffing: ${totalAssigned}/${req.requiredWorkers || 1}`}
+                                <span style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', background: '#EFF6FF', color: '#1D4ED8' }}>
+                                  Staffing: {totalAssigned}/{req.requiredWorkers || 1}
                                 </span>
                               </div>
                             </div>
@@ -670,8 +687,8 @@ export default function ManagementDashboard({
                             </div>
                           </div>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </div>
                 </div>
               </div>

@@ -134,6 +134,12 @@ export const completeWork = async (req, res) => {
     await User.findByIdAndUpdate(job.workerId, { workerStatus: 'IDLE' });
 
     // Check if ALL assigned jobs for this request are completed
+    const uncompletedJobs = await JobAssignment.countDocuments({
+      requestId: job.requestId,
+      status: { $ne: 'COMPLETED' }
+    });
+    const allCompleted = uncompletedJobs === 0;
+
     if (allCompleted) {
       const targetReq = await ServiceRequest.findById(job.requestId);
       if (targetReq) {
@@ -156,7 +162,7 @@ export const completeWork = async (req, res) => {
           deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
         }
 
-        targetReq.status = 'Completed';
+        targetReq.status = 'COMPLETED';
         targetReq.clientIndex = clientIdx;
         targetReq.binPrefix = binPrefix;
         targetReq.deployedBinIds = deployedBinIds;
