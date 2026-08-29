@@ -375,10 +375,10 @@ export default function ManagementDashboard({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div className="rewards-pill">
-              🍃 1,257 Rewards
+              1,257 Reward Points
             </div>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer' }}>
-              🔔
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--primary)" strokeWidth="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             </div>
             <span className="pill-badge">
               Executive Authority
@@ -977,7 +977,7 @@ export default function ManagementDashboard({
               <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Telemetry Connectivity</div>
                 <div style={{ fontSize: '26px', fontWeight: '900', color: '#3B82F6', marginTop: '4px' }}>100% Online</div>
-                <div style={{ fontSize: '11px', color: '#3B82F6', fontWeight: '700', marginTop: '2px' }}>⚡ Proteus Bridge Sync Active</div>
+                <div style={{ fontSize: '11px', color: '#3B82F6', fontWeight: '700', marginTop: '2px' }}>Proteus Bridge Sync Active</div>
               </div>
             </div>
 
@@ -1040,7 +1040,7 @@ export default function ManagementDashboard({
                               {site.organizationName}
                             </h4>
                             <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
-                              📍 {site.address}, {site.town}, {site.city}
+                              {site.address}, {site.town}, {site.city}
                             </div>
                           </div>
 
@@ -1052,7 +1052,7 @@ export default function ManagementDashboard({
                             background: '#D1FAE5',
                             color: '#065F46'
                           }}>
-                            ● ACTIVE
+                            ACTIVE
                           </span>
                         </div>
 
@@ -1075,7 +1075,7 @@ export default function ManagementDashboard({
                                   color: '#1E293B'
                                 }}
                               >
-                                🏷️ {bId}
+                                ID: {bId}
                               </span>
                             ))}
                           </div>

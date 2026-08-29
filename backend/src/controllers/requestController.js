@@ -108,6 +108,20 @@ export const createRequest = async (req, res) => {
       const reqNumStr = String(count + 1).padStart(4, '0');
       const requestNumber = `REQ-2026-${reqNumStr}`;
 
+      // Calculate the next sequential client index for this organization
+      const maxSite = await ServiceRequest.findOne({
+        requestType: 'BIN_DEPLOYMENT',
+        clientIndex: { $exists: true, $ne: null }
+      }).sort({ clientIndex: -1 }).lean();
+
+      const nextClientIndex = (maxSite && maxSite.clientIndex) ? (maxSite.clientIndex + 1) : 1;
+      const clientStr = String(nextClientIndex).padStart(2, '0');
+      const binPrefix = `BIN-${clientStr}`;
+      const deployedBinIds = [];
+      for (let i = 1; i <= binsCount; i++) {
+        deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
+      }
+
       request = await ServiceRequest.create({
         requestNumber,
         userId: req.user?._id || 'usr_cust_001',
@@ -115,7 +129,7 @@ export const createRequest = async (req, res) => {
         contactPerson,
         phone,
         secondaryPhone,
-        email: email || req.user?.email || 'marriott@greengold.org',
+        email: email || req.user?.email || 'customer@greengold.org',
         address,
         town,
         city: city || 'Islamabad',
@@ -131,6 +145,9 @@ export const createRequest = async (req, res) => {
         specialInstructions,
         priority: priority || 'Standard',
         requiredWorkers,
+        clientIndex: nextClientIndex,
+        binPrefix,
+        deployedBinIds,
         status: 'SUBMITTED'
       });
     } catch (e) {

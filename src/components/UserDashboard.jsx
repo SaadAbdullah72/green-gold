@@ -11,9 +11,9 @@ import RequestProgressTracker from './RequestProgressTracker';
 
 const clientMapPinIcon = L.divIcon({
   className: '',
-  html: '<div style="width:28px;height:28px;border-radius:50%;background:#10B981;border:3px solid #FFFFFF;box-shadow:0 6px 18px rgba(16,185,129,0.6);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:900;">📍</div>',
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
+  html: '<div style="width:22px;height:22px;border-radius:50%;background:#047857;border:2px solid #FFFFFF;box-shadow:0 4px 10px rgba(4,120,87,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;">•</div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
 });
 
 function MapLocationSelector({ coords, onCoordsChange }) {
@@ -110,35 +110,35 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
   const LOCATION_PRESETS = [
     {
-      name: '🏨 Serena Hotel Islamabad',
+      name: 'Serena Hotel Islamabad (Sector G-5)',
       town: 'G-5',
       address: 'Club Road, Sector G-5/1, Islamabad',
       lat: 33.7206,
       lng: 73.1070
     },
     {
-      name: '🏘️ Bahria Town Phase 7',
+      name: 'Bahria Town Phase 7 (Rawalpindi)',
       town: 'Phase 7',
       address: 'Corniche Road, River View Commercial, Bahria Town Phase 7, Rawalpindi',
       lat: 33.5255,
       lng: 73.1098
     },
     {
-      name: '✈️ PAF Complex Sector E-9',
+      name: 'PAF Complex Sector E-9 (Islamabad)',
       town: 'E-9',
       address: 'PAF Complex, Margalla Road, Sector E-9, Islamabad',
       lat: 33.7145,
       lng: 73.0238
     },
     {
-      name: '🎓 NUST H-12 Campus',
+      name: 'NUST H-12 Campus (Islamabad)',
       town: 'H-12',
       address: 'NUST Main Campus, Gate 4, Sector H-12, Islamabad',
       lat: 33.6425,
       lng: 72.9904
     },
     {
-      name: '🏢 Beverly Centre Blue Area',
+      name: 'Beverly Centre Blue Area (Islamabad)',
       town: 'Blue Area',
       address: 'Beverly Centre, 56-G, Jinnah Avenue, Blue Area, Islamabad',
       lat: 33.7167,
@@ -579,7 +579,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      📍 Pinpoint Precise Site Location on Map
+                      Pinpoint Precise Site Location on Map
                     </label>
                     <span style={{ fontSize: '11px', color: '#64748B' }}>
                       Click on map or drag pin to set exact coordinates for installation & collection crew.
