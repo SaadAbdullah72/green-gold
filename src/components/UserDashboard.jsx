@@ -11,20 +11,22 @@ import RequestProgressTracker from './RequestProgressTracker';
 
 const clientMapPinIcon = L.divIcon({
   className: '',
-  html: '<div style="width:22px;height:22px;border-radius:50%;background:#047857;border:2px solid #FFFFFF;box-shadow:0 4px 10px rgba(4,120,87,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;">•</div>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
+  html: '<div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;"><div style="position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(4,120,87,0.25);"></div><div style="width:16px;height:16px;border-radius:50%;background:#047857;border:3px solid #FFFFFF;box-shadow:0 3px 10px rgba(0,0,0,0.3);position:relative;z-index:2;"></div></div>',
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
 });
 
-function MapLocationSelector({ coords, onCoordsChange }) {
+function MapLocationSelector({ coords, onCoordsChange, onLocationSelected }) {
   const map = useMapEvents({
     click(e) {
-      onCoordsChange({ lat: e.latlng.lat, lng: e.latlng.lng });
+      const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+      onCoordsChange(newCoords);
+      if (onLocationSelected) onLocationSelected(newCoords.lat, newCoords.lng);
     }
   });
 
   useEffect(() => {
-    map.flyTo([coords.lat, coords.lng], map.getZoom());
+    map.flyTo([coords.lat, coords.lng], map.getZoom(), { duration: 1.2 });
   }, [coords.lat, coords.lng, map]);
 
   return (
@@ -36,14 +38,16 @@ function MapLocationSelector({ coords, onCoordsChange }) {
         dragend(e) {
           const marker = e.target;
           const pos = marker.getLatLng();
-          onCoordsChange({ lat: pos.lat, lng: pos.lng });
+          const newCoords = { lat: pos.lat, lng: pos.lng };
+          onCoordsChange(newCoords);
+          if (onLocationSelected) onLocationSelected(newCoords.lat, newCoords.lng);
         }
       }}
     >
       <Popup>
-        <div style={{ fontWeight: 800, color: '#0F172A' }}>Selected Placement Location</div>
-        <div style={{ fontSize: '11px', color: '#64748B' }}>
-          Lat: {coords.lat.toFixed(4)}, Lng: {coords.lng.toFixed(4)}
+        <div style={{ fontWeight: 800, color: '#0F172A', fontFamily: 'Times New Roman, serif' }}>Selected Smart Bin Placement Site</div>
+        <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'Times New Roman, serif' }}>
+          GPS: {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
         </div>
       </Popup>
     </Marker>
@@ -108,51 +112,94 @@ export default function UserDashboard({ username, userData, onLogout }) {
     specialInstructions: ''
   });
 
-  const LOCATION_PRESETS = [
-    {
-      name: 'Serena Hotel Islamabad (Sector G-5)',
-      town: 'G-5',
-      address: 'Club Road, Sector G-5/1, Islamabad',
-      lat: 33.7206,
-      lng: 73.1070
-    },
-    {
-      name: 'Bahria Town Phase 7 (Rawalpindi)',
-      town: 'Phase 7',
-      address: 'Corniche Road, River View Commercial, Bahria Town Phase 7, Rawalpindi',
-      lat: 33.5255,
-      lng: 73.1098
-    },
-    {
-      name: 'PAF Complex Sector E-9 (Islamabad)',
-      town: 'E-9',
-      address: 'PAF Complex, Margalla Road, Sector E-9, Islamabad',
-      lat: 33.7145,
-      lng: 73.0238
-    },
-    {
-      name: 'NUST H-12 Campus (Islamabad)',
-      town: 'H-12',
-      address: 'NUST Main Campus, Gate 4, Sector H-12, Islamabad',
-      lat: 33.6425,
-      lng: 72.9904
-    },
-    {
-      name: 'Beverly Centre Blue Area (Islamabad)',
-      town: 'Blue Area',
-      address: 'Beverly Centre, 56-G, Jinnah Avenue, Blue Area, Islamabad',
-      lat: 33.7167,
-      lng: 73.0673
-    }
-  ];
+  // Dynamic Location Search & Reverse Geocode State (InDrive / Yango style)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
 
-  const handleApplyPreset = (preset) => {
-    setSelectedCoords({ lat: preset.lat, lng: preset.lng });
+  const handleSearchPlaces = async (queryText) => {
+    setSearchQuery(queryText);
+    if (!queryText || queryText.trim().length < 2) {
+      setSearchResults([]);
+      setSearchDropdownOpen(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryText)}&countrycodes=pk&limit=6&addressdetails=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      setSearchResults(Array.isArray(data) ? data : []);
+      setSearchDropdownOpen(true);
+    } catch (err) {
+      console.warn('Geocoding search failed:', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (item) => {
+    const lat = parseFloat(item.lat);
+    const lng = parseFloat(item.lon);
+    setSelectedCoords({ lat, lng });
+
+    const addr = item.address || {};
+    const suburb = addr.suburb || addr.neighbourhood || addr.city_district || addr.quarter || addr.town || addr.city || '';
+    const cleanAddress = item.display_name ? item.display_name.split(',').slice(0, 4).join(',').trim() : item.display_name;
+
     setBinRequestForm(prev => ({
       ...prev,
-      locationName: preset.town,
-      fullAddress: preset.address
+      locationName: suburb || prev.locationName,
+      fullAddress: cleanAddress || prev.fullAddress
     }));
+
+    setSearchQuery(cleanAddress);
+    setSearchDropdownOpen(false);
+  };
+
+  const reverseGeocodeCoords = async (lat, lng) => {
+    setIsGeocoding(true);
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const suburb = addr.suburb || addr.neighbourhood || addr.city_district || addr.quarter || addr.town || addr.city || '';
+        const cleanAddress = data.display_name ? data.display_name.split(',').slice(0, 4).join(',').trim() : data.display_name;
+
+        setBinRequestForm(prev => ({
+          ...prev,
+          locationName: suburb || prev.locationName,
+          fullAddress: cleanAddress || prev.fullAddress
+        }));
+        setSearchQuery(cleanAddress);
+      }
+    } catch (err) {
+      console.warn('Reverse geocoding failed:', err);
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const handleDetectCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setSelectedCoords({ lat, lng });
+          reverseGeocodeCoords(lat, lng);
+        },
+        (err) => {
+          alert('Device location unavailable. You can search any location by typing in the search box or dragging the map pin.');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
   };
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -573,54 +620,132 @@ export default function UserDashboard({ username, userData, onLogout }) {
               </div>
 
               {/* =========================================================================
-                  INTERACTIVE MAP LOCATION PICKER & QUICK PRESETS
+                  INDRIVE / YANGO STYLE INTERACTIVE SEARCH & PRECISE MAP PINPOINT
                   ========================================================================= */}
-              <div style={{ marginBottom: '24px', background: '#F8FAFC', padding: '18px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ marginBottom: '24px', background: '#F8FAFC', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Pinpoint Precise Site Location on Map
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Location Pinpoint & Area Search
                     </label>
-                    <span style={{ fontSize: '11px', color: '#64748B' }}>
-                      Click on map or drag pin to set exact coordinates for installation & collection crew.
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>
+                      Type any place/area in Pakistan below or drag the pin directly on the map (like InDrive/Yango).
                     </span>
                   </div>
-                  <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', color: '#065F46' }}>
-                    GPS: {selectedCoords.lat.toFixed(4)}, {selectedCoords.lng.toFixed(4)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isGeocoding && (
+                      <span style={{ fontSize: '11px', color: '#047857', fontWeight: '700' }}>
+                        Updating address...
+                      </span>
+                    )}
+                    <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', color: '#065F46' }}>
+                      GPS: {selectedCoords.lat.toFixed(5)}, {selectedCoords.lng.toFixed(5)}
+                    </div>
                   </div>
                 </div>
 
-                {/* Quick Presets Buttons */}
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', marginBottom: '6px' }}>
-                    Quick Landmark Presets:
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {LOCATION_PRESETS.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleApplyPreset(preset)}
+                {/* InDrive / Yango Search Bar with Auto-Complete Dropdown */}
+                <div style={{ position: 'relative', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <input
+                        type="text"
+                        className="modern-input"
+                        placeholder="Search any sector, landmark, or street (e.g. Serena Hotel, Centaurus, F-6 Markaz, Bahria Town)..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchPlaces(e.target.value)}
+                        onFocus={() => { if (searchResults.length > 0) setSearchDropdownOpen(true); }}
                         style={{
-                          background: selectedCoords.lat === preset.lat ? '#10B981' : '#FFFFFF',
-                          color: selectedCoords.lat === preset.lat ? '#FFFFFF' : '#1E293B',
-                          border: '1px solid #CBD5E1',
-                          padding: '6px 10px',
-                          borderRadius: '8px',
-                          fontSize: '11px',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
+                          width: '100%',
+                          height: '46px',
+                          paddingLeft: '38px',
+                          paddingRight: '36px',
+                          borderRadius: '10px',
+                          fontSize: '13px',
+                          fontWeight: '600'
                         }}
-                      >
-                        {preset.name}
-                      </button>
-                    ))}
+                      />
+                      <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748B' }}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                      </div>
+                      {isSearching && (
+                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#047857', fontWeight: '700' }}>
+                          Searching...
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleDetectCurrentLocation}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#FFFFFF',
+                        border: '1px solid #CBD5E1',
+                        borderRadius: '10px',
+                        padding: '0 14px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        color: '#047857',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                      title="Use device GPS"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                      Locate Me
+                    </button>
                   </div>
+
+                  {/* Auto-complete suggestions dropdown */}
+                  {searchDropdownOpen && searchResults.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '52px',
+                      left: 0,
+                      right: 0,
+                      background: '#FFFFFF',
+                      borderRadius: '12px',
+                      border: '1px solid #CBD5E1',
+                      boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+                      zIndex: 1000,
+                      maxHeight: '260px',
+                      overflowY: 'auto'
+                    }}>
+                      {searchResults.map((item, sIdx) => {
+                        const title = item.name || item.display_name.split(',')[0];
+                        const subtitle = item.display_name.split(',').slice(1, 4).join(',').trim();
+
+                        return (
+                          <div
+                            key={sIdx}
+                            onClick={() => handleSelectSearchResult(item)}
+                            style={{
+                              padding: '12px 16px',
+                              borderBottom: sIdx === searchResults.length - 1 ? 'none' : '1px solid #F1F5F9',
+                              cursor: 'pointer',
+                              transition: 'background 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}
+                          >
+                            <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
+                              {title}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                              {subtitle}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                {/* Interactive Leaflet Map Container */}
-                <div style={{ height: '240px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #CBD5E1' }}>
+                {/* Interactive Leaflet Map Container with Drag Pin & Reverse Geocode */}
+                <div style={{ height: '260px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #CBD5E1' }}>
                   <MapContainer
                     center={[selectedCoords.lat, selectedCoords.lng]}
                     zoom={14}
@@ -631,7 +756,11 @@ export default function UserDashboard({ username, userData, onLogout }) {
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <MapLocationSelector coords={selectedCoords} onCoordsChange={setSelectedCoords} />
+                    <MapLocationSelector
+                      coords={selectedCoords}
+                      onCoordsChange={setSelectedCoords}
+                      onLocationSelected={(lat, lng) => reverseGeocodeCoords(lat, lng)}
+                    />
                   </MapContainer>
                 </div>
               </div>
