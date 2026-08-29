@@ -78,7 +78,7 @@ export default function ManagementDashboard({
   const [dbAuditLogs, setDbAuditLogs] = useState([]);
   const [dbCollectionQueue, setDbCollectionQueue] = useState([]);
   const [dbActiveSites, setDbActiveSites] = useState([]);
-  const [selectedSite, setSelectedSite] = useState(null);
+  const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [clearingData, setClearingData] = useState(false);
   const [loadingDb, setLoadingDb] = useState(false);
 
@@ -147,9 +147,10 @@ export default function ManagementDashboard({
       const sitesRes = await api.management.getActiveSites();
       if (sitesRes.sites) {
         setDbActiveSites(prev => JSON.stringify(prev) !== JSON.stringify(sitesRes.sites) ? sitesRes.sites : prev);
-        if (!selectedSite && sitesRes.sites.length > 0) {
-          setSelectedSite(sitesRes.sites[0]);
-        }
+        setSelectedSiteId(prevId => {
+          if (prevId) return prevId;
+          return sitesRes.sites.length > 0 ? (sitesRes.sites[0].id || sitesRes.sites[0]._id) : null;
+        });
       }
 
       const auditRes = await api.audit.getLogs();
@@ -604,7 +605,7 @@ export default function ManagementDashboard({
                                   {req.organizationName}
                                 </h4>
                                 <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
-                                  📍 {req.address}, {req.town}, {req.city}
+                                  {req.address}, {req.town}, {req.city}
                                 </div>
                               </div>
 
@@ -1000,15 +1001,17 @@ export default function ManagementDashboard({
                     <div style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>No Active Deployed Sites Yet</div>
                     <div style={{ fontSize: '12px' }}>Once technical staff completes an installation, the deployed client site and its allotted bins will appear here automatically.</div>
                   </div>
-                ) : (
-                  dbActiveSites.map((site) => {
-                    const isSelected = selectedSite && (selectedSite.id === site.id || selectedSite._id === site._id || selectedSite.organizationName === site.organizationName);
+                ) : (() => {
+                  const activeSelectedSite = (selectedSiteId ? dbActiveSites.find(s => String(s.id || s._id) === String(selectedSiteId)) : null) || (dbActiveSites.length > 0 ? dbActiveSites[0] : null);
+
+                  return dbActiveSites.map((site) => {
+                    const isSelected = activeSelectedSite && String(activeSelectedSite.id || activeSelectedSite._id) === String(site.id || site._id);
                     const binList = site.deployedBinIds || [`${site.binPrefix || 'BIN-01'}-01`];
 
                     return (
                       <div
                         key={site.id || site._id}
-                        onClick={() => setSelectedSite(site)}
+                        onClick={() => setSelectedSiteId(site.id || site._id)}
                         style={{
                           padding: '18px 20px',
                           background: '#FFFFFF',
@@ -1082,14 +1085,14 @@ export default function ManagementDashboard({
                         </div>
                       </div>
                     );
-                  })
-                )}
+                  });
+                })()}
               </div>
 
               {/* Right Column: Selected Site Interactive Map & Deep Inspection */}
               <div style={{ position: 'sticky', top: '20px' }}>
                 {(() => {
-                  const currentSite = selectedSite || (dbActiveSites && dbActiveSites.length > 0 ? dbActiveSites[0] : null);
+                  const currentSite = (selectedSiteId ? dbActiveSites.find(s => String(s.id || s._id) === String(selectedSiteId)) : null) || (dbActiveSites && dbActiveSites.length > 0 ? dbActiveSites[0] : null);
 
                   if (!currentSite) {
                     return (
