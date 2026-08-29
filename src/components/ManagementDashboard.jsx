@@ -8,7 +8,7 @@ import DashboardAssistant from './DashboardAssistant';
 
 const siteActivePinIcon = L.divIcon({
   className: '',
-  html: '<div style="width:32px;height:32px;border-radius:50%;background:#10B981;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(16,185,129,0.7);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;">🏢</div>',
+  html: '<div style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;"><div style="position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(4,120,87,0.25);"></div><div style="width:18px;height:18px;border-radius:50%;background:#047857;border:3px solid #FFFFFF;box-shadow:0 4px 12px rgba(0,0,0,0.35);position:relative;z-index:2;"></div></div>',
   iconSize: [32, 32],
   iconAnchor: [16, 16],
 });
@@ -148,8 +148,10 @@ export default function ManagementDashboard({
       if (sitesRes.sites) {
         setDbActiveSites(prev => JSON.stringify(prev) !== JSON.stringify(sitesRes.sites) ? sitesRes.sites : prev);
         setSelectedSiteId(prevId => {
-          if (prevId) return prevId;
-          return sitesRes.sites.length > 0 ? (sitesRes.sites[0].id || sitesRes.sites[0]._id) : null;
+          if (prevId && sitesRes.sites.some(s => String(s.id || s._id) === String(prevId))) {
+            return prevId;
+          }
+          return sitesRes.sites.length > 0 ? String(sitesRes.sites[0].id || sitesRes.sites[0]._id) : null;
         });
       }
 
@@ -289,6 +291,32 @@ export default function ManagementDashboard({
       alert(`Assignment Error: ${err.message}`);
     }
   };
+
+  const [deletingSiteId, setDeletingSiteId] = useState(null);
+
+  const handleDeleteActiveSite = async (e, site) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const siteName = site.organizationName || 'this site';
+    const siteCode = site.clientCode || 'Active Site';
+    if (!window.confirm(`Are you sure you want to permanently remove ${siteCode} (${siteName}) from active deployment records?`)) {
+      return;
+    }
+
+    try {
+      const targetId = String(site.id || site._id);
+      setDeletingSiteId(targetId);
+      await api.management.deleteActiveSite(targetId);
+      setDbActiveSites(prev => prev.filter(s => String(s.id || s._id) !== targetId));
+      if (String(selectedSiteId) === targetId) {
+        setSelectedSiteId(null);
+      }
+    } catch (err) {
+      alert(`Failed to remove active site: ${err.message}`);
+    } finally {
+      setDeletingSiteId(null);
+    }
+  };
+
   // Extract user initials to render in the profile card avatar circle
   const initials = username.split(/[ _]/).map(w => w[0]).join("").toUpperCase().substring(0, 2);
 
@@ -1005,13 +1033,15 @@ export default function ManagementDashboard({
                   const activeSelectedSite = (selectedSiteId ? dbActiveSites.find(s => String(s.id || s._id) === String(selectedSiteId)) : null) || (dbActiveSites.length > 0 ? dbActiveSites[0] : null);
 
                   return dbActiveSites.map((site) => {
-                    const isSelected = activeSelectedSite && String(activeSelectedSite.id || activeSelectedSite._id) === String(site.id || site._id);
+                    const siteKey = String(site.id || site._id);
+                    const isSelected = activeSelectedSite && String(activeSelectedSite.id || activeSelectedSite._id) === siteKey;
                     const binList = site.deployedBinIds || [`${site.binPrefix || 'BIN-01'}-01`];
+                    const isDeleting = deletingSiteId === siteKey;
 
                     return (
                       <div
-                        key={site.id || site._id}
-                        onClick={() => setSelectedSiteId(site.id || site._id)}
+                        key={siteKey}
+                        onClick={() => setSelectedSiteId(siteKey)}
                         style={{
                           padding: '18px 20px',
                           background: '#FFFFFF',
@@ -1047,16 +1077,37 @@ export default function ManagementDashboard({
                             </div>
                           </div>
 
-                          <span style={{
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '11px',
-                            fontWeight: '800',
-                            background: '#D1FAE5',
-                            color: '#065F46'
-                          }}>
-                            ACTIVE
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              background: '#D1FAE5',
+                              color: '#065F46'
+                            }}>
+                              ACTIVE
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleDeleteActiveSite(e, site); }}
+                              disabled={isDeleting}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                border: '1px solid #FCA5A5',
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Remove site from active deployments"
+                            >
+                              {isDeleting ? 'Removing...' : 'Remove'}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Deployed Bin IDs List */}
@@ -1105,6 +1156,7 @@ export default function ManagementDashboard({
 
                   const currentLat = currentSite.lat || 33.7206;
                   const currentLng = currentSite.lng || 73.1070;
+                  const currentKey = String(currentSite.id || currentSite._id);
 
                   return (
                     <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
@@ -1117,14 +1169,34 @@ export default function ManagementDashboard({
                             {currentSite.organizationName}
                           </h3>
                         </div>
-                        <div style={{ padding: '6px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '10px', fontSize: '11px', fontWeight: '800', color: '#065F46' }}>
-                          GPS: {currentLat.toFixed(4)}, {currentLng.toFixed(4)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ padding: '6px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '10px', fontSize: '11px', fontWeight: '800', color: '#065F46' }}>
+                            GPS: {currentLat.toFixed(4)}, {currentLng.toFixed(4)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteActiveSite(e, currentSite)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: '1px solid #FCA5A5',
+                              background: '#FEF2F2',
+                              color: '#DC2626',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              cursor: 'pointer'
+                            }}
+                            title="Remove this site"
+                          >
+                            Remove Site
+                          </button>
                         </div>
                       </div>
 
-                      {/* Map Container */}
+                      {/* Map Container - Keyed by current site ID to force instant remount and correct coordinates */}
                       <div style={{ height: '320px', width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid #CBD5E1', marginBottom: '18px' }}>
                         <MapContainer
+                          key={currentKey}
                           center={[currentLat, currentLng]}
                           zoom={15}
                           style={{ height: '100%', width: '100%' }}

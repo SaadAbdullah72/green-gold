@@ -218,6 +218,14 @@ export const api = {
     getActiveSites: async () => {
       const res = await fetch(`${API_BASE}/management/active-sites`, { headers: getHeaders() });
       return await handleResponse(res);
+    },
+
+    deleteActiveSite: async (siteId) => {
+      const res = await fetch(`${API_BASE}/management/active-sites/${siteId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
     }
   },
 

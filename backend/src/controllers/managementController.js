@@ -366,3 +366,13 @@ export const getActiveSites = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteActiveSite = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await ServiceRequest.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Active site removed successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -8,7 +8,8 @@ import {
   getTechnicalWorkers,
   getCollectors,
   assignCollectorToPickup,
-  assignJob 
+  assignJob,
+  deleteActiveSite
 } from '../controllers/managementController.js';
 import { authenticateUser, requireRole } from '../middleware/auth.js';
 
@@ -20,6 +21,7 @@ router.use(requireRole('MANAGEMENT'));
 router.get('/requests', getAllRequests);
 router.get('/collection-queue', getCollectionQueue);
 router.get('/active-sites', getActiveSites);
+router.delete('/active-sites/:id', deleteActiveSite);
 router.patch('/requests/:id/approve', approveRequest);
 router.patch('/requests/:id/decline', declineRequest);
 
