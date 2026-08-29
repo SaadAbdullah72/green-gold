@@ -54,9 +54,9 @@ export default function CollectorDashboard({ onLogout }) {
     return { lat: 33.6844, lng: 73.0479 };
   };
 
-  const loadRoute = async () => {
+  const loadRoute = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await api.collector.getMyAssignments();
       const jobs = Array.isArray(data.jobs) ? data.jobs : [];
       const firstJob = jobs[0];
@@ -65,17 +65,17 @@ export default function CollectorDashboard({ onLogout }) {
       setLocation(current);
     } catch (error) {
       console.error('Route load failed:', error);
-      setRoute({ collectorId, currentLocation: { lat: 33.6844, lng: 73.0479 }, pickups: [] });
+      if (!silent) setRoute({ collectorId, currentLocation: { lat: 33.6844, lng: 73.0479 }, pickups: [] });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadRoute();
+    loadRoute(false);
     const interval = setInterval(() => {
-      loadRoute();
-    }, 3000);
+      loadRoute(true); // Silent background polling
+    }, 4000);
     return () => clearInterval(interval);
   }, [collectorId]);
 
@@ -276,40 +276,42 @@ export default function CollectorDashboard({ onLogout }) {
                           type="button"
                           onClick={() => handleAcceptAssignment(pickup)}
                           style={{
-                            background: '#3B82F6',
+                            background: '#1D4ED8',
                             color: 'white',
                             border: 'none',
-                            borderRadius: '10px',
+                            borderRadius: '8px',
                             padding: '10px 16px',
-                            fontWeight: 800,
+                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                            fontWeight: 700,
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
-                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                            boxShadow: '0 4px 12px rgba(29, 78, 216, 0.25)'
                           }}
                         >
-                          ✅ Accept Duty (Start Route)
+                          Accept Duty (Start Route)
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleCollect(pickup)}
                           style={{
-                            background: '#10B981',
+                            background: '#047857',
                             color: 'white',
                             border: 'none',
-                            borderRadius: '10px',
+                            borderRadius: '8px',
                             padding: '10px 16px',
-                            fontWeight: 800,
+                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                            fontWeight: 700,
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
-                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                            boxShadow: '0 4px 12px rgba(4, 120, 87, 0.25)'
                           }}
                         >
-                          🏁 Mark Collected / Done Task
+                          Mark Collected / Task Done
                         </button>
                       )}
                       <button
@@ -319,8 +321,9 @@ export default function CollectorDashboard({ onLogout }) {
                           background: '#FEF3C7',
                           color: '#92400E',
                           border: '1px solid #FCD34D',
-                          borderRadius: '10px',
+                          borderRadius: '8px',
                           padding: '10px 14px',
+                          fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                           fontWeight: 700,
                           cursor: 'pointer'
                         }}

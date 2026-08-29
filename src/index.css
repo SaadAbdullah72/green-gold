@@ -68,10 +68,14 @@
   padding: 0;
 }
 
+*, *::before, *::after, body, button, input, select, textarea, table, span, p, div, a, th, td, h1, h2, h3, h4, h5, h6 {
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
+}
+
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
-  font-family: var(--font-body);
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
@@ -80,10 +84,10 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 /* =========================================================================

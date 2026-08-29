@@ -37,27 +37,26 @@ export default function TechnicianDashboard({ onLogout }) {
     };
   };
 
-  const loadJobs = async () => {
+  const loadJobs = async (silent = false) => {
     try {
-      setLoadingJobs(true);
+      if (!silent) setLoadingJobs(true);
       const res = await api.technical.getJobs();
       const nextJobs = Array.isArray(res?.jobs) ? res.jobs : [];
       setJobs(nextJobs.map(normalizeJob));
     } catch (error) {
       console.error('Failed to load technician jobs:', error);
-      setJobs([]);
+      if (!silent) setJobs([]);
     } finally {
-      setLoadingJobs(false);
+      if (!silent) setLoadingJobs(false);
     }
   };
 
   useEffect(() => {
-    loadJobs();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
+    loadJobs(false);
+    const pollTimer = setInterval(() => {
+      loadJobs(true); // Silent background polling without triggering re-render flickering
+    }, 4000);
+    return () => clearInterval(pollTimer);
   }, []);
 
   const activeAssignedJobs = useMemo(
@@ -79,7 +78,7 @@ export default function TechnicianDashboard({ onLogout }) {
       } else if (nextStatus === 'COMPLETED') {
         await api.technical.completeWork(jobId, { binsInstalled: 2, serialNumbers: 'SN-GG-TRACKER', notes: 'Updated from progress tracker' });
       }
-      await loadJobs();
+      await loadJobs(true);
     } catch (error) {
       console.error('Failed to update job stage:', error);
     }
@@ -88,7 +87,7 @@ export default function TechnicianDashboard({ onLogout }) {
   const handleStartWork = async (jobId) => {
     try {
       await api.technical.startWork(jobId);
-      await loadJobs();
+      await loadJobs(true);
     } catch (error) {
       console.error('Failed to start job:', error);
       alert('Error starting work: ' + error.message);
@@ -98,20 +97,12 @@ export default function TechnicianDashboard({ onLogout }) {
   const handleCompleteWork = async (jobId) => {
     try {
       await api.technical.completeWork(jobId, { binsInstalled: 2, notes: 'Smart bins deployed and verified by technician' });
-      await loadJobs();
+      await loadJobs(true);
     } catch (error) {
       console.error('Failed to complete job:', error);
       alert('Error completing work: ' + error.message);
     }
   };
-
-  useEffect(() => {
-    loadJobs();
-    const pollTimer = setInterval(() => {
-      loadJobs();
-    }, 3000);
-    return () => clearInterval(pollTimer);
-  }, []);
 
   const getTimerText = (deadline) => {
     const target = new Date(deadline).getTime();
@@ -332,18 +323,19 @@ export default function TechnicianDashboard({ onLogout }) {
                           type="button"
                           onClick={() => handleStageUpdate(job._id, 'ACCEPTED')}
                           style={{
-                            background: '#10B981',
+                            background: '#047857',
                             color: '#FFFFFF',
                             border: 'none',
-                            borderRadius: '12px',
+                            borderRadius: '8px',
                             padding: '12px 24px',
                             fontSize: '14px',
-                            fontWeight: 800,
+                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                            fontWeight: 700,
                             cursor: 'pointer',
-                            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.25)'
+                            boxShadow: '0 4px 12px rgba(4, 120, 87, 0.2)'
                           }}
                         >
-                          ✅ Accept Assignment »
+                          Accept Assignment
                         </button>
                       )}
 
@@ -353,18 +345,19 @@ export default function TechnicianDashboard({ onLogout }) {
                             type="button"
                             onClick={() => handleStartWork(job._id)}
                             style={{
-                              background: '#3B82F6',
+                              background: '#1D4ED8',
                               color: '#FFFFFF',
                               border: 'none',
-                              borderRadius: '12px',
+                              borderRadius: '8px',
                               padding: '12px 20px',
                               fontSize: '14px',
-                              fontWeight: 800,
+                              fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                              fontWeight: 700,
                               cursor: 'pointer',
-                              boxShadow: '0 8px 20px rgba(59, 130, 246, 0.25)'
+                              boxShadow: '0 4px 12px rgba(29, 78, 216, 0.2)'
                             }}
                           >
-                            📍 Reached Destination (Start Work) »
+                            Mark Reached Destination (Start Work)
                           </button>
                           <button
                             type="button"
@@ -373,15 +366,16 @@ export default function TechnicianDashboard({ onLogout }) {
                               background: '#047857',
                               color: '#FFFFFF',
                               border: 'none',
-                              borderRadius: '12px',
+                              borderRadius: '8px',
                               padding: '12px 20px',
                               fontSize: '14px',
-                              fontWeight: 800,
+                              fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                              fontWeight: 700,
                               cursor: 'pointer',
-                              boxShadow: '0 8px 20px rgba(4, 120, 87, 0.25)'
+                              boxShadow: '0 4px 12px rgba(4, 120, 87, 0.2)'
                             }}
                           >
-                            🏁 Complete Work & Allot Bins »
+                            Complete Work & Allot Bins
                           </button>
                         </>
                       )}
@@ -394,15 +388,16 @@ export default function TechnicianDashboard({ onLogout }) {
                             background: '#047857',
                             color: '#FFFFFF',
                             border: 'none',
-                            borderRadius: '12px',
+                            borderRadius: '8px',
                             padding: '12px 24px',
                             fontSize: '14px',
-                            fontWeight: 800,
+                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                            fontWeight: 700,
                             cursor: 'pointer',
-                            boxShadow: '0 8px 20px rgba(4, 120, 87, 0.25)'
+                            boxShadow: '0 4px 12px rgba(4, 120, 87, 0.2)'
                           }}
                         >
-                          🏁 Complete Work & Allot Bins »
+                          Complete Work & Allot Bins
                         </button>
                       )}
                     </div>

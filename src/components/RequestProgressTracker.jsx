@@ -91,20 +91,21 @@ export default function RequestProgressTracker({
                 disabled={isDisabled}
                 style={{
                   border: '1px solid',
-                  borderColor: isComplete ? '#10B981' : isNext ? '#10B981' : isCurrent ? '#0EA5E9' : '#CBD5E1',
+                  borderColor: isComplete ? '#047857' : isNext ? '#047857' : isCurrent ? '#1D4ED8' : '#CBD5E1',
                   background: isComplete ? '#ECFDF5' : isNext ? '#F0FDF4' : isCurrent ? '#EFF6FF' : '#F8FAFC',
                   color: isComplete ? '#065F46' : isNext ? '#047857' : isCurrent ? '#1D4ED8' : '#334155',
-                  borderRadius: '10px',
-                  padding: '8px 6px',
-                  fontSize: '11px',
-                  fontWeight: 800,
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                  fontSize: '12px',
+                  fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
+                  fontWeight: 700,
                   cursor: isDisabled ? 'default' : 'pointer',
                   opacity: isDisabled ? 0.85 : 1,
-                  boxShadow: isNext ? '0 2px 8px rgba(16,185,129,0.2)' : 'none',
+                  boxShadow: isNext ? '0 2px 6px rgba(4,120,87,0.15)' : 'none',
                   transition: 'all 0.2s ease'
                 }}
               >
-                {isComplete ? '✓ ' : isNext ? '👉 ' : ''}{stage.label}
+                {index + 1}. {stage.label}
               </button>
             );
           })}
