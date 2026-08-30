@@ -238,7 +238,107 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             </p>
           </div>
 
-          {/* ROLE PROFILE SELECTION DROPDOWN (Clean, No Emojis) */}
+          {/* QUICK ROLE SELECTOR BUTTONS */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '18px' }}>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('MANAGEMENT')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'MANAGEMENT' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'MANAGEMENT' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'MANAGEMENT' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Management
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('USER')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'USER' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'USER' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'USER' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('COLLECTOR')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'COLLECTOR' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'COLLECTOR' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'COLLECTOR' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Collector
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('TRANSPORTER')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'TRANSPORTER' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'TRANSPORTER' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'TRANSPORTER' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Transporter
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('RECYCLING_PLANT')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'RECYCLING_PLANT' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'RECYCLING_PLANT' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'RECYCLING_PLANT' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Recycling Plant
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('TECHNICAL')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'TECHNICAL' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'TECHNICAL' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'TECHNICAL' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Technician
+            </button>
+          </div>
+
+          {/* ROLE PROFILE SELECTION DROPDOWN */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
               Access Profile Role *
