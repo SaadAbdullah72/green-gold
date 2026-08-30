@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health Check (no DB needed)
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     status: 'OK',
     system: 'GreenGold OS Bin Deployment Management System API',
@@ -33,20 +33,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Ensure DB is connected before hitting any API route
-app.use('/api', ensureDBConnected);
+// Ensure DB connection is initiated
+app.use(ensureDBConnected);
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/requests', requestRoutes);
-app.use('/api/management', managementRoutes);
-app.use('/api/technical', technicalRoutes);
-app.use('/api/collector', collectorRoutes);
-app.use('/api/transporter', transporterRoutes);
-app.use('/api/recycling', recyclingRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/iot', iotRoutes);
+// Mount API Routes under both /api and root prefixes for seamless serverless routing
+const mountRoutes = (prefix = '') => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/requests`, requestRoutes);
+  app.use(`${prefix}/management`, managementRoutes);
+  app.use(`${prefix}/technical`, technicalRoutes);
+  app.use(`${prefix}/collector`, collectorRoutes);
+  app.use(`${prefix}/transporter`, transporterRoutes);
+  app.use(`${prefix}/recycling`, recyclingRoutes);
+  app.use(`${prefix}/notifications`, notificationRoutes);
+  app.use(`${prefix}/audit`, auditRoutes);
+  app.use(`${prefix}/iot`, iotRoutes);
+};
+
+mountRoutes('/api');
+mountRoutes('');
 
 // Error Handler
 app.use(errorHandler);

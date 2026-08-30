@@ -14,39 +14,35 @@ export const connectDB = async () => {
 
   try {
     const conn = await mongoose.connect(connStr, { 
-      serverSelectionTimeoutMS: 15000,
-      connectTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      bufferCommands: true,
-      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 20000,
+      bufferCommands: false,
+      maxPoolSize: 5,
     });
     cachedConnection = conn;
     console.log(`✅ MONGODB CONNECTED: ${conn.connection.host}`);
     
-    // Auto-seed management account (safe, won't crash if it fails)
-    try {
-      await autoSeedManagementAccount();
-    } catch (seedErr) {
-      console.error('Seed notice:', seedErr.message);
-    }
+    // Auto-seed management account in background
+    autoSeedManagementAccount().catch(() => {});
     
     return conn;
   } catch (err) {
-    console.error(`❌ MongoDB Connection Error: ${err.message}`);
-    throw err;
+    console.error(`MongoDB Connection Notice: ${err.message}`);
+    return null;
   }
 };
 
-// Middleware to ensure DB is connected before handling requests
+// Middleware to ensure DB connection is active without hard-blocking
 export const ensureDBConnected = async (req, res, next) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       await connectDB();
     }
-    next();
   } catch (err) {
-    res.status(503).json({ success: false, message: 'Database temporarily unavailable. Please try again.' });
+    // Non-blocking
   }
+  next();
 };
 
 async function autoSeedManagementAccount() {
