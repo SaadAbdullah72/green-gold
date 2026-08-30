@@ -293,22 +293,83 @@ const SEEDED_ACCOUNTS = [
       department: 'Operations Command'
     }
   },
+  // 4 Waste Collectors (Smart Bins -> Dump Yard)
   {
-    email: 'collector@greengold.com',
+    email: 'collector1@greengold.com',
     passwords: ['collector123'],
     data: {
-      fullName: 'Waste Collector Driver C-101',
+      fullName: 'Collector Driver Tariq Jamil',
       phone: '+92 321 5550101',
       secondaryPhone: '+92 321 5550199',
       role: 'COLLECTOR',
       employeeId: 'C-101',
-      department: 'Waste Collection',
+      department: 'Waste Collection Fleet',
       town: 'F-7',
-      vehicleNumber: 'ICT-GRN-9912',
+      vehicleNumber: 'ICT-GRN-9901',
       workerStatus: 'IDLE'
     }
   },
-  // 4 Transporters
+  {
+    email: 'collector@greengold.com',
+    passwords: ['collector123'],
+    data: {
+      fullName: 'Collector Driver Tariq Jamil',
+      phone: '+92 321 5550101',
+      secondaryPhone: '+92 321 5550199',
+      role: 'COLLECTOR',
+      employeeId: 'C-101',
+      department: 'Waste Collection Fleet',
+      town: 'F-7',
+      vehicleNumber: 'ICT-GRN-9901',
+      workerStatus: 'IDLE'
+    }
+  },
+  {
+    email: 'collector2@greengold.com',
+    passwords: ['collector123'],
+    data: {
+      fullName: 'Collector Driver Zubair Ali',
+      phone: '+92 321 5550102',
+      secondaryPhone: '+92 321 5550199',
+      role: 'COLLECTOR',
+      employeeId: 'C-102',
+      department: 'Waste Collection Fleet',
+      town: 'G-5',
+      vehicleNumber: 'ICT-GRN-9902',
+      workerStatus: 'IDLE'
+    }
+  },
+  {
+    email: 'collector3@greengold.com',
+    passwords: ['collector123'],
+    data: {
+      fullName: 'Collector Driver Usman Ghani',
+      phone: '+92 321 5550103',
+      secondaryPhone: '+92 321 5550199',
+      role: 'COLLECTOR',
+      employeeId: 'C-103',
+      department: 'Waste Collection Fleet',
+      town: 'E-9',
+      vehicleNumber: 'ICT-GRN-9903',
+      workerStatus: 'IDLE'
+    }
+  },
+  {
+    email: 'collector4@greengold.com',
+    passwords: ['collector123'],
+    data: {
+      fullName: 'Collector Driver Farhan Malik',
+      phone: '+92 321 5550104',
+      secondaryPhone: '+92 321 5550199',
+      role: 'COLLECTOR',
+      employeeId: 'C-104',
+      department: 'Waste Collection Fleet',
+      town: 'F-6',
+      vehicleNumber: 'ICT-GRN-9904',
+      workerStatus: 'IDLE'
+    }
+  },
+  // 4 Transporters (Dump Yard -> Recycling Plant)
   {
     email: 'transporter1@greengold.com',
     passwords: ['transport123'],
