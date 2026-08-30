@@ -83,6 +83,17 @@ export default function DumpingFacilityDashboard({ onLogout }) {
         }
       }
       if (jobsRes.success) setTransportJobs(jobsRes.jobs || []);
+
+      // Cache to sessionStorage for 0ms instant reload
+      try {
+        sessionStorage.setItem('greengold_dump_cache', JSON.stringify({
+          analytics: analyticsRes.success ? analyticsRes : null,
+          records: recordsRes.success ? recordsRes.records : [],
+          plants: plantRes.success ? plantRes.plants : [],
+          transporters: trnRes.success ? trnRes.transporters : [],
+          jobs: jobsRes.success ? jobsRes.jobs : []
+        }));
+      } catch (e) {}
     } catch (err) {
       showMsg('error', 'Error synchronizing facility data: ' + err.message);
     } finally {
@@ -92,8 +103,22 @@ export default function DumpingFacilityDashboard({ onLogout }) {
   }, [selectedSiteId, selectedPlantId]);
 
   useEffect(() => {
+    // Instant 0ms cache hydration
+    try {
+      const cached = sessionStorage.getItem('greengold_dump_cache');
+      if (cached) {
+        const d = JSON.parse(cached);
+        if (d.analytics) setAnalytics(d.analytics);
+        if (d.records) setRecords(d.records);
+        if (d.plants) setPlants(d.plants);
+        if (d.transporters) setTransporters(d.transporters);
+        if (d.jobs) setTransportJobs(d.jobs);
+        setLoading(false);
+      }
+    } catch (e) {}
+
     loadData();
-    const interval = setInterval(loadData, 12000);
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, [loadData]);
 

@@ -146,56 +146,34 @@ export default function ManagementDashboard({
 
   const loadManagementData = async (isInitial = false) => {
     try {
-      const reqRes = await api.management.getRequests();
-      if (reqRes.requests) {
-        setDbRequests(prev => JSON.stringify(prev) !== JSON.stringify(reqRes.requests) ? reqRes.requests : prev);
-      }
+      const res = await api.management.getBootstrap();
+      if (res && res.data) {
+        const d = res.data;
+        if (d.requests) setDbRequests(d.requests);
+        if (d.workers) setDbWorkers(d.workers);
+        if (d.collectors) setDbCollectors(d.collectors);
+        if (d.collectionQueue) setDbCollectionQueue(d.collectionQueue);
+        if (d.sites) {
+          setDbActiveSites(d.sites);
+          setSelectedSiteId(prevId => {
+            if (prevId && d.sites.some(s => String(s.id || s._id) === String(prevId))) {
+              return prevId;
+            }
+            return d.sites.length > 0 ? String(d.sites[0].id || d.sites[0]._id) : null;
+          });
+        }
+        if (d.dumpRecords) setDbDumpRecords(d.dumpRecords);
+        if (d.transporters) setDbTransporters(d.transporters);
+        if (d.recyclingPlants) setDbRecyclingPlants(d.recyclingPlants);
+        if (d.transportJobs) setDbTransportJobs(d.transportJobs);
+        if (d.recyclingReports) setDbRecyclingReports(d.recyclingReports);
+        if (d.wasteTracking) setDbWasteTracking(d.wasteTracking);
+        if (d.auditLogs) setDbAuditLogs(d.auditLogs);
 
-      const workerRes = await api.management.getWorkers();
-      if (workerRes.workers) {
-        setDbWorkers(prev => JSON.stringify(prev) !== JSON.stringify(workerRes.workers) ? workerRes.workers : prev);
-      }
-
-      const collectorRes = await api.management.getCollectors();
-      if (collectorRes.collectors) {
-        setDbCollectors(prev => JSON.stringify(prev) !== JSON.stringify(collectorRes.collectors) ? collectorRes.collectors : prev);
-      }
-
-      const collectionQueueRes = await api.management.getCollectionQueue();
-      if (collectionQueueRes.requests) {
-        setDbCollectionQueue(prev => JSON.stringify(prev) !== JSON.stringify(collectionQueueRes.requests) ? collectionQueueRes.requests : prev);
-      }
-
-      const sitesRes = await api.management.getActiveSites();
-      if (sitesRes.sites) {
-        setDbActiveSites(prev => JSON.stringify(prev) !== JSON.stringify(sitesRes.sites) ? sitesRes.sites : prev);
-        setSelectedSiteId(prevId => {
-          if (prevId && sitesRes.sites.some(s => String(s.id || s._id) === String(prevId))) {
-            return prevId;
-          }
-          return sitesRes.sites.length > 0 ? String(sitesRes.sites[0].id || sitesRes.sites[0]._id) : null;
-        });
-      }
-
-      const [dumpRes, trnRes, plantRes, jobRes, reportRes, trackRes] = await Promise.allSettled([
-        api.management.getDumpRecords(),
-        api.management.getTransporters(),
-        api.management.getRecyclingPlants(),
-        api.management.getAllTransportJobs(),
-        api.management.getAllRecyclingReports(),
-        api.management.getWasteTrackingOverview()
-      ]);
-
-      if (dumpRes.status === 'fulfilled' && dumpRes.value.records) setDbDumpRecords(dumpRes.value.records);
-      if (trnRes.status === 'fulfilled' && trnRes.value.transporters) setDbTransporters(trnRes.value.transporters);
-      if (plantRes.status === 'fulfilled' && plantRes.value.plants) setDbRecyclingPlants(plantRes.value.plants);
-      if (jobRes.status === 'fulfilled' && jobRes.value.jobs) setDbTransportJobs(jobRes.value.jobs);
-      if (reportRes.status === 'fulfilled' && reportRes.value.reports) setDbRecyclingReports(reportRes.value.reports);
-      if (trackRes.status === 'fulfilled' && trackRes.value.userSummaries) setDbWasteTracking(trackRes.value);
-
-      const auditRes = await api.audit.getLogs();
-      if (auditRes.logs) {
-        setDbAuditLogs(prev => JSON.stringify(prev) !== JSON.stringify(auditRes.logs) ? auditRes.logs : prev);
+        // Cache for instant 0ms reload
+        try {
+          sessionStorage.setItem('greengold_mgmt_cache', JSON.stringify(d));
+        } catch (e) {}
       }
     } catch (err) {
       if (err.message && (err.message.includes('Token') || err.message.includes('authorized'))) {
@@ -205,10 +183,27 @@ export default function ManagementDashboard({
   };
 
   useEffect(() => {
+    // Instant 0ms Cache Hydration
+    try {
+      const cached = sessionStorage.getItem('greengold_mgmt_cache');
+      if (cached) {
+        const d = JSON.parse(cached);
+        if (d.requests) setDbRequests(d.requests);
+        if (d.workers) setDbWorkers(d.workers);
+        if (d.collectors) setDbCollectors(d.collectors);
+        if (d.collectionQueue) setDbCollectionQueue(d.collectionQueue);
+        if (d.sites) setDbActiveSites(d.sites);
+        if (d.dumpRecords) setDbDumpRecords(d.dumpRecords);
+        if (d.transportJobs) setDbTransportJobs(d.transportJobs);
+        if (d.recyclingReports) setDbRecyclingReports(d.recyclingReports);
+        if (d.wasteTracking) setDbWasteTracking(d.wasteTracking);
+      }
+    } catch (e) {}
+
     loadManagementData(true);
     const timer = setInterval(() => {
       loadManagementData(false);
-    }, 2500);
+    }, 4000);
     return () => clearInterval(timer);
   }, []);
 

@@ -27,7 +27,8 @@ import {
   deleteRecyclingReport,
   clearAllRecyclingReports,
   deleteCollectorAssignment,
-  clearAllCollectorAssignments
+  clearAllCollectorAssignments,
+  getManagementBootstrap
 } from '../controllers/managementController.js';
 import { authenticateUser, requireRole } from '../middleware/auth.js';
 
@@ -36,6 +37,7 @@ const router = express.Router();
 router.use(authenticateUser);
 router.use(requireRole('MANAGEMENT'));
 
+router.get('/bootstrap', getManagementBootstrap);
 router.get('/requests', getAllRequests);
 router.get('/collection-queue', getCollectionQueue);
 router.get('/active-sites', getActiveSites);

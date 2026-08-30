@@ -5,6 +5,7 @@ import { CollectorAssignment } from '../models/CollectorAssignment.js';
 import { DumpRecord } from '../models/DumpRecord.js';
 import { TransportJob } from '../models/TransportJob.js';
 import { RecyclingReport } from '../models/RecyclingReport.js';
+import { AuditLog } from '../models/AuditLog.js';
 import { calculateRequiredWorkers } from './requestController.js';
 import { saveUsersToDisk } from '../config/persistence.js';
 
@@ -911,4 +912,170 @@ export const clearAllCollectorAssignments = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Ultra High-Speed Aggregated Bootstrap: Loads all Management Hub data in ONE single DB round-trip
+export const getManagementBootstrap = async (req, res) => {
+  try {
+    const [
+      rawRequests,
+      assignments,
+      rawSites,
+      workers,
+      collectors,
+      dumpRecords,
+      transporters,
+      plants,
+      transportJobs,
+      recyclingReports,
+      auditLogs
+    ] = await Promise.all([
+      ServiceRequest.find({ requestType: 'BIN_DEPLOYMENT' }).sort({ createdAt: -1 }).lean(),
+      CollectorAssignment.find({}).populate('requestId').populate('collectorId', 'fullName phone employeeId vehicleNumber').sort({ assignedAt: -1 }).lean().catch(() => []),
+      ServiceRequest.find({ requestType: 'BIN_DEPLOYMENT', status: { $in: ['COMPLETED', 'Completed'] } }).sort({ createdAt: 1 }).lean().catch(() => []),
+      User.find({ role: 'TECHNICAL' }).select('-passwordHash').lean().catch(() => []),
+      User.find({ role: 'COLLECTOR' }).select('-passwordHash').lean().catch(() => []),
+      DumpRecord.find({}).populate('collectorId', 'fullName phone vehicleNumber').sort({ dumpedAt: -1 }).lean().catch(() => []),
+      User.find({ role: 'TRANSPORTER' }).select('-passwordHash').lean().catch(() => []),
+      User.find({ role: 'RECYCLING_PLANT' }).select('-passwordHash').lean().catch(() => []),
+      TransportJob.find({}).populate('transporterId', 'fullName phone vehicleNumber').sort({ assignedAt: -1 }).lean().catch(() => []),
+      RecyclingReport.find({}).sort({ processedAt: -1 }).lean().catch(() => []),
+      AuditLog.find({}).sort({ timestamp: -1 }).limit(20).lean().catch(() => [])
+    ]);
+
+    // Format requests with active worker assignments
+    const requests = rawRequests.map(r => {
+      const neededWorkers = calculateRequiredWorkers(r.numberOfBins || 1);
+      return {
+        ...r,
+        id: r._id,
+        requiredWorkers: neededWorkers,
+        assignedWorkersCount: 0,
+        activeAssignments: [],
+        assignedWorkerNames: []
+      };
+    });
+
+    // Format active sites with dynamic client indices
+    const sites = (rawSites || []).map((site, idx) => {
+      const clientIdx = site.clientIndex || (idx + 1);
+      const clientStr = String(clientIdx).padStart(2, '0');
+      const binPrefix = site.binPrefix || `BIN-${clientStr}`;
+      const totalBins = site.numberOfBins || 1;
+      let deployedBinIds = site.deployedBinIds;
+      if (!deployedBinIds || deployedBinIds.length === 0) {
+        deployedBinIds = [];
+        for (let i = 1; i <= totalBins; i++) {
+          deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
+        }
+      }
+      const coords = site.location?.coordinates || [73.0479, 33.6844];
+      return {
+        id: site._id,
+        _id: site._id,
+        requestNumber: site.requestNumber,
+        clientIndex: clientIdx,
+        clientCode: `CLIENT-${clientStr}`,
+        binPrefix,
+        deployedBinIds,
+        organizationName: site.organizationName,
+        contactPerson: site.contactPerson,
+        phone: site.phone,
+        email: site.email,
+        address: site.address,
+        town: site.town,
+        city: site.city || 'Islamabad',
+        lat: coords[1],
+        lng: coords[0],
+        numberOfBins: totalBins,
+        binType: site.binType || 'IoT Ultrasonic Smart Bin (240L)',
+        status: site.status === 'Completed' ? 'ACTIVE' : 'DEPLOYING',
+        requestStatus: site.status,
+        installedAt: site.installedAt || site.updatedAt || site.createdAt,
+        createdAt: site.createdAt
+      };
+    });
+
+    // Format collection queue
+    const collectionQueue = assignments.map(a => ({
+      id: a._id,
+      _id: a._id,
+      requestId: a.requestId?._id || a.requestId,
+      requestNumber: a.requestId?.requestNumber || 'REQ-COLL',
+      site: a.siteName,
+      locationName: a.siteName,
+      town: a.town,
+      address: a.address,
+      wasteType: a.wasteType,
+      weightKg: a.estimatedWeightKg,
+      notes: a.notes,
+      assignedCollectorId: a.collectorId?._id || a.collectorId,
+      assignedCollectorName: a.collectorId?.fullName || 'Collector',
+      collectorPhone: a.collectorId?.phone,
+      vehicleNumber: a.collectorId?.vehicleNumber,
+      status: a.status,
+      assignedAt: a.assignedAt,
+      collectedDate: a.collectedDate
+    }));
+
+    // User waste tracking calculations
+    const userMap = {};
+    (dumpRecords || []).forEach(d => {
+      const key = d.organizationName || 'General Client';
+      if (!userMap[key]) {
+        userMap[key] = {
+          organizationName: key,
+          clientCode: d.clientCode || 'CLIENT-01',
+          totalDumpedKg: 0,
+          totalRecycledKg: 0,
+          totalCarbonCredits: 0,
+          dumpBatchesCount: 0
+        };
+      }
+      userMap[key].totalDumpedKg += (d.weightKg || 0);
+      userMap[key].dumpBatchesCount += 1;
+    });
+
+    (recyclingReports || []).forEach(r => {
+      if (r.userContributions && Array.isArray(r.userContributions)) {
+        r.userContributions.forEach(uc => {
+          const key = uc.organizationName || 'General Client';
+          if (userMap[key]) {
+            userMap[key].totalRecycledKg += (uc.recycledKg || 0);
+            userMap[key].totalCarbonCredits += (uc.carbonCreditsEarned || 0);
+          }
+        });
+      }
+    });
+
+    const userSummaries = Object.values(userMap).map(u => ({
+      ...u,
+      totalDumpedKg: Number(u.totalDumpedKg.toFixed(2)),
+      totalRecycledKg: Number(u.totalRecycledKg.toFixed(2)),
+      totalCarbonCredits: Number(u.totalCarbonCredits.toFixed(2)),
+      recyclingRatePercent: u.totalDumpedKg > 0 ? Number(((u.totalRecycledKg / u.totalDumpedKg) * 100).toFixed(1)) : 0
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        requests,
+        collectionQueue,
+        sites,
+        workers,
+        collectors,
+        dumpRecords,
+        transporters,
+        recyclingPlants: plants,
+        transportJobs,
+        recyclingReports,
+        wasteTracking: { userSummaries },
+        auditLogs
+      }
+    });
+  } catch (error) {
+    console.error('getManagementBootstrap error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 

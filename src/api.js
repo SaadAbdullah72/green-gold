@@ -196,6 +196,11 @@ export const api = {
   },
 
   management: {
+    getBootstrap: async () => {
+      const res = await fetch(`${API_BASE}/management/bootstrap`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
     getRequests: async (status = '') => {
       const url = status ? `${API_BASE}/management/requests?status=${status}` : `${API_BASE}/management/requests`;
       const res = await fetch(url, { headers: getHeaders() });
