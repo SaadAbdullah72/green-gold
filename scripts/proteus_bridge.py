@@ -233,12 +233,19 @@ def main():
     if args.bin_id:
         target_bin_id = args.bin_id
     else:
-        # Use the bin ID from selected site, or generate from bin type
+        # Extract the unit/site number from DB bin ID (e.g. BIN-01-01 -> unit=01)
+        # Then rebuild with the selected bin type code
         site_bin_id = selected_site.get('binId', '')
+        site_unit = '01'  # default unit
         if site_bin_id:
-            target_bin_id = site_bin_id
-        else:
-            target_bin_id = build_bin_id(bin_type)
+            # Extract last segment as unit number: BIN-XX-YY -> YY
+            parts = site_bin_id.split('-')
+            if len(parts) >= 3:
+                site_unit = parts[-1]
+            elif len(parts) == 2:
+                site_unit = parts[-1]
+        # Build: BIN-{bin_type_code}-{site_unit}
+        target_bin_id = f"BIN-{bin_type['code']}-{site_unit}"
 
     target_client_name = selected_site.get('organizationName', 'Smart Bin Facility')
     target_waste_type = bin_type["waste_type"]
