@@ -252,21 +252,21 @@ export default function DumpingFacilityDashboard({ onLogout }) {
         gap: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <IconBrandLogo />
+          <img src="/logo.png" alt="GreenGold Logo" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
           <div>
-            <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85 }}>
+            <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#A7F3D0', fontWeight: 800 }}>
               INTER-MUNICIPAL RESOURCE CONVERGENCE & RECYCLING DISPATCH
             </div>
-            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
+            <h1 style={{ margin: '2px 0 0 0', fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>
               GreenGold OS — Central Waste Dumping & Separation Facility
             </h1>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ textAlign: 'right', fontSize: '12px' }}>
-            <div style={{ fontWeight: 800 }}>{user?.fullName || 'Supervisor Rashid Mahmood'}</div>
-            <div style={{ opacity: 0.85 }}>Facility ID: <strong>DUMP-101</strong> (Sector I-9/1 Industrial Hub)</div>
+          <div style={{ textAlign: 'right', fontSize: '12px', color: '#FFFFFF' }}>
+            <div style={{ fontWeight: 800, color: '#FFFFFF' }}>{user?.fullName || 'Supervisor Rashid Mahmood'}</div>
+            <div style={{ color: '#E2E8F0', marginTop: '2px' }}>Facility ID: <strong style={{ color: '#FFFFFF' }}>DUMP-101</strong> (Sector I-9/1 Industrial Hub)</div>
           </div>
 
           <button
