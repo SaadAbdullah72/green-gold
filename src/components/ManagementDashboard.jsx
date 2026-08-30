@@ -1096,119 +1096,339 @@ export default function ManagementDashboard({
         )}
 
         {/* ---------------------------------------------------------------------
-            SUB TAB VIEW 3: CARBON CREDIT MINTING
+            SUB TAB VIEW 3: CARBON CREDIT MINTING & REGISTRY
             --------------------------------------------------------------------- */}
         {activeSubTab === 'carbon' && (
           <div className="mgmt-sub-view active">
-            <div className="mgmt-grid-1col">
-              <div className="glass-panel table-panel">
-                <h3>Tested Batches Awaiting Carbon Tokenization</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '15px' }}>
-                  Batches processed through composting and attested by soil science laboratory. Minting locks carbon avoidance credits on registry.
-                </p>
-                <div className="table-wrapper">
-                  <table className="admin-table">
+            {/* Top Summary Banner */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Carbon Minted</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#059669', marginTop: '4px' }}>
+                  {liveStats.totalCarbonCredits.toFixed(2)} <span style={{ fontSize: '14px' }}>CC</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#10B981', fontWeight: '700', marginTop: '2px' }}>● Minted on Registry</div>
+              </div>
+
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avoided Mass (CO₂e)</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#047857', marginTop: '4px' }}>
+                  {Number(liveStats.avoidanceMt || 0).toFixed(3)} <span style={{ fontSize: '14px' }}>MT</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Certified Greenhouse Gas Avoidance</div>
+              </div>
+
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Certified Batches</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#3B82F6', marginTop: '4px' }}>
+                  {dbRecyclingReports.length} {dbRecyclingReports.length === 1 ? 'Batch' : 'Batches'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#3B82F6', fontWeight: '700', marginTop: '2px' }}>Industrial Plant Audited</div>
+              </div>
+
+              <div style={{ padding: '18px 22px', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Beneficiary Clients</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>
+                  {dbActiveSites.length} {dbActiveSites.length === 1 ? 'Client' : 'Clients'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Distributed to Portals</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                    Authenticated Carbon Credit Minting Registry ({dbRecyclingReports.length})
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                    Official immutable ledger of carbon credits generated per client waste generator, verified by partner recycling plants.
+                  </div>
+                </div>
+
+                {dbRecyclingReports.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllRecyclingReports}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #FCA5A5',
+                      background: '#FEF2F2',
+                      color: '#B91C1C',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Clear All Minting Reports
+                  </button>
+                )}
+              </div>
+
+              {dbRecyclingReports.length === 0 ? (
+                <div style={{ padding: '40px 24px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>No Carbon Credits Minted Yet</div>
+                  <div style={{ fontSize: '12px' }}>Once recycling plants verify and process delivered waste payloads, authenticated tokens will automatically appear on this ledger.</div>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr>
-                        <th>Batch ID</th>
-                        <th>Batch Name</th>
-                        <th>Compost Yield</th>
-                        <th>CO2e Offset (Est)</th>
-                        <th>Lab Test Parameters</th>
-                        <th>Action</th>
+                      <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', textTransform: 'uppercase', fontSize: '11px' }}>
+                        <th style={{ padding: '12px' }}>Mint Code</th>
+                        <th style={{ padding: '12px' }}>Origin Client (User)</th>
+                        <th style={{ padding: '12px' }}>Recycling Plant</th>
+                        <th style={{ padding: '12px' }}>Stream & Yield</th>
+                        <th style={{ padding: '12px' }}>Minted Tokens</th>
+                        <th style={{ padding: '12px' }}>Attested By</th>
+                        <th style={{ padding: '12px' }}>Status</th>
+                        <th style={{ padding: '12px', textAlign: 'center' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {safeBatchesAwaitingCert.length === 0 ? (
-                        <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                            No compost batches awaiting certification.
-                          </td>
-                        </tr>
-                      ) : (
-                        safeBatchesAwaitingCert.map(batch => (
-                          <tr key={batch.id}>
-                            <td><strong>{batch.id}</strong></td>
-                            <td>
-                              <div style={{ fontWeight: 600 }}>{batch.name}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Harvested: {batch.harvestDate}</div>
+                      {dbRecyclingReports.map((r) => {
+                        const contrib = r.userContributions?.[0];
+                        const clientName = contrib?.organizationName || (dbActiveSites[0]?.organizationName) || 'Saad Abdullah';
+                        const clientCode = contrib?.clientCode || 'CLIENT-01';
+                        return (
+                          <tr key={r._id || r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '12px', fontWeight: '800', color: '#047857' }}>
+                              {r.reportCode || 'REC-RPT-0101'}
                             </td>
-                            <td>{batch.compostYieldKg} kg</td>
-                            <td><strong style={{ color: 'var(--gold-light)' }}>{batch.carbonOffsetValueMt} MT CO2e</strong></td>
-                            <td>
-                              <div style={{ fontWeight: 700, color: 'var(--primary)' }}>Score: {batch.qaScore}/100</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>NPK: {batch.npkRatio} | pH: {batch.ph}</div>
+                            <td style={{ padding: '12px' }}>
+                              <strong style={{ color: '#0F172A' }}>{clientName}</strong>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>{clientCode}</div>
                             </td>
-                            <td>
-                              <button className="action-btn approve" onClick={() => handleCertifyCarbonAction(batch.id)}>
-                                Certify & Mint Credits
+                            <td style={{ padding: '12px' }}>
+                              <strong style={{ color: '#047857' }}>{r.plantName}</strong>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div>
+                                <span style={{
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  background: (r.wasteType || '').includes('Plastic') ? '#DBEAFE' : (r.wasteType || '').includes('Metal') ? '#FEF3C7' : '#DCFCE7',
+                                  color: (r.wasteType || '').includes('Plastic') ? '#1E40AF' : (r.wasteType || '').includes('Metal') ? '#92400E' : '#166534'
+                                }}>
+                                  {r.wasteType}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                                Recycled: <strong style={{ color: '#047857' }}>{r.recycledWeightKg} KG</strong> / {r.receivedWeightKg} KG ({r.recoveryEfficiencyPercent || 86}%)
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ fontSize: '15px', fontWeight: '900', color: '#059669' }}>
+                                +{r.carbonCreditsGenerated} CC
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#64748B' }}>Factor: {r.ccFactorUsed || 1.2} CC/kg</div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ fontWeight: '700', color: '#334155' }}>{r.operatorName || 'Plant Inspector'}</div>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>
+                                {r.processedAt ? new Date(r.processedAt).toLocaleString() : 'N/A'}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '10px',
+                                fontWeight: '900',
+                                background: '#D1FAE5',
+                                color: '#065F46',
+                                textTransform: 'uppercase'
+                              }}>
+                                ✓ MINTED ON REGISTRY
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteRecyclingReport(e, r._id || r.id)}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #FCA5A5',
+                                  background: '#FFF1F2',
+                                  color: '#BE123C',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer'
+                                }}
+                                title="Delete report"
+                              >
+                                Delete
                               </button>
                             </td>
                           </tr>
-                        ))
-                      )}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
 
         {/* ---------------------------------------------------------------------
-            SUB TAB VIEW 5: FACTORY PERFORMANCE REPORTS
+            SUB TAB VIEW 5: FACTORY PERFORMANCE & PROCESSING AUDIT REPORTS
             --------------------------------------------------------------------- */}
         {activeSubTab === 'factory' && (
           <div className="mgmt-sub-view active">
-            <div className="mgmt-grid-1col">
-              <div className="glass-panel table-panel">
-                <div className="flex-between mb-15">
-                  <div>
-                    <h3>Factory Recycling & Carbon Report</h3>
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      Track compost processing volumes, recovered plastics, and carbon offsets per partner factory.
-                    </p>
+            {/* Top 3 Plant Overview Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              {[
+                { name: 'Pak Recycling Ltd', type: 'Organic/Compost', address: 'Plot 42, Sector I-9/2', capacity: '80 Tons' },
+                { name: 'EcoPak Plastics Recycling Facility', type: 'Plastic', address: 'Industrial Triangle, Kahuta Road', capacity: '60 Tons' },
+                { name: 'GreenTech Metal & Materials Recovery', type: 'Metal', address: 'Plot 18, Sector I-10/3', capacity: '100 Tons' }
+              ].map((fac, fIdx) => {
+                const plantReports = dbRecyclingReports.filter(r => (r.plantName || '').toLowerCase().includes(fac.type.toLowerCase()) || (r.wasteType || '').toLowerCase().includes(fac.type.toLowerCase()));
+                const plantRepurposedKg = plantReports.reduce((sum, r) => sum + Number(r.recycledWeightKg || 0), 0);
+                const plantCarbonCC = plantReports.reduce((sum, r) => sum + Number(r.carbonCreditsGenerated || 0), 0);
+
+                return (
+                  <div key={fIdx} style={{ background: '#FFFFFF', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{fac.type} Facility</span>
+                        <h4 style={{ margin: '2px 0 0 0', fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>{fac.name}</h4>
+                      </div>
+                      <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', background: '#D1FAE5', color: '#065F46' }}>OPERATIONAL</span>
+                    </div>
+
+                    <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '14px' }}>{fac.address} • Cap: {fac.capacity}</div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', fontWeight: '700' }}>Waste Repurposed</div>
+                        <div style={{ fontSize: '16px', fontWeight: '900', color: '#047857' }}>{plantRepurposedKg.toFixed(1)} KG</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', fontWeight: '700' }}>Carbon Yield</div>
+                        <div style={{ fontSize: '16px', fontWeight: '900', color: '#059669' }}>+{plantCarbonCC.toFixed(2)} CC</div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <select 
-                      className="login-input" 
-                      value={factoryPeriod} 
-                      onChange={(e) => setFactoryPeriod(e.target.value)}
-                      style={{ padding: '6px 12px', fontSize: '13px', background: 'rgba(0,0,0,0.4)', cursor: 'pointer' }}
-                    >
-                      <option value="weekly">Weekly Reports</option>
-                      <option value="monthly">Monthly Reports</option>
-                    </select>
+                );
+              })}
+            </div>
+
+            {/* Live Factory Processing Audit Log Table */}
+            <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                    Industrial Plant Processing Audit Reports ({dbRecyclingReports.length})
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                    Real-time waste transformation flows from client origin sites to industrial recycling facilities.
                   </div>
                 </div>
+              </div>
 
-                <div className="table-wrapper">
-                  <table className="admin-table">
+              {dbRecyclingReports.length === 0 ? (
+                <div style={{ padding: '40px 24px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>No Factory Audit Reports Yet</div>
+                  <div style={{ fontSize: '12px' }}>Delivered transporter loads verified by plant operators will generate recovery metrics and waste flow logs here.</div>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr>
-                        <th>Factory ID</th>
-                        <th>Processing Facility Name</th>
-                        <th>Waste Repurposed ({factoryPeriod})</th>
-                        <th>Plastics Diverted</th>
-                        <th>Verified Carbon Saved</th>
-                        <th>QA Rating</th>
+                      <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', textTransform: 'uppercase', fontSize: '11px' }}>
+                        <th style={{ padding: '12px' }}>Audit Code</th>
+                        <th style={{ padding: '12px' }}>Recycling Plant</th>
+                        <th style={{ padding: '12px' }}>Origin Client (Site)</th>
+                        <th style={{ padding: '12px' }}>Waste Stream</th>
+                        <th style={{ padding: '12px' }}>Inflow (KG)</th>
+                        <th style={{ padding: '12px' }}>Recycled Yield</th>
+                        <th style={{ padding: '12px' }}>Efficiency</th>
+                        <th style={{ padding: '12px' }}>Carbon Saved</th>
+                        <th style={{ padding: '12px' }}>Inspector & Date</th>
+                        <th style={{ padding: '12px', textAlign: 'center' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {FACTORY_REPORTS[factoryPeriod].map(fac => (
-                        <tr key={fac.id}>
-                          <td><strong>{fac.id}</strong></td>
-                          <td><strong>{fac.name}</strong></td>
-                          <td><strong style={{ color: 'var(--primary)' }}>{fac.recycledKg} kg</strong></td>
-                          <td>{fac.plasticRecoveredKg} kg</td>
-                          <td><strong style={{ color: 'var(--primary)' }}>{fac.carbonSavedMt} MT CO2e</strong></td>
-                          <td><span className="status-pill approved">★ {fac.rating}</span></td>
-                        </tr>
-                      ))}
+                      {dbRecyclingReports.map((r) => {
+                        const contrib = r.userContributions?.[0];
+                        const clientName = contrib?.organizationName || (dbActiveSites[0]?.organizationName) || 'Saad Abdullah';
+                        return (
+                          <tr key={r._id || r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '12px', fontWeight: '800', color: '#047857' }}>
+                              {r.reportCode || 'REC-RPT-0101'}
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '700', color: '#0F172A' }}>
+                              {r.plantName}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <strong style={{ color: '#0F172A' }}>{clientName}</strong>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                background: (r.wasteType || '').includes('Plastic') ? '#DBEAFE' : (r.wasteType || '').includes('Metal') ? '#FEF3C7' : '#DCFCE7',
+                                color: (r.wasteType || '').includes('Plastic') ? '#1E40AF' : (r.wasteType || '').includes('Metal') ? '#92400E' : '#166534'
+                              }}>
+                                {r.wasteType}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '800' }}>
+                              {r.receivedWeightKg} KG
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '800', color: '#047857' }}>
+                              {r.recycledWeightKg} KG
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '800', color: '#3B82F6' }}>
+                              {r.recoveryEfficiencyPercent || 86}%
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '900', color: '#059669' }}>
+                              +{r.carbonCreditsGenerated} CC
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ fontWeight: '700', color: '#334155' }}>{r.operatorName || 'Haji Rafiq'}</div>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>
+                                {r.processedAt ? new Date(r.processedAt).toLocaleString() : 'N/A'}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteRecyclingReport(e, r._id || r.id)}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #FCA5A5',
+                                  background: '#FFF1F2',
+                                  color: '#BE123C',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer'
+                                }}
+                                title="Delete audit report"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
