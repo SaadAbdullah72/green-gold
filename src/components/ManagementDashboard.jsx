@@ -463,19 +463,52 @@ export default function ManagementDashboard({
     if (organicKg === 0 && stats.totalWasteDivertedKg) organicKg = stats.totalWasteDivertedKg;
     if (plasticKg === 0 && stats.recycledPlasticsKg) plasticKg = stats.recycledPlasticsKg;
 
-    // 3. Minted Carbon Credits
+    // 3. Minted Carbon Credits Calculation
     let mintedCreditsMt = 0;
+    let pendingCreditsMt = 0;
+
+    // Sum from all verified Recycling Reports
     (dbRecyclingReports || []).forEach(r => {
-      mintedCreditsMt += Number(r.carbonCreditsMinted || 0);
+      mintedCreditsMt += Number(r.carbonCreditsGenerated || r.carbonCreditsMinted || 0);
     });
 
-    const totalDiverted = organicKg + plasticKg + metalKg;
+    // Sum from certified and pending carbon batches
+    (safeBatchesAwaitingCert || []).forEach(b => {
+      const credits = Number(b.carbonCreditsEarned || b.credits || (b.weightKg ? b.weightKg * 0.0005 : 0));
+      if (b.status === 'Certified' || b.status === 'Minted') {
+        mintedCreditsMt += credits;
+      } else {
+        pendingCreditsMt += credits;
+      }
+    });
+
+    // Greenhouse Gas (GHG) avoidance from all diverted waste streams:
+    // Organic (0.52 MT CO2e / Ton) + Plastic (1.45 MT CO2e / Ton) + Metal (2.10 MT CO2e / Ton)
+    const streamCarbonAvoidanceMt = Number((
+      (organicKg * 0.00052) + 
+      (plasticKg * 0.00145) + 
+      (metalKg * 0.00210)
+    ).toFixed(2));
+
     if (mintedCreditsMt === 0) {
-      mintedCreditsMt = Number((totalDiverted * 0.0005).toFixed(2));
-      if (stats.certifiedCarbonCreditsMt) mintedCreditsMt = Math.max(mintedCreditsMt, stats.certifiedCarbonCreditsMt);
+      mintedCreditsMt = streamCarbonAvoidanceMt;
+    } else {
+      mintedCreditsMt = Math.max(mintedCreditsMt, streamCarbonAvoidanceMt);
     }
 
-    const pendingCreditsMt = Number(((totalDumpedKg > 0 ? totalDumpedKg : totalDiverted) * 0.0002).toFixed(2));
+    if (stats.certifiedCarbonCreditsMt) {
+      mintedCreditsMt = Math.max(mintedCreditsMt, stats.certifiedCarbonCreditsMt);
+    }
+
+    // Pending credits from in-progress/unprocessed dump records
+    if (pendingCreditsMt === 0 && totalDumpedKg > 0) {
+      pendingCreditsMt = Number((totalDumpedKg * 0.0008).toFixed(2));
+    }
+    if (stats.pendingCarbonCreditsMt) {
+      pendingCreditsMt = Math.max(pendingCreditsMt, stats.pendingCarbonCreditsMt);
+    }
+
+    const totalDiverted = organicKg + plasticKg + metalKg;
 
     return {
       activeBins: activeBinsCount,
@@ -486,7 +519,7 @@ export default function ManagementDashboard({
       metalRecoveredKg: Math.round(metalKg),
       totalDivertedKg: Math.round(totalDiverted)
     };
-  }, [dbActiveSites, dbDumpRecords, dbRecyclingReports, dbWasteTracking, stats]);
+  }, [dbActiveSites, dbDumpRecords, dbRecyclingReports, dbWasteTracking, safeBatchesAwaitingCert, stats]);
 
   return (
     <div className="app-container">
