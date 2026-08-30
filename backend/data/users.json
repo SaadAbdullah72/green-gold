@@ -268,5 +268,25 @@
     "createdAt": "2026-08-30T12:52:49.298Z",
     "updatedAt": "2026-08-30T12:52:49.298Z",
     "__v": 0
+  },
+  {
+    "_id": "6a943fca236682706ce342d0",
+    "fullName": "Saad Abdullah",
+    "email": "saddar@gmail.com",
+    "phone": "+923275784309",
+    "secondaryPhone": "+923275784309",
+    "passwordHash": "$2b$10$g4iv9eR8CjhD5puZIdW9FORwDR//13jD9moqVwUE1QlkXvQJod9Nm",
+    "role": "USER",
+    "organizationName": "Saad Abdullah",
+    "address": "All STREETS",
+    "town": "SADDAR Rawalpindi",
+    "city": "Islamabad",
+    "plantType": "Organic/Compost",
+    "plantCapacityTons": 50,
+    "workerStatus": "IDLE",
+    "isActive": true,
+    "createdAt": "2026-08-30T14:35:54.895Z",
+    "updatedAt": "2026-08-30T14:35:54.895Z",
+    "__v": 0
   }
 ]
