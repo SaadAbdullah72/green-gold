@@ -490,14 +490,12 @@ export default function ManagementDashboard({
   }).length;
   const pendingCarbonCount = safeBatchesAwaitingCert.filter(b => b.status === 'Awaiting Certification').length;
 
-  // Live Dynamic KPI Calculations from Real Database State
+  // Live Dynamic KPI Calculations from Real Database State (Strict Zero-State with No Mock Fallbacks)
   const liveStats = useMemo(() => {
     // 1. Total Active Bins in field from Active Deployed Sites
     let activeBinsCount = 0;
     if (dbActiveSites && dbActiveSites.length > 0) {
       activeBinsCount = dbActiveSites.reduce((sum, s) => sum + (s.numberOfBins || s.deployedBinIds?.length || 1), 0);
-    } else {
-      activeBinsCount = stats.activeBins || 6;
     }
 
     // 2. Stream weights from dump records & recycling reports
@@ -512,26 +510,17 @@ export default function ManagementDashboard({
       totalDumpedKg += w;
       if (wt.includes('plastic')) plasticKg += w;
       else if (wt.includes('metal')) metalKg += w;
+      else if (wt.includes('organic') || wt.includes('compost')) organicKg += w;
       else organicKg += w;
     });
 
     (dbRecyclingReports || []).forEach(r => {
-      const out = Number(r.recycledOutputKg || r.inputWeightKg || 0);
+      const out = Number(r.recycledWeightKg || r.recycledOutputKg || r.inputWeightKg || 0);
       const wt = (r.wasteType || '').toLowerCase();
       if (wt.includes('plastic')) plasticKg += out;
       else if (wt.includes('metal')) metalKg += out;
       else if (wt.includes('organic') || wt.includes('compost')) organicKg += out;
     });
-
-    // Merge with waste tracking totals if present
-    if (dbWasteTracking?.totals) {
-      if (dbWasteTracking.totals.totalOrganicKg > organicKg) organicKg = dbWasteTracking.totals.totalOrganicKg;
-      if (dbWasteTracking.totals.totalPlasticKg > plasticKg) plasticKg = dbWasteTracking.totals.totalPlasticKg;
-      if (dbWasteTracking.totals.totalMetalKg > metalKg) metalKg = dbWasteTracking.totals.totalMetalKg;
-    }
-
-    if (organicKg === 0 && stats.totalWasteDivertedKg) organicKg = stats.totalWasteDivertedKg;
-    if (plasticKg === 0 && stats.recycledPlasticsKg) plasticKg = stats.recycledPlasticsKg;
 
     // 3. Minted Carbon Credits (CC Tokens & MT CO2e) Calculation
     let totalCC = 0;
@@ -539,11 +528,13 @@ export default function ManagementDashboard({
       totalCC += Number(r.carbonCreditsGenerated || r.carbonCreditsMinted || 0);
     });
 
-    // Sum from stream weights: Organic (0.5 CC/kg), Plastic (1.2 CC/kg), Metal (1.8 CC/kg)
-    const streamCC = Number(((organicKg * 0.5) + (plasticKg * 1.2) + (metalKg * 1.8)).toFixed(2));
+    // Sum from stream weights only if non-zero: Organic (0.5 CC/kg), Plastic (1.2 CC/kg), Metal (1.8 CC/kg)
+    const streamCC = (organicKg > 0 || plasticKg > 0 || metalKg > 0)
+      ? Number(((organicKg * 0.5) + (plasticKg * 1.2) + (metalKg * 1.8)).toFixed(2))
+      : 0;
     totalCC = Math.max(totalCC, streamCC);
 
-    let pendingCC = Number((totalDumpedKg * 0.8).toFixed(2));
+    let pendingCC = totalDumpedKg > 0 ? Number((totalDumpedKg * 0.8).toFixed(2)) : 0;
     (safeBatchesAwaitingCert || []).forEach(b => {
       const credits = Number(b.carbonCreditsEarned || b.credits || (b.weightKg ? b.weightKg * 0.5 : 0));
       if (b.status === 'Certified' || b.status === 'Minted') {
@@ -560,13 +551,13 @@ export default function ManagementDashboard({
       activeBins: activeBinsCount,
       organicDivertedKg: Math.round(organicKg),
       totalCarbonCredits: totalCC,
-      avoidanceMt: avoidanceMt > 0 ? avoidanceMt : 0.012,
+      avoidanceMt: avoidanceMt,
       pendingCC: pendingCC,
       plasticRecoveredKg: Math.round(plasticKg),
       metalRecoveredKg: Math.round(metalKg),
       totalDivertedKg: Math.round(totalDiverted)
     };
-  }, [dbActiveSites, dbDumpRecords, dbRecyclingReports, dbWasteTracking, safeBatchesAwaitingCert, stats]);
+  }, [dbActiveSites, dbDumpRecords, dbRecyclingReports, safeBatchesAwaitingCert]);
 
   return (
     <div className="app-container">
