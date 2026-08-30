@@ -51,6 +51,10 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
       setIsRegister(false);
       setEmail('dumpyard@greengold.com');
       setPassword('dump123');
+    } else if (newRole === 'USER') {
+      setIsRegister(false);
+      setEmail('citizen@greengold.com');
+      setPassword('client123');
     } else {
       setEmail('');
       setPassword('');

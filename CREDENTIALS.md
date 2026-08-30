@@ -54,9 +54,16 @@
 | 3 | GreenTech Metal & Materials Recovery  | Zubair Qureshi                 | greentech@greengold.com     | plant123 | PLANT-103   | Metal            | 100 Tons  | Plot 18, Sector I-10/3, Islamabad           |
 
 
-## 6. CUSTOMER / WASTE GENERATOR
+## 6. CUSTOMER / CLIENT WASTE GENERATOR (Facility Bins & Pickup Requests)
 ## Dashboard: /generator
-## (Users register themselves via Sign Up tab on login page)
+
+| # | Full Name     | Organization / Site     | Email                  | Password   | Phone           | Address                          | Town       |
+|---|---------------|-------------------------|------------------------|------------|-----------------|----------------------------------|------------|
+| 1 | Hamza Tariq   | PAF Complex Sector E-9  | citizen@greengold.com  | client123  | +92 300 1234567 | Sector E-9 Campus, Islamabad     | Sector E-9 |
+| 2 | Hamza Tariq   | PAF Complex Sector E-9  | client@greengold.com   | client123  | +92 300 1234567 | Sector E-9 Campus, Islamabad     | Sector E-9 |
+| 3 | Taimoor Shah  | Serena Hotel Islamabad  | user@greengold.com     | user123    | +92 300 7654321 | Club Road, Sector G-5, Islamabad | Sector G-5 |
+
+*(New clients can also self-register anytime via the "Sign Up" tab on the Login Page)*
 
 
 ## 7. HARDWARE IOT PROTEUS SIMULATOR

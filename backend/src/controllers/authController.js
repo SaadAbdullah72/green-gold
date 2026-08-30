@@ -554,6 +554,52 @@ const SEEDED_ACCOUNTS = [
       lng: 73.0410,
       workerStatus: 'IDLE'
     }
+  },
+  // 6. Citizen / Client Waste Generator Accounts
+  {
+    email: 'citizen@greengold.com',
+    passwords: ['client123', 'citizen123', 'user123'],
+    data: {
+      fullName: 'Hamza Tariq',
+      organizationName: 'PAF Complex Sector E-9',
+      phone: '+92 300 1234567',
+      secondaryPhone: '+92 300 1234567',
+      role: 'USER',
+      address: 'Sector E-9 Campus, Islamabad',
+      town: 'Sector E-9',
+      city: 'Islamabad',
+      workerStatus: 'IDLE'
+    }
+  },
+  {
+    email: 'client@greengold.com',
+    passwords: ['client123', 'user123'],
+    data: {
+      fullName: 'Hamza Tariq',
+      organizationName: 'PAF Complex Sector E-9',
+      phone: '+92 300 1234567',
+      secondaryPhone: '+92 300 1234567',
+      role: 'USER',
+      address: 'Sector E-9 Campus, Islamabad',
+      town: 'Sector E-9',
+      city: 'Islamabad',
+      workerStatus: 'IDLE'
+    }
+  },
+  {
+    email: 'user@greengold.com',
+    passwords: ['user123', 'client123'],
+    data: {
+      fullName: 'Taimoor Shah',
+      organizationName: 'Serena Hotel Islamabad',
+      phone: '+92 300 7654321',
+      secondaryPhone: '+92 300 7654321',
+      role: 'USER',
+      address: 'Club Road, Sector G-5, Islamabad',
+      town: 'Sector G-5',
+      city: 'Islamabad',
+      workerStatus: 'IDLE'
+    }
   }
 ];
 
