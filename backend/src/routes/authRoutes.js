@@ -9,7 +9,8 @@ import {
   registerDumpFacility,
   login, 
   logout, 
-  getMe 
+  getMe,
+  deleteMyAccount
 } from '../controllers/authController.js';
 import { authenticateUser } from '../middleware/auth.js';
 
@@ -26,6 +27,7 @@ router.post('/register/dump-facility', registerDumpFacility);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', authenticateUser, getMe);
+router.delete('/account', authenticateUser, deleteMyAccount);
 
 export default router;
 

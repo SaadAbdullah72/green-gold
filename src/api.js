@@ -143,6 +143,17 @@ export const api = {
       return res;
     },
 
+    deleteAccount: async () => {
+      const res = await fetch(`${API_BASE}/auth/account`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      const data = await handleResponse(res);
+      localStorage.removeItem('greengold_token');
+      localStorage.removeItem('greengold_user');
+      return data;
+    },
+
     logout: () => {
       localStorage.removeItem('greengold_token');
       localStorage.removeItem('greengold_user');

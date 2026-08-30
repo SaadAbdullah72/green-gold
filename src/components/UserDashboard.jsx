@@ -65,6 +65,25 @@ export default function UserDashboard({ username, userData, onLogout }) {
   const [myDumpRecords, setMyDumpRecords] = useState([]);
   const [myRecyclingReports, setMyRecyclingReports] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const handleDeleteMyAccount = async () => {
+    const confirmDelete = window.confirm(
+      '⚠️ PERMANENT ACCOUNT DELETION\n\nAre you sure you want to permanently delete your account?\n\nThis will permanently delete:\n• Your account and login credentials\n• All submitted smart bin requests\n• All waste pickup requests\n• All linked dump logs & carbon credits\n\nThis action CANNOT be undone.'
+    );
+    if (!confirmDelete) return;
+
+    try {
+      setIsDeletingAccount(true);
+      await api.auth.deleteAccount();
+      alert('Your account and all associated facility records have been permanently deleted.');
+      if (onLogout) onLogout();
+      else window.location.reload();
+    } catch (err) {
+      alert(`Deletion Error: ${err.message}`);
+      setIsDeletingAccount(false);
+    }
+  };
 
   const loadRequests = async () => {
     try {
@@ -519,7 +538,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
           </nav>
         </div>
 
-        {/* User Profile Card & Logout */}
+        {/* User Profile Card & Actions */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#10B981', color: '#FFFFFF', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
@@ -529,17 +548,41 @@ export default function UserDashboard({ username, userData, onLogout }) {
               <div style={{ fontSize: '13px', fontWeight: '800', color: '#FFFFFF', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {displayName}
               </div>
-              <div style={{ fontSize: '11px', color: '#34D399' }}>{userCity}</div>
+              <div style={{ fontSize: '11px', color: '#34D399' }}>{userCity} • {userData?.email || ''}</div>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onLogout}
-            style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#A7F3D0', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
-          >
-            Logout Portal »
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={onLogout}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#A7F3D0', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textAlign: 'center' }}
+            >
+              Sign Out »
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeleteMyAccount}
+              disabled={isDeletingAccount}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: '10px',
+                border: '1px solid #F87171',
+                background: '#7F1D1D',
+                color: '#FECACA',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: isDeletingAccount ? 'not-allowed' : 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              title="Permanently delete your account and all associated requests"
+            >
+              {isDeletingAccount ? 'Deleting Account...' : 'Delete My Account'}
+            </button>
+          </div>
         </div>
       </aside>
 

@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
+import { ServiceRequest } from '../models/ServiceRequest.js';
+import { CollectorAssignment } from '../models/CollectorAssignment.js';
+import { DumpRecord } from '../models/DumpRecord.js';
+import { TransportJob } from '../models/TransportJob.js';
+import { RecyclingReport } from '../models/RecyclingReport.js';
 import { saveUsersToDisk } from '../config/persistence.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'greengold_os_super_secret_jwt_key_2026_production';
@@ -554,52 +559,6 @@ const SEEDED_ACCOUNTS = [
       lng: 73.0410,
       workerStatus: 'IDLE'
     }
-  },
-  // 6. Citizen / Client Waste Generator Accounts
-  {
-    email: 'citizen@greengold.com',
-    passwords: ['client123', 'citizen123', 'user123'],
-    data: {
-      fullName: 'Hamza Tariq',
-      organizationName: 'PAF Complex Sector E-9',
-      phone: '+92 300 1234567',
-      secondaryPhone: '+92 300 1234567',
-      role: 'USER',
-      address: 'Sector E-9 Campus, Islamabad',
-      town: 'Sector E-9',
-      city: 'Islamabad',
-      workerStatus: 'IDLE'
-    }
-  },
-  {
-    email: 'client@greengold.com',
-    passwords: ['client123', 'user123'],
-    data: {
-      fullName: 'Hamza Tariq',
-      organizationName: 'PAF Complex Sector E-9',
-      phone: '+92 300 1234567',
-      secondaryPhone: '+92 300 1234567',
-      role: 'USER',
-      address: 'Sector E-9 Campus, Islamabad',
-      town: 'Sector E-9',
-      city: 'Islamabad',
-      workerStatus: 'IDLE'
-    }
-  },
-  {
-    email: 'user@greengold.com',
-    passwords: ['user123', 'client123'],
-    data: {
-      fullName: 'Taimoor Shah',
-      organizationName: 'Serena Hotel Islamabad',
-      phone: '+92 300 7654321',
-      secondaryPhone: '+92 300 7654321',
-      role: 'USER',
-      address: 'Club Road, Sector G-5, Islamabad',
-      town: 'Sector G-5',
-      city: 'Islamabad',
-      workerStatus: 'IDLE'
-    }
   }
 ];
 
@@ -621,10 +580,11 @@ export const login = async (req, res) => {
       console.error('DB query fallback:', dbErr.message);
     }
 
-    // Direct Instant Seed Fallback (guarantees login works even if DB connection is cold)
+    // Direct Instant Seed Fallback (for fixed infrastructure accounts only)
     if (matchSeed && matchSeed.passwords.includes(password)) {
       const demoUser = user || {
-        _id: 'seed_' + (matchSeed.data.employeeId || '001'),
+        _id: 'seed_' + matchSeed.data.employeeId,
+        id: 'seed_' + matchSeed.data.employeeId,
         ...matchSeed.data,
         email: cleanEmail
       };
@@ -648,7 +608,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Account not found. Please check your credentials or register.'
+        message: 'Account not found. Please check your email or register via the Sign Up tab.'
       });
     }
 
@@ -683,5 +643,77 @@ export const getMe = async (req, res) => {
     return res.status(200).json({ success: true, user: sanitizeUser(user) });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteMyAccount = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId);
+    const orgName = user?.organizationName || user?.fullName;
+
+    // 1. Delete all user Service Requests
+    await ServiceRequest.deleteMany({
+      $or: [
+        { userId },
+        ...(orgName ? [{ organizationName: new RegExp(`^${orgName}$`, 'i') }] : [])
+      ]
+    });
+
+    // 2. Delete all Collector Assignments
+    if (orgName) {
+      await CollectorAssignment.deleteMany({
+        siteName: new RegExp(`^${orgName}$`, 'i')
+      });
+    }
+
+    // 3. Delete Dump Records
+    await DumpRecord.deleteMany({
+      $or: [
+        { userId },
+        ...(orgName ? [{ organizationName: new RegExp(`^${orgName}$`, 'i') }] : [])
+      ]
+    });
+
+    // 4. Clean Transport Jobs
+    if (orgName) {
+      await TransportJob.deleteMany({
+        $or: [
+          { originSite: new RegExp(`^${orgName}$`, 'i') },
+          { 'dumpRecords.organizationName': new RegExp(`^${orgName}$`, 'i') }
+        ]
+      });
+    }
+
+    // 5. Clean Recycling Reports contributions
+    await RecyclingReport.updateMany(
+      {},
+      {
+        $pull: {
+          userContributions: {
+            $or: [
+              { userId },
+              ...(orgName ? [{ organizationName: new RegExp(`^${orgName}$`, 'i') }] : [])
+            ]
+          }
+        }
+      }
+    );
+
+    // 6. Delete user from database & disk persistence
+    await User.findByIdAndDelete(userId);
+    await syncUsersToDisk();
+
+    return res.json({
+      success: true,
+      message: 'Your account and all linked facility records have been permanently deleted.'
+    });
+  } catch (error) {
+    console.error('deleteMyAccount error:', error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

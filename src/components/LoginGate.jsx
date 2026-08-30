@@ -53,8 +53,8 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
       setPassword('dump123');
     } else if (newRole === 'USER') {
       setIsRegister(false);
-      setEmail('citizen@greengold.com');
-      setPassword('client123');
+      setEmail('');
+      setPassword('');
     } else {
       setEmail('');
       setPassword('');

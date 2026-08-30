@@ -57,13 +57,9 @@
 ## 6. CUSTOMER / CLIENT WASTE GENERATOR (Facility Bins & Pickup Requests)
 ## Dashboard: /generator
 
-| # | Full Name     | Organization / Site     | Email                  | Password   | Phone           | Address                          | Town       |
-|---|---------------|-------------------------|------------------------|------------|-----------------|----------------------------------|------------|
-| 1 | Hamza Tariq   | PAF Complex Sector E-9  | citizen@greengold.com  | client123  | +92 300 1234567 | Sector E-9 Campus, Islamabad     | Sector E-9 |
-| 2 | Hamza Tariq   | PAF Complex Sector E-9  | client@greengold.com   | client123  | +92 300 1234567 | Sector E-9 Campus, Islamabad     | Sector E-9 |
-| 3 | Taimoor Shah  | Serena Hotel Islamabad  | user@greengold.com     | user123    | +92 300 7654321 | Club Road, Sector G-5, Islamabad | Sector G-5 |
+* **Registration**: Self-register anytime via the **"Sign Up"** tab on the Login Page with your Organization Name, Address, and Phone.
+* **Account Control**: Every waste generator has a dedicated **"Delete My Account"** option in their portal sidebar to permanently purge their account, requests, and linked waste logs from the system.
 
-*(New clients can also self-register anytime via the "Sign Up" tab on the Login Page)*
 
 
 ## 7. HARDWARE IOT PROTEUS SIMULATOR
