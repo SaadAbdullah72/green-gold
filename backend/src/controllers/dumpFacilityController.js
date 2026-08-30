@@ -3,6 +3,48 @@ import { TransportJob } from '../models/TransportJob.js';
 import { User } from '../models/User.js';
 import { ServiceRequest } from '../models/ServiceRequest.js';
 
+// Helper: Clean dynamic site metadata
+const resolveSiteMetadata = (site, idx = 0) => {
+  if (!site) return null;
+  let org = site.organizationName || '';
+  let addr = site.address || '';
+  let twn = site.town || '';
+  let cty = site.city || 'Islamabad';
+
+  const fullText = `${org} ${addr} ${twn}`.toLowerCase();
+  const isGeneric = !org || org === 'Customer Portal' || org.includes('Customer Portal') || org.includes('Smart Bin Facility') || org.includes('Client Site');
+
+  if (isGeneric) {
+    if (fullText.includes('korang')) {
+      org = 'Korang Town Facility';
+      twn = twn || 'Korang Town';
+    } else if (fullText.includes('e9') || fullText.includes('paf') || fullText.includes('complex')) {
+      org = 'PAF Complex Sector E-9';
+      twn = twn || 'Sector E-9';
+      addr = addr || 'Sector E-9 Campus, Islamabad';
+    } else if (fullText.includes('serena') || fullText.includes('g-5') || fullText.includes('g5')) {
+      org = 'Serena Hotel Islamabad';
+      twn = twn || 'Sector G-5';
+      addr = addr || 'Club Road, Sector G-5, Islamabad';
+    } else if (fullText.includes('bahria')) {
+      org = 'Bahria Town Phase 7';
+      twn = twn || 'Bahria Town';
+    } else if (addr) {
+      org = addr.split(',')[0].trim();
+    } else {
+      org = `Service Site #${idx + 1}`;
+    }
+  }
+
+  return {
+    organizationName: org,
+    siteName: org,
+    address: addr || 'Islamabad Capital Territory',
+    town: twn || 'Islamabad',
+    city: cty
+  };
+};
+
 // 1. GET ALL DUMP RECORDS AT CENTRAL YARD
 export const getDumpFacilityRecords = async (req, res) => {
   try {
@@ -10,13 +52,6 @@ export const getDumpFacilityRecords = async (req, res) => {
     const query = {};
     if (status) query.status = status;
     if (wasteType) query.wasteType = wasteType;
-    if (area) {
-      query.$or = [
-        { town: { $regex: new RegExp(area, 'i') } },
-        { address: { $regex: new RegExp(area, 'i') } },
-        { organizationName: { $regex: new RegExp(area, 'i') } }
-      ];
-    }
 
     const records = await DumpRecord.find(query)
       .populate('collectorId', 'fullName phone employeeId vehicleNumber')
@@ -24,11 +59,11 @@ export const getDumpFacilityRecords = async (req, res) => {
       .sort({ dumpedAt: -1 })
       .lean();
 
-    // Fetch active sites to resolve clean names, addresses, and formatted bin IDs
+    // Fetch active sites list (exact same order as Proteus Bridge Step 1)
     const rawSites = await ServiceRequest.find({
       requestType: 'BIN_DEPLOYMENT',
       status: { $in: ['COMPLETED', 'Completed'] }
-    }).lean().catch(() => []);
+    }).sort({ createdAt: 1 }).lean().catch(() => []);
 
     const resolvedRecords = records.map(r => {
       let resolvedOrg = r.organizationName || 'Client Site';
@@ -36,37 +71,49 @@ export const getDumpFacilityRecords = async (req, res) => {
       let resolvedTown = r.town || 'Islamabad';
       let resolvedBinId = r.binId || 'BIN-01-01';
 
-      const txt = `${r.organizationName || ''} ${r.address || ''} ${r.town || ''} ${r.notes || ''} ${r.binId || ''}`.toLowerCase();
-      const isPlaceholderOrg = !resolvedOrg || resolvedOrg === 'Customer Portal' || resolvedOrg.includes('Customer Portal') || resolvedOrg.includes('Smart Bin Facility') || resolvedOrg.includes('Client Site');
+      // 1. Check if binId follows BIN-{streamCode}-{siteIndex} pattern from Proteus Bridge
+      const binMatch = String(resolvedBinId).match(/BIN-(\d+)-(\d+)/i);
+      let matchedSite = null;
 
-      if (txt.includes('e9') || txt.includes('paf') || txt.includes('complex') || txt.includes('03-02') || txt.includes('-02')) {
-        resolvedOrg = 'PAF Complex Sector E-9';
-        resolvedAddress = 'Sector E-9 Campus, Islamabad';
-        resolvedTown = 'Sector E-9';
-        const streamCode = (r.wasteType || '').toLowerCase().includes('metal') ? '01' : (r.wasteType || '').toLowerCase().includes('plastic') ? '02' : '03';
-        resolvedBinId = `BIN-${streamCode}-02`;
-      } else if (txt.includes('serena') || txt.includes('g-5') || txt.includes('g5') || txt.includes('club road') || txt.includes('-01')) {
-        resolvedOrg = 'Serena Hotel Islamabad';
-        resolvedAddress = 'Club Road, Sector G-5, Islamabad';
-        resolvedTown = 'Sector G-5';
-        const streamCode = (r.wasteType || '').toLowerCase().includes('metal') ? '01' : (r.wasteType || '').toLowerCase().includes('plastic') ? '02' : '03';
-        resolvedBinId = `BIN-${streamCode}-01`;
-      } else if (txt.includes('bahria') || txt.includes('korang') || txt.includes('pwd') || txt.includes('-03')) {
-        resolvedOrg = 'Bahria Town Phase 7';
-        resolvedAddress = 'Phase 7 Wilayat Complex, Rawalpindi';
-        resolvedTown = 'Bahria Town';
-        const streamCode = (r.wasteType || '').toLowerCase().includes('metal') ? '01' : (r.wasteType || '').toLowerCase().includes('plastic') ? '02' : '03';
-        resolvedBinId = `BIN-${streamCode}-03`;
-      } else if (isPlaceholderOrg) {
-        resolvedOrg = 'PAF Complex Sector E-9';
-        resolvedAddress = 'Sector E-9 Campus, Islamabad';
-        resolvedTown = 'Sector E-9';
-        resolvedBinId = 'BIN-03-02';
+      if (binMatch) {
+        const siteIndex = parseInt(binMatch[2], 10); // 1, 2, 3...
+
+        if (rawSites && siteIndex > 0 && siteIndex <= rawSites.length) {
+          matchedSite = rawSites[siteIndex - 1];
+        }
       }
 
-      if (resolvedTown === 'F-7' || resolvedAddress.includes('F-7')) {
-        resolvedTown = 'Sector E-9';
-        resolvedAddress = 'Sector E-9 Campus, Islamabad';
+      // 2. Fallback match by address/text
+      if (!matchedSite) {
+        const txt = `${r.organizationName || ''} ${r.address || ''} ${r.town || ''} ${r.notes || ''}`.toLowerCase();
+        matchedSite = rawSites.find(s => {
+          const sTxt = `${s.organizationName || ''} ${s.address || ''} ${s.town || ''}`.toLowerCase();
+          if (txt.includes('korang') && sTxt.includes('korang')) return true;
+          if ((txt.includes('e9') || txt.includes('paf')) && (sTxt.includes('e9') || sTxt.includes('paf'))) return true;
+          if (txt.includes('serena') && sTxt.includes('serena')) return true;
+          return false;
+        });
+      }
+
+      if (matchedSite) {
+        const clean = resolveSiteMetadata(matchedSite);
+        resolvedOrg = clean.organizationName;
+        resolvedAddress = clean.address;
+        resolvedTown = clean.town;
+      } else {
+        const clean = resolveSiteMetadata({ organizationName: resolvedOrg, address: resolvedAddress, town: resolvedTown });
+        resolvedOrg = clean.organizationName;
+        resolvedAddress = clean.address;
+        resolvedTown = clean.town;
+      }
+
+      // Clean up stream if needed
+      let stream = r.wasteType || 'Organic/Compost';
+      if (binMatch) {
+        const sCode = binMatch[1];
+        if (sCode === '01') stream = 'Metal';
+        else if (sCode === '02') stream = 'Plastic';
+        else if (sCode === '03') stream = 'Organic/Compost';
       }
 
       return {
@@ -79,7 +126,7 @@ export const getDumpFacilityRecords = async (req, res) => {
         town: resolvedTown,
         city: r.city || 'Islamabad',
         weightKg: r.weightKg || 5,
-        wasteType: r.wasteType || 'Organic/Compost',
+        wasteType: stream,
         isSeparated: r.isSeparated,
         separatedType: r.separatedType,
         separatedAt: r.separatedAt,
@@ -110,7 +157,6 @@ export const getDumpFacilityAnalytics = async (req, res) => {
       .sort({ dumpedAt: -1 })
       .lean();
 
-    // 100% Sync with Management Active Sites Ledger
     const rawSites = await ServiceRequest.find({
       requestType: 'BIN_DEPLOYMENT',
       status: { $in: ['COMPLETED', 'Completed'] }
@@ -123,31 +169,23 @@ export const getDumpFacilityAnalytics = async (req, res) => {
         const clientIdx = site.clientIndex || (idx + 1);
         const clientStr = String(clientIdx).padStart(2, '0');
         const binPrefix = site.binPrefix || `BIN-${clientStr}`;
-        const totalBins = site.numberOfBins || 1;
-
-        let deployedBinIds = site.deployedBinIds;
-        if (!deployedBinIds || deployedBinIds.length === 0) {
-          deployedBinIds = [];
-          for (let i = 1; i <= totalBins; i++) {
-            deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
-          }
-        }
+        const clean = resolveSiteMetadata(site, idx);
 
         const siteKey = String(site._id);
         siteMap[siteKey] = {
           siteId: siteKey,
           _id: siteKey,
-          siteName: site.organizationName,
-          organizationName: site.organizationName,
+          siteName: clean.organizationName,
+          organizationName: clean.organizationName,
           clientIndex: clientIdx,
           clientCode: `CLIENT-${clientStr}`,
           binPrefix,
-          deployedBinIds,
+          deployedBinIds: site.deployedBinIds || [`BIN-01-${clientStr}`, `BIN-02-${clientStr}`, `BIN-03-${clientStr}`],
           contactPerson: site.contactPerson || '',
           phone: site.phone || '',
-          address: site.address || 'Islamabad',
-          town: site.town || 'Islamabad',
-          city: site.city || 'Islamabad',
+          address: clean.address,
+          town: clean.town,
+          city: clean.city,
           totalKg: 0,
           plasticKg: 0,
           metalKg: 0,
