@@ -9,6 +9,8 @@ const normalizeRole = (role) => {
   if (value === 'USER' || value === 'ROLE_GENERATOR' || value === 'GENERATOR') return 'ROLE_GENERATOR';
   if (value === 'TECHNICAL' || value === 'ROLE_TECHNICIAN' || value === 'TECHNICIAN') return 'ROLE_TECHNICIAN';
   if (value === 'COLLECTOR' || value === 'ROLE_COLLECTOR') return 'ROLE_COLLECTOR';
+  if (value === 'TRANSPORTER' || value === 'ROLE_TRANSPORTER') return 'ROLE_TRANSPORTER';
+  if (value === 'RECYCLING_PLANT' || value === 'ROLE_RECYCLING_PLANT') return 'ROLE_RECYCLING_PLANT';
 
   return 'ROLE_GENERATOR';
 };
