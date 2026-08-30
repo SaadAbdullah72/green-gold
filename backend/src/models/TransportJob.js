@@ -12,7 +12,9 @@ const transportJobSchema = new mongoose.Schema(
     plantType: { type: String, enum: ['Organic/Compost', 'Plastic', 'Metal', 'General Mixed'], default: 'Organic/Compost' },
     totalWeightKg: { type: Number, required: true, min: 0.1 },
     wasteType: { type: String, required: true },
-    originSite: { type: String, default: 'Islamabad Central Dump & Separation Yard' },
+    originSite: { type: String, default: 'Capital Green Central Dump Facility (Sector I-9/1)' },
+    originCoords: { type: [Number], default: [33.6660, 73.0410] },
+    destinationCoords: { type: [Number], default: [33.6628, 73.0489] },
     vehicleNumber: { type: String, default: 'ICT-TRN-1001' },
     status: {
       type: String,

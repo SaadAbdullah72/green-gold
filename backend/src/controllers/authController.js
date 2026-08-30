@@ -27,6 +27,8 @@ const sanitizeUser = (user) => {
     vehicleNumber: user.vehicleNumber,
     plantType: user.plantType,
     plantCapacityTons: user.plantCapacityTons,
+    lat: user.lat,
+    lng: user.lng,
     workerStatus: user.workerStatus
   };
 };
@@ -490,6 +492,8 @@ const SEEDED_ACCOUNTS = [
       address: 'Plot 42, Sector I-9/2 Industrial Area, Islamabad',
       plantType: 'Organic/Compost',
       plantCapacityTons: 80,
+      lat: 33.6628,
+      lng: 73.0489,
       workerStatus: 'IDLE'
     }
   },
@@ -507,6 +511,8 @@ const SEEDED_ACCOUNTS = [
       address: 'Industrial Triangle, Kahuta Road, Islamabad',
       plantType: 'Plastic',
       plantCapacityTons: 60,
+      lat: 33.5684,
+      lng: 73.1610,
       workerStatus: 'IDLE'
     }
   },
@@ -524,6 +530,8 @@ const SEEDED_ACCOUNTS = [
       address: 'Plot 18, Sector I-10/3 Industrial Area, Islamabad',
       plantType: 'Metal',
       plantCapacityTons: 100,
+      lat: 33.6512,
+      lng: 73.0321,
       workerStatus: 'IDLE'
     }
   },
@@ -542,6 +550,8 @@ const SEEDED_ACCOUNTS = [
       address: 'Sector I-9/1 Industrial Hub, Islamabad',
       town: 'I-9',
       city: 'Islamabad',
+      lat: 33.6660,
+      lng: 73.0410,
       workerStatus: 'IDLE'
     }
   }

@@ -101,8 +101,23 @@ export default function TransporterDashboard({ onLogout }) {
   const currentJob = (selectedJob ? jobs.find(j => String(j.id || j._id) === String(selectedJob.id || selectedJob._id)) : null)
     || (jobs.length > 0 ? jobs[0] : null);
 
-  const DUMP_YARD_COORDS = [33.6844, 73.0479]; // Central Yard
-  const PLANT_COORDS = [33.6600, 73.0600]; // Sector I-9 Industrial Plant
+  const DUMP_YARD_COORDS = currentJob?.originCoords && currentJob.originCoords.length === 2 
+    ? currentJob.originCoords 
+    : [33.6660, 73.0410];
+
+  const wt = (currentJob?.wasteType || '').toLowerCase();
+  const PLANT_COORDS = currentJob?.destinationCoords && currentJob.destinationCoords.length === 2 
+    ? currentJob.destinationCoords 
+    : (wt.includes('plastic') 
+        ? [33.5684, 73.1610] 
+        : wt.includes('metal') 
+          ? [33.6512, 73.0321] 
+          : [33.6628, 73.0489]);
+
+  const mapCenter = [
+    (DUMP_YARD_COORDS[0] + PLANT_COORDS[0]) / 2,
+    (DUMP_YARD_COORDS[1] + PLANT_COORDS[1]) / 2
+  ];
 
   return (
     <div style={{ minHeight: '100vh', background: '#F8FAF6', fontFamily: 'Times New Roman, serif', color: '#0F172A' }}>
@@ -409,8 +424,8 @@ export default function TransporterDashboard({ onLogout }) {
                   <div style={{ height: '280px', width: '100%', borderRadius: '14px', overflow: 'hidden', border: '1px solid #CBD5E1', marginBottom: '18px' }}>
                     <MapContainer
                       key={currentJob.id || currentJob._id}
-                      center={[33.6722, 73.0540]}
-                      zoom={13}
+                      center={mapCenter}
+                      zoom={12}
                       style={{ height: '100%', width: '100%' }}
                       scrollWheelZoom={false}
                     >
@@ -420,8 +435,8 @@ export default function TransporterDashboard({ onLogout }) {
                       />
                       <Marker position={DUMP_YARD_COORDS} icon={depotIcon}>
                         <Popup>
-                          <strong>Origin: Central Dump Yard</strong><br />
-                          Islamabad Waste Collection Hub
+                          <strong>Origin: Central Dump Facility</strong><br />
+                          Sector I-9/1 Industrial Area, Islamabad
                         </Popup>
                       </Marker>
                       <Marker position={PLANT_COORDS} icon={plantIcon}>
@@ -431,7 +446,7 @@ export default function TransporterDashboard({ onLogout }) {
                         </Popup>
                       </Marker>
                       <Polyline
-                        positions={[DUMP_YARD_COORDS, [33.6750, 73.0500], [33.6680, 73.0550], PLANT_COORDS]}
+                        positions={[DUMP_YARD_COORDS, PLANT_COORDS]}
                         color="#047857"
                         weight={4}
                         dashArray="6, 8"
