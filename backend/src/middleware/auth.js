@@ -58,3 +58,6 @@ export const requireRole = (...roles) => {
     next();
   };
 };
+
+export const authorizeRoles = requireRole;
+export const protect = authenticateUser;
