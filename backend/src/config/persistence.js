@@ -1,25 +1,21 @@
-// Persistence layer - safe for serverless (Vercel read-only filesystem)
-// On Vercel, disk operations silently fail but don't crash the app
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-let fs, path;
 let DATA_DIR, USERS_FILE, REQUESTS_FILE;
 
 try {
-  fs = await import('fs');
-  path = await import('path');
-  const { fileURLToPath } = await import('url');
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   DATA_DIR = path.join(__dirname, '../../data');
   USERS_FILE = path.join(DATA_DIR, 'users.json');
   REQUESTS_FILE = path.join(DATA_DIR, 'requests.json');
 
-  // Ensure data directory exists (only works on writable filesystems)
-  if (!fs.existsSync(DATA_DIR)) {
+  if (fs && fs.existsSync && !fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 } catch (e) {
-  console.log('Persistence: Running on read-only filesystem (Vercel), disk ops disabled.');
+  // Read-only environment like Vercel Serverless
 }
 
 export const saveUsersToDisk = (users) => {
