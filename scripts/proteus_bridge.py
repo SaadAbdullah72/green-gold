@@ -84,27 +84,21 @@ def select_site(db_bins):
     print("=" * 70)
 
     if db_bins and len(db_bins) > 0:
-        # Group bins by organization to avoid duplicates
-        seen_orgs = {}
-        unique_sites = []
-        for b in db_bins:
-            org = b.get('organizationName', 'Unknown')
-            if org not in seen_orgs:
-                seen_orgs[org] = True
-                unique_sites.append(b)
-
-        for idx, site in enumerate(unique_sites, 1):
+        for idx, site in enumerate(db_bins, 1):
             org = site.get('organizationName', 'Unknown')
             bin_id = site.get('binId', 'N/A')
             town = site.get('town', '')
             city = site.get('city', '')
             address = site.get('address', '')
+            contact = site.get('contactPerson', '')
             location_str = f"{town}, {city}" if town else city
             print(f"  [{idx}] {org}")
-            print(f"      Bin: {bin_id} | Location: {address}, {location_str}")
+            print(f"      Bin: {bin_id} | {address}, {location_str}")
+            if contact:
+                print(f"      Contact: {contact}")
             print()
 
-        custom_idx = len(unique_sites) + 1
+        custom_idx = len(db_bins) + 1
         print(f"  [{custom_idx}] Enter Custom Bin ID manually")
         print("-" * 70)
 
@@ -115,8 +109,8 @@ def select_site(db_bins):
 
         try:
             num = int(choice)
-            if 1 <= num <= len(unique_sites):
-                selected = unique_sites[num - 1]
+            if 1 <= num <= len(db_bins):
+                selected = db_bins[num - 1]
                 print(f"  >> Selected: {selected.get('organizationName')} ({selected.get('binId')})")
                 return selected
             elif num == custom_idx:
@@ -142,7 +136,7 @@ def select_site(db_bins):
                 }
 
         # Default to first
-        selected = unique_sites[0]
+        selected = db_bins[0]
         print(f"  >> Defaulting to: {selected.get('organizationName')}")
         return selected
 
