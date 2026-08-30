@@ -279,6 +279,55 @@ export const registerRecyclingPlant = async (req, res) => {
   }
 };
 
+export const registerDumpFacility = async (req, res) => {
+  try {
+    const { organizationName, fullName, email, phone, password, address, town, city } = req.body;
+
+    if (!organizationName || !email || !password || !phone) {
+      return res.status(400).json({ success: false, message: 'Please provide facility organization name, email, password and phone.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'This email is already registered. Please sign in.' });
+    }
+
+    const dumpCount = await User.countDocuments({ role: 'DUMP_FACILITY' });
+    const autoEmployeeId = `DUMP-${101 + dumpCount}`;
+    const passwordHash = await User.hashPassword(password);
+
+    const newUser = await User.create({
+      fullName: fullName || organizationName,
+      organizationName,
+      email: cleanEmail,
+      phone,
+      secondaryPhone: phone,
+      passwordHash,
+      role: 'DUMP_FACILITY',
+      employeeId: autoEmployeeId,
+      department: 'Central Processing & Yard Logistics',
+      address: address || 'Sector I-9/1 Industrial Hub, Islamabad',
+      town: town || 'I-9',
+      city: city || 'Islamabad',
+      workerStatus: 'IDLE'
+    });
+
+    await syncUsersToDisk();
+
+    const token = generateToken(newUser._id, newUser.role);
+    return res.status(201).json({
+      success: true,
+      message: `Dumping Facility account registered with ID ${autoEmployeeId}`,
+      token,
+      user: sanitizeUser(newUser)
+    });
+  } catch (err) {
+    console.error('registerDumpFacility Error:', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // Seed helper for instant demo accounts
 const SEEDED_ACCOUNTS = [
   {
@@ -475,6 +524,24 @@ const SEEDED_ACCOUNTS = [
       address: 'Plot 18, Sector I-10/3 Industrial Area, Islamabad',
       plantType: 'Metal',
       plantCapacityTons: 100,
+      workerStatus: 'IDLE'
+    }
+  },
+  // Dumping Facility / Central Waste Separation Yard
+  {
+    email: 'dumpyard@greengold.com',
+    passwords: ['dump123'],
+    data: {
+      fullName: 'Supervisor Rashid Mahmood (Central Dump Yard)',
+      organizationName: 'Capital Green Central Waste & Dumping Facility',
+      phone: '+92 51 4430999',
+      secondaryPhone: '+92 300 5550999',
+      role: 'DUMP_FACILITY',
+      employeeId: 'DUMP-101',
+      department: 'Central Processing & Yard Logistics',
+      address: 'Sector I-9/1 Industrial Hub, Islamabad',
+      town: 'I-9',
+      city: 'Islamabad',
       workerStatus: 'IDLE'
     }
   }

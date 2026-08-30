@@ -47,6 +47,10 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
       setIsRegister(false);
       setEmail('pakrecycling@greengold.com');
       setPassword('plant123');
+    } else if (newRole === 'DUMP_FACILITY') {
+      setIsRegister(false);
+      setEmail('dumpyard@greengold.com');
+      setPassword('dump123');
     } else {
       setEmail('');
       setPassword('');
@@ -139,7 +143,9 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                   ? 'ROLE_TRANSPORTER'
                   : data.user.role === 'RECYCLING_PLANT'
                     ? 'ROLE_RECYCLING_PLANT'
-                    : 'ROLE_GENERATOR';
+                    : data.user.role === 'DUMP_FACILITY'
+                      ? 'ROLE_DUMP_FACILITY'
+                      : 'ROLE_GENERATOR';
 
         login({ ...data.user, role: normalizedRole }, data.token);
 
@@ -155,7 +161,8 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
           ROLE_TECHNICIAN: '/technician',
           ROLE_COLLECTOR: '/collector',
           ROLE_TRANSPORTER: '/transporter',
-          ROLE_RECYCLING_PLANT: '/recycling-plant'
+          ROLE_RECYCLING_PLANT: '/recycling-plant',
+          ROLE_DUMP_FACILITY: '/dump-facility'
         };
         navigate(routeMap[normalizedRole] || '/generator');
       }
@@ -319,6 +326,22 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
               }}
             >
               Recycling Plant
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleProfileChange('DUMP_FACILITY')}
+              style={{
+                padding: '9px 6px',
+                borderRadius: '8px',
+                border: selectedRoleProfile === 'DUMP_FACILITY' ? '2px solid #047857' : '1px solid #CBD5E1',
+                background: selectedRoleProfile === 'DUMP_FACILITY' ? '#ECFDF5' : '#F8FAFC',
+                color: selectedRoleProfile === 'DUMP_FACILITY' ? '#047857' : '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Dump Yard
             </button>
             <button
               type="button"

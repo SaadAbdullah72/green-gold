@@ -6,6 +6,7 @@ import {
   registerCollector,
   registerTransporter,
   registerRecyclingPlant,
+  registerDumpFacility,
   login, 
   logout, 
   getMe 
@@ -20,6 +21,7 @@ router.post('/register/technical', registerTechnical);
 router.post('/register/collector', registerCollector);
 router.post('/register/transporter', registerTransporter);
 router.post('/register/recycling-plant', registerRecyclingPlant);
+router.post('/register/dump-facility', registerDumpFacility);
 
 router.post('/login', login);
 router.post('/logout', logout);

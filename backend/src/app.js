@@ -12,6 +12,7 @@ import iotRoutes from './routes/iotRoutes.js';
 import collectorRoutes from './routes/collectorRoutes.js';
 import transporterRoutes from './routes/transporterRoutes.js';
 import recyclingRoutes from './routes/recyclingRoutes.js';
+import dumpFacilityRoutes from './routes/dumpFacilityRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -45,6 +46,7 @@ const mountRoutes = (prefix = '') => {
   app.use(`${prefix}/collector`, collectorRoutes);
   app.use(`${prefix}/transporter`, transporterRoutes);
   app.use(`${prefix}/recycling`, recyclingRoutes);
+  app.use(`${prefix}/dump-facility`, dumpFacilityRoutes);
   app.use(`${prefix}/notifications`, notificationRoutes);
   app.use(`${prefix}/audit`, auditRoutes);
   app.use(`${prefix}/iot`, iotRoutes);

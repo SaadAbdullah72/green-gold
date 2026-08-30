@@ -8,9 +8,9 @@
 ## 1. MANAGEMENT ADMIN (Operations Command Center)
 ## Dashboard: /management
 
-| # | Full Name                     | Email                      | Password  | Employee ID |
-|---|-------------------------------|----------------------------|-----------|-------------|
-| 1 | System Operations Management  | saad489254@gmail.com       | saad123   | MGMT-001    |
+| # | Full Name                     | Email                      | Password  | Employee ID | Role Description |
+|---|-------------------------------|----------------------------|-----------|-------------|------------------|
+| 1 | System Operations Management  | saad489254@gmail.com       | saad123   | MGMT-001    | System Admin     |
 
 
 ## 2. WASTE COLLECTOR DRIVERS (Smart Bins → Central Dump Yard)
@@ -25,7 +25,15 @@
 | 5 | Collector Driver Farhan Malik| collector4@greengold.com     | collector123 | C-104       | ICT-GRN-9904  | F-6    |
 
 
-## 3. LOGISTICS TRANSPORTERS (Dump Yard → Recycling Plant)
+## 3. CENTRAL DUMPING & SEPARATION FACILITY (Weigh-In, Area Totals, Stream Sort & Plant Dispatch)
+## Dashboard: /dump-facility
+
+| # | Facility Name                              | Supervisor Name     | Email                  | Password | Employee ID | Location                          |
+|---|--------------------------------------------|---------------------|------------------------|----------|-------------|-----------------------------------|
+| 1 | Capital Green Central Waste & Dumping Hub  | Rashid Mahmood      | dumpyard@greengold.com | dump123  | DUMP-101    | Sector I-9/1 Industrial, Islamabad|
+
+
+## 4. LOGISTICS TRANSPORTERS (Dump Yard → Recycling Plant)
 ## Dashboard: /transporter
 
 | # | Full Name                  | Email                          | Password     | Employee ID | Vehicle #     |
@@ -36,7 +44,7 @@
 | 4 | Transporter Danish Raza    | transporter4@greengold.com     | transport123 | TRN-104     | ICT-TRN-1004  |
 
 
-## 4. INDUSTRIAL RECYCLING PLANTS (Audit & Carbon Credit Minting)
+## 5. INDUSTRIAL RECYCLING PLANTS (Audit & Carbon Credit Minting)
 ## Dashboard: /recycling-plant
 
 | # | Plant Name                            | Inspector Name                 | Email                       | Password | Employee ID | Waste Stream     | Capacity  | Address                                     |
@@ -46,14 +54,19 @@
 | 3 | GreenTech Metal & Materials Recovery  | Zubair Qureshi                 | greentech@greengold.com     | plant123 | PLANT-103   | Metal            | 100 Tons  | Plot 18, Sector I-10/3, Islamabad           |
 
 
-## 5. CUSTOMER / WASTE GENERATOR
+## 6. CUSTOMER / WASTE GENERATOR
 ## Dashboard: /generator
 ## (Users register themselves via Sign Up tab on login page)
 
 
-## CARBON CREDIT FORMULA
+## 7. HARDWARE IOT PROTEUS SIMULATOR
+## Script: python scripts/proteus_bridge.py --demo
+## Bin Types: Metal (01), Plastic (02), Organic/Compost (03)
+
+
+## CARBON CREDIT MINTING FORMULA
 ## CC = Recycled Weight (kg) × Stream Factor
-##   Organic/Compost: 0.5 CC/kg
-##   Plastic:         1.2 CC/kg
-##   Metal:           2.0 CC/kg
+##   Organic/Compost: 0.5 CC/kg  (Pak Recycling Ltd)
+##   Plastic:         1.2 CC/kg  (EcoPak Plastics Facility)
+##   Metal:           2.0 CC/kg  (GreenTech Metal Recovery)
 ##   General Mixed:   0.3 CC/kg

@@ -9,6 +9,7 @@ import TechnicianDashboard from './components/TechnicianDashboard';
 import CollectorDashboard from './components/CollectorDashboard';
 import TransporterDashboard from './components/TransporterDashboard';
 import RecyclingPlantDashboard from './components/RecyclingPlantDashboard';
+import DumpingFacilityDashboard from './components/DumpingFacilityDashboard';
 
 function getHomeRoute(role) {
   switch (role) {
@@ -24,6 +25,8 @@ function getHomeRoute(role) {
       return '/transporter';
     case 'ROLE_RECYCLING_PLANT':
       return '/recycling-plant';
+    case 'ROLE_DUMP_FACILITY':
+      return '/dump-facility';
     default:
       return '/login';
   }
@@ -105,6 +108,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['ROLE_RECYCLING_PLANT', 'ROLE_ADMIN']}>
             <RecyclingPlantDashboard onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dump-facility"
+        element={
+          <ProtectedRoute allowedRoles={['ROLE_DUMP_FACILITY', 'ROLE_ADMIN']}>
+            <DumpingFacilityDashboard onLogout={handleLogout} />
           </ProtectedRoute>
         }
       />

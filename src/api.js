@@ -479,5 +479,52 @@ export const api = {
       });
       return await handleResponse(res);
     }
+  },
+
+  dumpFacility: {
+    getRecords: async (query = {}) => {
+      const qs = new URLSearchParams(query).toString();
+      const url = qs ? `${API_BASE}/dump-facility/records?${qs}` : `${API_BASE}/dump-facility/records`;
+      const res = await fetch(url, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getAnalytics: async () => {
+      const res = await fetch(`${API_BASE}/dump-facility/analytics`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    separateRecords: async (separationData) => {
+      const res = await fetch(`${API_BASE}/dump-facility/separate`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(separationData)
+      });
+      return await handleResponse(res);
+    },
+
+    getTransporters: async () => {
+      const res = await fetch(`${API_BASE}/dump-facility/transporters`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getRecyclingPlants: async () => {
+      const res = await fetch(`${API_BASE}/dump-facility/recycling-plants`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    dispatchTransporter: async (dispatchPayload) => {
+      const res = await fetch(`${API_BASE}/dump-facility/dispatch`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(dispatchPayload)
+      });
+      return await handleResponse(res);
+    },
+
+    getTransportJobs: async () => {
+      const res = await fetch(`${API_BASE}/dump-facility/jobs`, { headers: getHeaders() });
+      return await handleResponse(res);
+    }
   }
 };
