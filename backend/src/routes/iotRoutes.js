@@ -96,8 +96,23 @@ router.post('/telemetry', async (req, res) => {
       gasPpm,
       lat, 
       lng, 
-      event 
+      event,
+      wasteType: incomingWasteType,
+      serviceArea,
+      facilityName
     } = req.body;
+
+    // Resolve waste type: from Proteus payload, or infer from BIN-{code} pattern
+    let resolvedWasteType = incomingWasteType || 'Municipal Solid Waste / Recyclables';
+    if (!incomingWasteType && binId) {
+      const typeMatch = binId.match(/BIN-(\d+)/i);
+      if (typeMatch) {
+        const tc = typeMatch[1];
+        if (tc === '01') resolvedWasteType = 'Metal';
+        else if (tc === '02') resolvedWasteType = 'Plastic';
+        else if (tc === '03') resolvedWasteType = 'Organic/Compost';
+      }
+    }
 
     const targetBinId = binId || 'BIN-01-01';
     const numWeight = parseFloat(weightKg) || 0;
@@ -188,7 +203,9 @@ router.post('/telemetry', async (req, res) => {
       lng: siteLng,
       rfidLastScanned: rfidTag || null,
       lastUpdated: new Date().toISOString(),
-      event: event || defaultEvent
+      event: event || defaultEvent,
+      wasteType: resolvedWasteType,
+      serviceArea: serviceArea || null
     };
 
     liveBinTelemetry[targetBinId] = telemetryData;
@@ -295,11 +312,11 @@ router.post('/telemetry', async (req, res) => {
               type: 'Point',
               coordinates: [siteLng, siteLat]
             },
-            wasteType: 'Municipal Solid Waste / Recyclables',
+            wasteType: resolvedWasteType,
             weightKg: numWeight > 0 ? numWeight : 7.5,
             numberOfBins: 1,
-            binType: 'Waste Collection Pickup',
-            notes: `[AUTO-DISPATCH] Smart Bin ${targetBinId} reached ${numFill}% fill level (${numWeight} kg). Immediate pickup needed by Waste Collector at ${siteAddress}, ${siteTown}.`,
+            binType: `${resolvedWasteType} Waste Collection Pickup`,
+            notes: `[AUTO-DISPATCH] Smart Bin ${targetBinId} (${resolvedWasteType} Bin) reached ${numFill}% fill level (${numWeight} kg). Immediate ${resolvedWasteType} waste pickup needed by Waste Collector at ${siteAddress}, ${siteTown}.`,
             priority: 'Urgent',
             status: 'WAITING_COLLECTION',
             requiredWorkers: 1
@@ -316,8 +333,8 @@ router.post('/telemetry', async (req, res) => {
             await Notification.create({
               recipientId: mgmt._id,
               type: 'BIN_FULL_ALERT',
-              title: `♻️ Bin Full Alert: ${targetBinId} (${orgName})`,
-              message: `Smart Bin ${targetBinId} at ${orgName} is FULL at ${numFill}% capacity. Please assign a Waste Collector from the Logistics Queue.`,
+              title: `♻️ ${resolvedWasteType} Bin Full Alert: ${targetBinId} (${orgName})`,
+              message: `${resolvedWasteType} Smart Bin ${targetBinId} at ${orgName} is FULL at ${numFill}% capacity (${numWeight} kg of ${resolvedWasteType} waste). Please assign a Waste Collector from the Logistics Queue.`,
               relatedRequestId: newCollReq._id
             }).catch(() => {});
           }
