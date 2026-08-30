@@ -106,6 +106,31 @@ export default function RecyclingPlantDashboard({ onLogout }) {
     }
   };
 
+  const handleDeleteReport = async (e, reportId) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this plant recycling report?')) return;
+    try {
+      await api.recycling.deleteReport(reportId);
+      setStatusMessage('Recycling report deleted successfully.');
+      setTimeout(() => setStatusMessage(''), 3000);
+      await loadData(true);
+    } catch (err) {
+      alert(`Delete Error: ${err.message}`);
+    }
+  };
+
+  const handleClearAllReports = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to CLEAR ALL recycling audit reports for this facility?')) return;
+    try {
+      await api.recycling.clearAllReports();
+      setStatusMessage('All facility audit reports cleared.');
+      setTimeout(() => setStatusMessage(''), 3000);
+      await loadData(true);
+    } catch (err) {
+      alert(`Clear Error: ${err.message}`);
+    }
+  };
+
   const wasteStreamType = selectedDelivery?.wasteType || user?.plantType || 'Organic/Compost';
   const currentCcFactor = CC_FACTORS[wasteStreamType] || 0.5;
   const previewCarbonCredits = (recycledKg * currentCcFactor).toFixed(2);
@@ -377,6 +402,29 @@ export default function RecyclingPlantDashboard({ onLogout }) {
               Certified Industrial Resource Recovery & Carbon Credits Ledger
             </h3>
 
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#047857' }}>
+                Plant Processing Audit Logs ({reports.length})
+              </h2>
+              {reports.length > 0 && (
+                <button
+                  onClick={handleClearAllReports}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #FCA5A5',
+                    background: '#FEF2F2',
+                    color: '#B91C1C',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear All Reports
+                </button>
+              )}
+            </div>
+
             {reports.length === 0 ? (
               <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748B' }}>
                 No completed recycling reports in your ledger yet.
@@ -393,6 +441,7 @@ export default function RecyclingPlantDashboard({ onLogout }) {
                     <th style={{ padding: '12px' }}>Carbon Credits</th>
                     <th style={{ padding: '12px' }}>Inspector</th>
                     <th style={{ padding: '12px' }}>Date</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -409,6 +458,24 @@ export default function RecyclingPlantDashboard({ onLogout }) {
                       <td style={{ padding: '12px', color: '#64748B' }}>{r.operatorName}</td>
                       <td style={{ padding: '12px', color: '#64748B' }}>
                         {r.processedAt ? new Date(r.processedAt).toLocaleDateString() : 'Recent'}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <button
+                          onClick={(e) => handleDeleteReport(e, r.id || r._id)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            border: '1px solid #FCA5A5',
+                            background: '#FFF1F2',
+                            color: '#BE123C',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                          title="Delete Record"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

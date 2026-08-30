@@ -336,22 +336,92 @@ export default function ManagementDashboard({
     if (e && e.stopPropagation) e.stopPropagation();
     const siteName = site.organizationName || 'this site';
     const siteCode = site.clientCode || 'Active Site';
-    if (!window.confirm(`Are you sure you want to permanently remove ${siteCode} (${siteName}) from active deployment records?`)) {
+    if (!window.confirm(`⚠️ PERMANENT CASCADE PURGE:\nAre you sure you want to completely purge ${siteCode} (${siteName})?\n\nThis will permanently remove:\n- The User / Site Account\n- All Deployed Smart Bins\n- All Dump Yard Inflow Logs & Batches\n- All Dispatched Transport Jobs\n- All Minted Carbon Credits across all dashboards.`)) {
       return;
     }
 
     try {
       const targetId = String(site.id || site._id);
       setDeletingSiteId(targetId);
-      await api.management.deleteActiveSite(targetId);
+      await api.management.purgeUserAndData(targetId);
       setDbActiveSites(prev => prev.filter(s => String(s.id || s._id) !== targetId));
       if (String(selectedSiteId) === targetId) {
         setSelectedSiteId(null);
       }
+      await loadManagementData();
     } catch (err) {
-      alert(`Failed to remove active site: ${err.message}`);
+      alert(`Failed to purge site & user data: ${err.message}`);
     } finally {
       setDeletingSiteId(null);
+    }
+  };
+
+  const handleDeleteDumpRecord = async (e, recordId) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to permanently delete this dump batch record?')) return;
+    try {
+      await api.management.deleteDumpRecord(recordId);
+      setDbDumpRecords(prev => prev.filter(r => String(r.id || r._id) !== String(recordId)));
+      await loadManagementData();
+    } catch (err) {
+      alert(`Delete Error: ${err.message}`);
+    }
+  };
+
+  const handleClearAllDumpRecords = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to CLEAR ALL dump records from the central yard?')) return;
+    try {
+      await api.management.clearAllDumpRecords();
+      setDbDumpRecords([]);
+      await loadManagementData();
+    } catch (err) {
+      alert(`Clear Error: ${err.message}`);
+    }
+  };
+
+  const handleDeleteTransportJob = async (e, jobId) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this transport job?')) return;
+    try {
+      await api.management.deleteTransportJob(jobId);
+      setDbTransportJobs(prev => prev.filter(j => String(j.id || j._id) !== String(jobId)));
+      await loadManagementData();
+    } catch (err) {
+      alert(`Delete Error: ${err.message}`);
+    }
+  };
+
+  const handleClearAllTransportJobs = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to CLEAR ALL transport jobs?')) return;
+    try {
+      await api.management.clearAllTransportJobs();
+      setDbTransportJobs([]);
+      await loadManagementData();
+    } catch (err) {
+      alert(`Clear Error: ${err.message}`);
+    }
+  };
+
+  const handleDeleteRecyclingReport = async (e, reportId) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this recycling report and its minted carbon credits?')) return;
+    try {
+      await api.management.deleteRecyclingReport(reportId);
+      setDbRecyclingReports(prev => prev.filter(r => String(r.id || r._id) !== String(reportId)));
+      await loadManagementData();
+    } catch (err) {
+      alert(`Delete Error: ${err.message}`);
+    }
+  };
+
+  const handleClearAllRecyclingReports = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to CLEAR ALL recycling plant audit reports and reset carbon credit totals?')) return;
+    try {
+      await api.management.clearAllRecyclingReports();
+      setDbRecyclingReports([]);
+      await loadManagementData();
+    } catch (err) {
+      alert(`Clear Error: ${err.message}`);
     }
   };
 
@@ -1477,7 +1547,7 @@ export default function ManagementDashboard({
 
             {/* Section 1: Central Dump Yard & Sorting Ledger */}
             <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '28px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
                     Central Dump Yard & Material Separation Ledger ({dbDumpRecords.length})
@@ -1486,6 +1556,25 @@ export default function ManagementDashboard({
                     Track all waste payloads dumped by collectors, separate by material type, and dispatch with transporters.
                   </div>
                 </div>
+
+                {dbDumpRecords.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllDumpRecords}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #FCA5A5',
+                      background: '#FEF2F2',
+                      color: '#B91C1C',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Clear All Dump Records
+                  </button>
+                )}
               </div>
 
               {dbDumpRecords.length === 0 ? (
@@ -1547,65 +1636,85 @@ export default function ManagementDashboard({
                             </span>
                           </td>
                           <td style={{ padding: '12px', textAlign: 'right' }}>
-                            {rec.status === 'DUMPED' && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px' }}>
+                              {rec.status === 'DUMPED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDumpRecord(rec);
+                                    setSeparatedWasteType(rec.wasteType || 'Organic/Compost');
+                                    setSeparationNotes('');
+                                    setShowSeparateModal(true);
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #0284C7',
+                                    background: '#F0F9FF',
+                                    color: '#0284C7',
+                                    fontSize: '11px',
+                                    fontWeight: '800',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Separate Stream ✂️
+                                </button>
+                              )}
+
+                              {rec.status === 'SEPARATED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDumpToTransport(rec);
+                                    setSelectedTransporterId('');
+                                    setSelectedPlantId('');
+                                    setShowTransporterAssignModal(true);
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    background: '#047857',
+                                    color: '#FFFFFF',
+                                    fontSize: '11px',
+                                    fontWeight: '800',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Dispatch Transporter 🚚
+                                </button>
+                              )}
+
+                              {(rec.status === 'IN_TRANSIT' || rec.status === 'ASSIGNED_TRANSPORT' || rec.status === 'DELIVERED') && (
+                                <span style={{ fontSize: '11px', color: '#D97706', fontWeight: '700' }}>
+                                  En Route to Plant
+                                </span>
+                              )}
+
+                              {rec.status === 'PROCESSED' && (
+                                <span style={{ fontSize: '11px', color: '#047857', fontWeight: '800' }}>
+                                  ✓ Recycled & Minted
+                                </span>
+                              )}
+
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setSelectedDumpRecord(rec);
-                                  setSeparatedWasteType(rec.wasteType || 'Organic/Compost');
-                                  setSeparationNotes('');
-                                  setShowSeparateModal(true);
-                                }}
+                                onClick={(e) => handleDeleteDumpRecord(e, rec.id || rec._id)}
                                 style={{
-                                  padding: '6px 12px',
+                                  padding: '5px 10px',
                                   borderRadius: '6px',
-                                  border: '1px solid #0284C7',
-                                  background: '#F0F9FF',
-                                  color: '#0284C7',
+                                  border: '1px solid #FCA5A5',
+                                  background: '#FFF1F2',
+                                  color: '#BE123C',
                                   fontSize: '11px',
                                   fontWeight: '800',
                                   cursor: 'pointer'
                                 }}
+                                title="Delete dump batch"
                               >
-                                Separate Stream ✂️
+                                Delete
                               </button>
-                            )}
-
-                            {rec.status === 'SEPARATED' && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedDumpToTransport(rec);
-                                  setSelectedTransporterId('');
-                                  setSelectedPlantId('');
-                                  setShowTransporterAssignModal(true);
-                                }}
-                                style={{
-                                  padding: '6px 12px',
-                                  borderRadius: '6px',
-                                  border: 'none',
-                                  background: '#047857',
-                                  color: '#FFFFFF',
-                                  fontSize: '11px',
-                                  fontWeight: '800',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                Dispatch Transporter 🚚
-                              </button>
-                            )}
-
-                            {(rec.status === 'IN_TRANSIT' || rec.status === 'ASSIGNED_TRANSPORT' || rec.status === 'DELIVERED') && (
-                              <span style={{ fontSize: '11px', color: '#D97706', fontWeight: '700' }}>
-                                En Route to Plant
-                              </span>
-                            )}
-
-                            {rec.status === 'PROCESSED' && (
-                              <span style={{ fontSize: '11px', color: '#047857', fontWeight: '800' }}>
-                                ✓ Recycled & Minted
-                              </span>
-                            )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1617,9 +1726,30 @@ export default function ManagementDashboard({
 
             {/* Section 2: Active Inter-Facility Transport Dispatches */}
             <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '28px' }}>
-              <h3 style={{ margin: '0 0 14px 0', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
-                Inter-Facility Transporter Hauls ({dbTransportJobs.length})
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                  Inter-Facility Transporter Hauls ({dbTransportJobs.length})
+                </h3>
+                {dbTransportJobs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllTransportJobs}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #FCA5A5',
+                      background: '#FEF2F2',
+                      color: '#B91C1C',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Clear All Transport Jobs
+                  </button>
+                )}
+              </div>
+
               {dbTransportJobs.length === 0 ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
                   No transport dispatches active.
@@ -1635,6 +1765,7 @@ export default function ManagementDashboard({
                       <th style={{ padding: '10px' }}>Waste Stream</th>
                       <th style={{ padding: '10px' }}>Payload</th>
                       <th style={{ padding: '10px' }}>Status</th>
+                      <th style={{ padding: '10px', textAlign: 'center' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1650,6 +1781,25 @@ export default function ManagementDashboard({
                           <span style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', background: j.status === 'COMPLETED' ? '#D1FAE5' : '#FEF3C7', color: j.status === 'COMPLETED' ? '#065F46' : '#92400E' }}>
                             {j.status}
                           </span>
+                        </td>
+                        <td style={{ padding: '10px', textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteTransportJob(e, j.id || j._id)}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              border: '1px solid #FCA5A5',
+                              background: '#FFF1F2',
+                              color: '#BE123C',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              cursor: 'pointer'
+                            }}
+                            title="Delete transport job"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}

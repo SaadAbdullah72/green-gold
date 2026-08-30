@@ -311,6 +311,78 @@ export const api = {
     getWasteTrackingOverview: async () => {
       const res = await fetch(`${API_BASE}/management/waste-tracking`, { headers: getHeaders() });
       return await handleResponse(res);
+    },
+
+    purgeUserAndData: async (userIdOrSiteId) => {
+      const res = await fetch(`${API_BASE}/management/users/${userIdOrSiteId}/purge`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    deleteDumpRecord: async (recordId) => {
+      const res = await fetch(`${API_BASE}/management/dump-records/${recordId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    clearAllDumpRecords: async () => {
+      const res = await fetch(`${API_BASE}/management/dump-records`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    deleteTransportJob: async (jobId) => {
+      const res = await fetch(`${API_BASE}/management/transport-jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    clearAllTransportJobs: async () => {
+      const res = await fetch(`${API_BASE}/management/transport-jobs`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    deleteRecyclingReport: async (reportId) => {
+      const res = await fetch(`${API_BASE}/management/recycling-reports/${reportId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    clearAllRecyclingReports: async () => {
+      const res = await fetch(`${API_BASE}/management/recycling-reports`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    deleteCollectorAssignment: async (assignmentId) => {
+      const res = await fetch(`${API_BASE}/management/collectors/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    clearAllCollectorAssignments: async () => {
+      const res = await fetch(`${API_BASE}/management/collectors/assignments`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
     }
   },
 
@@ -362,6 +434,22 @@ export const api = {
 
     getMyReports: async () => {
       const res = await fetch(`${API_BASE}/recycling/reports`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    deleteReport: async (reportId) => {
+      const res = await fetch(`${API_BASE}/recycling/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    clearAllReports: async () => {
+      const res = await fetch(`${API_BASE}/recycling/reports`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
       return await handleResponse(res);
     },
 
@@ -486,6 +574,22 @@ export const api = {
       const qs = new URLSearchParams(query).toString();
       const url = qs ? `${API_BASE}/dump-facility/records?${qs}` : `${API_BASE}/dump-facility/records`;
       const res = await fetch(url, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    deleteRecord: async (recordId) => {
+      const res = await fetch(`${API_BASE}/dump-facility/records/${recordId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    clearAllRecords: async () => {
+      const res = await fetch(`${API_BASE}/dump-facility/records`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
       return await handleResponse(res);
     },
 

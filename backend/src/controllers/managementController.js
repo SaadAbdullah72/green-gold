@@ -6,6 +6,7 @@ import { DumpRecord } from '../models/DumpRecord.js';
 import { TransportJob } from '../models/TransportJob.js';
 import { RecyclingReport } from '../models/RecyclingReport.js';
 import { calculateRequiredWorkers } from './requestController.js';
+import { saveUsersToDisk } from '../config/persistence.js';
 
 export const getAllRequests = async (req, res) => {
   try {
@@ -718,6 +719,194 @@ export const getWasteTrackingOverview = async (req, res) => {
       },
       userSummaries
     });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==========================================
+// COMPLETE CASCADE USER PURGE & GRANULAR DELETION
+// ==========================================
+
+// Complete System-Wide User & Record Purge
+export const purgeUserAndData = async (req, res) => {
+  try {
+    const { id } = req.params; // Can be user _id, site _id, or request _id
+
+    let targetUserId = null;
+    let targetOrgName = null;
+    let targetBinIds = [];
+
+    // 1. Check if ID is a User
+    const user = await User.findById(id).catch(() => null);
+    if (user) {
+      targetUserId = user._id;
+      targetOrgName = user.organizationName || user.fullName;
+    }
+
+    // 2. Check if ID is a ServiceRequest
+    const sReq = await ServiceRequest.findById(id).catch(() => null);
+    if (sReq) {
+      targetUserId = targetUserId || sReq.userId;
+      targetOrgName = targetOrgName || sReq.organizationName;
+      targetBinIds = sReq.deployedBinIds || [];
+    }
+
+    const queryFilters = [];
+    if (targetUserId) queryFilters.push({ userId: targetUserId });
+    if (targetOrgName) queryFilters.push({ organizationName: new RegExp(`^${targetOrgName}$`, 'i') });
+    if (targetBinIds.length > 0) queryFilters.push({ binId: { $in: targetBinIds } });
+
+    // Cascade 1: Delete Service Requests
+    await ServiceRequest.deleteMany({
+      $or: [
+        { _id: id },
+        ...(targetUserId ? [{ userId: targetUserId }] : []),
+        ...(targetOrgName ? [{ organizationName: new RegExp(`^${targetOrgName}$`, 'i') }] : [])
+      ]
+    });
+
+    // Cascade 2: Delete Collector Assignments
+    await CollectorAssignment.deleteMany({
+      $or: [
+        { requestId: id },
+        ...(targetOrgName ? [{ siteName: new RegExp(`^${targetOrgName}$`, 'i') }] : []),
+        ...(targetBinIds.length > 0 ? [{ binId: { $in: targetBinIds } }] : [])
+      ]
+    });
+
+    // Cascade 3: Delete Dump Records
+    await DumpRecord.deleteMany({
+      $or: [
+        ...(targetUserId ? [{ userId: targetUserId }] : []),
+        ...(targetOrgName ? [{ organizationName: new RegExp(`^${targetOrgName}$`, 'i') }] : []),
+        ...(targetBinIds.length > 0 ? [{ binId: { $in: targetBinIds } }] : [])
+      ]
+    });
+
+    // Cascade 4: Remove/Clean Transport Jobs
+    if (targetOrgName) {
+      await TransportJob.deleteMany({
+        $or: [
+          { originSite: new RegExp(`^${targetOrgName}$`, 'i') },
+          { 'dumpRecords.organizationName': new RegExp(`^${targetOrgName}$`, 'i') }
+        ]
+      });
+    }
+
+    // Cascade 5: Remove User Contributions & Carbon Credits from Recycling Reports
+    if (targetUserId || targetOrgName) {
+      await RecyclingReport.updateMany(
+        {},
+        {
+          $pull: {
+            userContributions: {
+              $or: [
+                ...(targetUserId ? [{ userId: targetUserId }] : []),
+                ...(targetOrgName ? [{ organizationName: new RegExp(`^${targetOrgName}$`, 'i') }] : [])
+              ]
+            }
+          }
+        }
+      );
+    }
+
+    // Cascade 6: Delete User Account if exists
+    if (targetUserId) {
+      await User.findByIdAndDelete(targetUserId);
+      const allUsers = await User.find({}).select('+passwordHash').lean();
+      saveUsersToDisk(allUsers);
+    }
+
+    return res.json({
+      success: true,
+      message: `User ${targetOrgName || id} and all associated records, bins, dump logs, and carbon credits successfully purged across entire system.`
+    });
+  } catch (error) {
+    console.error('[Purge User Error]:', error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Granular: Delete Single Dump Record
+export const deleteDumpRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await DumpRecord.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Dump record deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Bulk: Clear All Dump Records
+export const clearAllDumpRecords = async (req, res) => {
+  try {
+    await DumpRecord.deleteMany({});
+    return res.json({ success: true, message: 'All dump records cleared successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Granular: Delete Single Transport Job
+export const deleteTransportJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await TransportJob.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Transport job deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Bulk: Clear All Transport Jobs
+export const clearAllTransportJobs = async (req, res) => {
+  try {
+    await TransportJob.deleteMany({});
+    return res.json({ success: true, message: 'All transport jobs cleared successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Granular: Delete Single Recycling Report
+export const deleteRecyclingReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await RecyclingReport.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Recycling report deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Bulk: Clear All Recycling Reports
+export const clearAllRecyclingReports = async (req, res) => {
+  try {
+    await RecyclingReport.deleteMany({});
+    return res.json({ success: true, message: 'All recycling reports cleared successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Granular: Delete Single Collector Assignment
+export const deleteCollectorAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await CollectorAssignment.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Collector assignment deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Bulk: Clear All Collector Assignments
+export const clearAllCollectorAssignments = async (req, res) => {
+  try {
+    await CollectorAssignment.deleteMany({});
+    return res.json({ success: true, message: 'All collector assignments cleared successfully.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

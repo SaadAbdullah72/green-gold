@@ -217,6 +217,29 @@ export default function DumpingFacilityDashboard({ onLogout }) {
     }
   };
 
+  const handleDeleteRecord = async (e, recordId) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to permanently delete this waste batch record from the yard?')) return;
+    try {
+      await api.dumpFacility.deleteRecord(recordId);
+      showMsg('success', 'Waste batch record deleted successfully.');
+      loadData();
+    } catch (err) {
+      showMsg('error', 'Failed to delete record: ' + err.message);
+    }
+  };
+
+  const handleClearAllRecords = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to CLEAR ALL dump records and batch logs in the central facility?')) return;
+    try {
+      await api.dumpFacility.clearAllRecords();
+      showMsg('success', 'All facility dump records cleared.');
+      loadData();
+    } catch (err) {
+      showMsg('error', 'Failed to clear records: ' + err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC', fontFamily: 'Times New Roman, serif' }}>
@@ -284,6 +307,23 @@ export default function DumpingFacilityDashboard({ onLogout }) {
             }}
           >
             {refreshing ? 'Syncing...' : 'Refresh'}
+          </button>
+
+          <button
+            onClick={handleClearAllRecords}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid #F87171',
+              background: '#991B1B',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+            title="Clear all yard dump records"
+          >
+            Clear All Logs
           </button>
 
           <button
@@ -619,13 +659,14 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                             <th style={{ padding: '10px 12px' }}>CATEGORY</th>
                             <th style={{ padding: '10px 12px' }}>WEIGHT</th>
                             <th style={{ padding: '10px 12px' }}>STATUS</th>
+                            <th style={{ padding: '10px 12px', textAlign: 'center' }}>ACTION</th>
                           </tr>
                         </thead>
                         <tbody>
                           {siteInflowRecords.map((r, i) => {
                             const stream = r.wasteType || r.separatedType || 'Organic/Compost';
                             return (
-                              <tr key={i} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                              <tr key={r._id || r.id || i} style={{ borderBottom: '1px solid #E2E8F0' }}>
                                 <td style={{ padding: '10px 12px', fontWeight: 700, color: '#334155' }}>
                                   {r.dumpedAt ? new Date(r.dumpedAt).toLocaleString() : 'N/A'}
                                 </td>
@@ -659,6 +700,24 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                                   }}>
                                     {r.status}
                                   </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                  <button
+                                    onClick={(e) => handleDeleteRecord(e, r._id || r.id)}
+                                    style={{
+                                      padding: '4px 10px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #FCA5A5',
+                                      background: '#FFF1F2',
+                                      color: '#BE123C',
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer'
+                                    }}
+                                    title="Delete this batch record"
+                                  >
+                                    Delete
+                                  </button>
                                 </td>
                               </tr>
                             );
@@ -1039,11 +1098,12 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                     <th style={{ padding: '10px 12px' }}>CATEGORY</th>
                     <th style={{ padding: '10px 12px' }}>WEIGHT</th>
                     <th style={{ padding: '10px 12px' }}>STATUS</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center' }}>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
                   {records.map((r, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                    <tr key={r._id || r.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                       <td style={{ padding: '10px 12px', color: '#334155' }}>
                         {r.dumpedAt ? new Date(r.dumpedAt).toLocaleString() : 'N/A'}
                       </td>
@@ -1066,6 +1126,24 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                         }}>
                           {r.status}
                         </span>
+                      </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                        <button
+                          onClick={(e) => handleDeleteRecord(e, r._id || r.id)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            border: '1px solid #FCA5A5',
+                            background: '#FFF1F2',
+                            color: '#BE123C',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                          title="Delete this record"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

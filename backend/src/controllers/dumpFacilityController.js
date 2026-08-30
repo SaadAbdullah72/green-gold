@@ -550,3 +550,24 @@ export const getDumpFacilityTransportJobs = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 8. DELETE SINGLE DUMP FACILITY RECORD
+export const deleteDumpFacilityRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await DumpRecord.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Dump batch record deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 9. BULK CLEAR ALL DUMP FACILITY RECORDS
+export const clearAllDumpFacilityRecords = async (req, res) => {
+  try {
+    await DumpRecord.deleteMany({});
+    return res.json({ success: true, message: 'All dump batch records in yard cleared successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -6,7 +6,9 @@ import {
   getDumpFacilityTransporters,
   getDumpFacilityRecyclingPlants,
   dispatchTransporterFromYard,
-  getDumpFacilityTransportJobs
+  getDumpFacilityTransportJobs,
+  deleteDumpFacilityRecord,
+  clearAllDumpFacilityRecords
 } from '../controllers/dumpFacilityController.js';
 import { authenticateUser, requireRole } from '../middleware/auth.js';
 
@@ -17,6 +19,8 @@ router.use(authenticateUser);
 router.use(requireRole('DUMP_FACILITY', 'MANAGEMENT'));
 
 router.get('/records', getDumpFacilityRecords);
+router.delete('/records/:id', deleteDumpFacilityRecord);
+router.delete('/records', clearAllDumpFacilityRecords);
 router.get('/analytics', getDumpFacilityAnalytics);
 router.post('/separate', separateDumpFacilityRecords);
 router.get('/transporters', getDumpFacilityTransporters);

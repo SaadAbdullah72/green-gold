@@ -186,3 +186,22 @@ export const getPlantStats = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteRecyclingReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await RecyclingReport.findOneAndDelete({ _id: id, plantId: req.user._id });
+    return res.json({ success: true, message: 'Recycling report deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const clearAllRecyclingReports = async (req, res) => {
+  try {
+    await RecyclingReport.deleteMany({ plantId: req.user._id });
+    return res.json({ success: true, message: 'All plant audit reports cleared successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
