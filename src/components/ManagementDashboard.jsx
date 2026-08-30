@@ -667,7 +667,7 @@ export default function ManagementDashboard({
               {liveStats.totalCarbonCredits.toFixed(2)} <span style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>CC</span>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              Avoided: {liveStats.avoidanceMt} MT CO₂e (Pending: {liveStats.pendingCC.toFixed(2)} CC)
+              Avoided: {Number(liveStats.avoidanceMt || 0).toFixed(3)} MT CO₂e (Pending: {liveStats.pendingCC.toFixed(2)} CC)
             </div>
           </div>
 
