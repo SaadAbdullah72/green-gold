@@ -172,15 +172,6 @@ export const getDumpFacilityAnalytics = async (req, res) => {
         inflowHistory: []
       };
     }
-        totalKg: 0,
-        plasticKg: 0,
-        metalKg: 0,
-        organicKg: 0,
-        mixedKg: 0,
-        recordsCount: 0,
-        inflowHistory: []
-      };
-    }
 
     // 4. Map dump records to their respective active sites in the ledger
     const activeSiteList = Object.values(siteMap);
