@@ -138,38 +138,44 @@ router.post('/telemetry', async (req, res) => {
       defaultEvent = 'HAZARD ALERT: HIGH GAS/SMOKE DETECTED';
     }
 
-    // 100% Dynamic Database Lookup for Client Site Allotment
-    let matchedSite = await ServiceRequest.findOne({
+    // 100% Dynamic Database Lookup for Real Active Client Site Allotment
+    const activeSitesList = await ServiceRequest.find({
       requestType: 'BIN_DEPLOYMENT',
-      $or: [
-        { deployedBinIds: targetBinId },
-        { binPrefix: targetBinId.slice(0, 6) },
-        { requestNumber: { $regex: new RegExp(targetBinId, 'i') } }
-      ]
-    }).lean().catch(() => null);
+      status: { $in: ['COMPLETED', 'Completed'] }
+    }).sort({ createdAt: 1 }).lean().catch(() => []);
 
-    if (!matchedSite) {
-      // Try resolving by client index number (e.g. BIN-04-01 -> clientIndex: 4)
-      const match = targetBinId.match(/BIN-(\d+)/i);
-      if (match) {
-        const clientIdx = parseInt(match[1], 10);
-        matchedSite = await ServiceRequest.findOne({
-          requestType: 'BIN_DEPLOYMENT',
-          clientIndex: clientIdx
-        }).lean().catch(() => null);
+    const binFormatMatch = targetBinId.match(/BIN-(\d+)-(\d+)/i);
+    let matchedSite = null;
+
+    if (binFormatMatch) {
+      const streamCode = binFormatMatch[1];
+      const siteIndex = parseInt(binFormatMatch[2], 10);
+      if (streamCode === '01') resolvedWasteType = 'Metal';
+      else if (streamCode === '02') resolvedWasteType = 'Plastic';
+      else if (streamCode === '03') resolvedWasteType = 'Organic/Compost';
+
+      if (activeSitesList && siteIndex > 0 && siteIndex <= activeSitesList.length) {
+        matchedSite = activeSitesList[siteIndex - 1];
       }
+    }
+
+    if (!matchedSite && activeSitesList.length > 0) {
+      matchedSite = activeSitesList.find(s => 
+        (s.deployedBinIds && s.deployedBinIds.includes(targetBinId)) ||
+        (s.binPrefix && targetBinId.startsWith(s.binPrefix))
+      ) || activeSitesList[0];
     }
 
     let siteName = `Smart Bin ${targetBinId}`;
     let orgName = `Smart Bin Facility (${targetBinId})`;
-    let siteAddress = 'Main Campus Placement Site';
-    let siteTown = 'Islamabad';
+    let siteAddress = 'Saddar, Rawalpindi';
+    let siteTown = 'Saddar';
     let siteCity = 'Islamabad';
     let siteContactPerson = 'Site Operations Incharge';
-    let sitePhone = '+92 300 0000000';
+    let sitePhone = '+92 300 1234567';
     let siteEmail = 'iot-logistics@greengold.org';
-    let siteLat = lat || 33.6844;
-    let siteLng = lng || 73.0479;
+    let siteLat = lat || 33.5954;
+    let siteLng = lng || 73.0512;
 
     if (matchedSite) {
       orgName = matchedSite.organizationName || orgName;
