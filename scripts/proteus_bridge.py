@@ -77,7 +77,7 @@ def fetch_active_bins_from_api(api_url):
 def select_site(db_bins):
     """
     STEP 1: Interactive site selector — fetches REAL deployed bins from backend.
-    Returns selected bin dict from database.
+    Returns (selected_bin_dict, site_number) tuple.
     """
     print("\n" + "=" * 70)
     print("  STEP 1: SELECT SERVICE AREA (LIVE FROM DATABASE)")
@@ -112,7 +112,7 @@ def select_site(db_bins):
             if 1 <= num <= len(db_bins):
                 selected = db_bins[num - 1]
                 print(f"  >> Selected: {selected.get('organizationName')} ({selected.get('binId')})")
-                return selected
+                return selected, num
             elif num == custom_idx:
                 try:
                     custom_id = input("  Enter Bin ID (e.g. BIN-01-01): ").strip().upper()
@@ -124,7 +124,7 @@ def select_site(db_bins):
                     "town": "Islamabad",
                     "city": "Islamabad",
                     "address": "Custom Location"
-                }
+                }, 1
         except ValueError:
             if choice.upper().startswith("BIN-"):
                 return {
@@ -133,12 +133,12 @@ def select_site(db_bins):
                     "town": "Islamabad",
                     "city": "Islamabad",
                     "address": "Custom Location"
-                }
+                }, 1
 
         # Default to first
         selected = db_bins[0]
         print(f"  >> Defaulting to: {selected.get('organizationName')}")
-        return selected
+        return selected, 1
 
     else:
         print("  [!] No active bins found in database.")
@@ -155,7 +155,7 @@ def select_site(db_bins):
             "town": "Islamabad",
             "city": "Islamabad",
             "address": "Custom Location"
-        }
+        }, 1
 
 
 def select_bin_type():
@@ -220,7 +220,7 @@ def main():
     # ---------------------------------------------------------------
     # STEP 1: Select Service Area (from REAL database)
     # ---------------------------------------------------------------
-    selected_site = select_site(db_bins)
+    selected_site, site_number = select_site(db_bins)
 
     # ---------------------------------------------------------------
     # STEP 2: Select Bin Type (Metal=01, Plastic=02, Organic=03)
@@ -233,19 +233,9 @@ def main():
     if args.bin_id:
         target_bin_id = args.bin_id
     else:
-        # Extract the unit/site number from DB bin ID (e.g. BIN-01-01 -> unit=01)
-        # Then rebuild with the selected bin type code
-        site_bin_id = selected_site.get('binId', '')
-        site_unit = '01'  # default unit
-        if site_bin_id:
-            # Extract last segment as unit number: BIN-XX-YY -> YY
-            parts = site_bin_id.split('-')
-            if len(parts) >= 3:
-                site_unit = parts[-1]
-            elif len(parts) == 2:
-                site_unit = parts[-1]
-        # Build: BIN-{bin_type_code}-{site_unit}
-        target_bin_id = f"BIN-{bin_type['code']}-{site_unit}"
+        # Build ID: BIN-{bin_type_code}-{site_number}
+        # e.g. Site 2 + Plastic(02) = BIN-02-02
+        target_bin_id = f"BIN-{bin_type['code']}-{str(site_number).zfill(2)}"
 
     target_client_name = selected_site.get('organizationName', 'Smart Bin Facility')
     target_waste_type = bin_type["waste_type"]
