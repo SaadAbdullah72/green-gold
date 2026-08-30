@@ -4,20 +4,21 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { IconBrandLogo } from './Icons';
 
-// Formal Custom Map Pin Markers (No cartoon icons)
+// Formal Custom Map Pin Markers
 const yardIcon = L.divIcon({
   className: '',
-  html: '<div style="width:20px;height:20px;border-radius:50%;background:#064E3B;border:3px solid #FFFFFF;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>',
-  iconSize: [20, 20],
-  iconAnchor: [10, 10]
+  html: '<div style="width:18px;height:18px;border-radius:50%;background:#047857;border:3px solid #FFFFFF;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9]
 });
 
 const plantIcon = L.divIcon({
   className: '',
-  html: '<div style="width:22px;height:22px;border-radius:50%;background:#1D4ED8;border:3px solid #FFFFFF;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11]
+  html: '<div style="width:20px;height:20px;border-radius:50%;background:#1E3A8A;border:3px solid #FFFFFF;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10]
 });
 
 export default function DumpingFacilityDashboard({ onLogout }) {
@@ -69,7 +70,6 @@ export default function DumpingFacilityDashboard({ onLogout }) {
 
       if (analyticsRes.success) {
         setAnalytics(analyticsRes);
-        // Default select first site if none selected
         if (!selectedSiteId && analyticsRes.sites && analyticsRes.sites.length > 0) {
           setSelectedSiteId(analyticsRes.sites[0].siteId || analyticsRes.sites[0].organizationName);
         }
@@ -84,7 +84,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
       }
       if (jobsRes.success) setTransportJobs(jobsRes.jobs || []);
     } catch (err) {
-      showMsg('error', 'Error loading dumping facility data: ' + err.message);
+      showMsg('error', 'Error synchronizing facility data: ' + err.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -97,18 +97,18 @@ export default function DumpingFacilityDashboard({ onLogout }) {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // Enrolled Active Sites
+  // Enrolled Active Sites (100% Synced with Admin Active Deployed Sites Ledger)
   const enrolledSites = useMemo(() => {
-    return analytics?.sites || analytics?.areas || [];
+    return analytics?.sites || [];
   }, [analytics]);
 
-  // Selected Enrolled Site Data
+  // Currently Selected Site
   const currentSite = useMemo(() => {
     if (!selectedSiteId && enrolledSites.length > 0) return enrolledSites[0];
     return enrolledSites.find(s => s.siteId === selectedSiteId || s.organizationName === selectedSiteId) || enrolledSites[0] || null;
   }, [selectedSiteId, enrolledSites]);
 
-  // Filter records based on category filter
+  // Filtered records based on top category dropdown
   const categoryFilteredRecords = useMemo(() => {
     if (selectedCategoryFilter === 'ALL') return records;
     return records.filter(r => {
@@ -119,7 +119,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
     });
   }, [records, selectedCategoryFilter]);
 
-  // Filter records based on selected site AND category
+  // Filtered records for the selected site
   const siteInflowRecords = useMemo(() => {
     if (!currentSite) return [];
     const siteName = (currentSite.organizationName || currentSite.siteName || '').toLowerCase();
@@ -139,7 +139,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
     });
   }, [currentSite, records, selectedCategoryFilter]);
 
-  // Undispatched Records available for transport
+  // Undispatched Ready Batches
   const readyRecords = useMemo(() => {
     return categoryFilteredRecords.filter(r => r.status === 'DUMPED' || r.status === 'SEPARATED');
   }, [categoryFilteredRecords]);
@@ -159,12 +159,12 @@ export default function DumpingFacilityDashboard({ onLogout }) {
     }
   };
 
-  // Currently Selected Recycling Plant for Leaflet route preview
+  // Selected Plant for Route Guide
   const currentSelectedPlant = useMemo(() => {
     return plants.find(p => String(p._id || p.id) === String(selectedPlantId)) || plants[0] || null;
   }, [plants, selectedPlantId]);
 
-  // Auto-select plant when stream is picked
+  // Auto-match Recycling Plant on stream selection
   const handleAutoSelectPlant = (streamType) => {
     if (!plants || plants.length === 0) return;
     const norm = streamType.toLowerCase();
@@ -221,11 +221,11 @@ export default function DumpingFacilityDashboard({ onLogout }) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC', fontFamily: 'Times New Roman, serif' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#064E3B' }}>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#047857' }}>
             GreenGold OS — Central Waste Dumping Facility
           </div>
-          <div style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
-            Synchronizing telemetry, enrolled sites, and recycling plant registries...
+          <div style={{ fontSize: '13px', color: '#64748B', marginTop: '6px' }}>
+            Synchronizing live active ledgers and recycling plant routes...
           </div>
         </div>
       </div>
@@ -237,72 +237,80 @@ export default function DumpingFacilityDashboard({ onLogout }) {
   const plantCoords = currentSelectedPlant?.coords || [33.6628, 73.0489];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC', fontFamily: 'Times New Roman, serif', color: '#0F172A', paddingBottom: '60px' }}>
+    <div style={{ minHeight: '100vh', background: '#F8FAF6', fontFamily: 'Times New Roman, serif', color: '#0F172A', paddingBottom: '60px' }}>
       
-      {/* 1. FORMAL TOP COMMAND HEADER */}
-      <header style={{ background: '#064E3B', color: '#FFFFFF', padding: '20px 36px', borderBottom: '3px solid #047857', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-        <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      {/* 1. TOP PROFESSIONAL HEADER (Theme matched with Management, Collector, and Transporter) */}
+      <header style={{
+        background: '#047857',
+        color: '#FFFFFF',
+        padding: '16px 28px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: '0 4px 20px rgba(4,120,87,0.2)',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <IconBrandLogo />
           <div>
-            <div style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#A7F3D0', fontWeight: 'bold' }}>
+            <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85 }}>
               INTER-MUNICIPAL RESOURCE CONVERGENCE & RECYCLING DISPATCH
             </div>
-            <h1 style={{ margin: '4px 0 0 0', fontSize: '22px', fontWeight: 'bold', letterSpacing: '0.02em' }}>
-              Central Waste Dumping & Separation Facility
+            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
+              GreenGold OS — Central Waste Dumping & Separation Facility
             </h1>
-            <div style={{ fontSize: '13px', color: '#E2E8F0', marginTop: '2px' }}>
-              Sector I-9/1 Industrial Area, Islamabad | Operational Zone Hub (ID: DUMP-101)
-            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ textAlign: 'right', fontSize: '12px' }}>
+            <div style={{ fontWeight: 800 }}>{user?.fullName || 'Supervisor Rashid Mahmood'}</div>
+            <div style={{ opacity: 0.85 }}>Facility ID: <strong>DUMP-101</strong> (Sector I-9/1 Industrial Hub)</div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)' }}>
-              <div style={{ fontSize: '11px', color: '#34D399', fontWeight: 'bold' }}>FACILITY SUPERVISOR</div>
-              <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{user?.fullName || 'Supervisor Rashid Mahmood'}</div>
-            </div>
+          <button
+            onClick={loadData}
+            disabled={refreshing}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.12)',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            {refreshing ? 'Syncing...' : 'Refresh'}
+          </button>
 
-            <button
-              onClick={loadData}
-              disabled={refreshing}
-              style={{
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.25)',
-                color: '#FFF',
-                padding: '8px 14px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '12px'
-              }}
-            >
-              {refreshing ? 'Syncing...' : 'Refresh'}
-            </button>
-
-            <button
-              onClick={() => { logout(); if (onLogout) onLogout(); }}
-              style={{
-                background: '#DC2626',
-                border: 'none',
-                color: '#FFF',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '12px'
-              }}
-            >
-              Sign Out
-            </button>
-          </div>
+          <button
+            onClick={() => { logout(); if (onLogout) onLogout(); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              background: '#DC2626',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Sign Out
+          </button>
         </div>
       </header>
 
-      {/* TOAST MESSAGE */}
+      {/* NOTIFICATION TOAST */}
       {message.text && (
         <div style={{
           maxWidth: '1440px',
           margin: '14px auto 0',
           padding: '10px 20px',
-          borderRadius: '6px',
+          borderRadius: '8px',
           background: message.type === 'error' ? '#FEE2E2' : '#DCFCE7',
           color: message.type === 'error' ? '#991B1B' : '#166534',
           border: `1px solid ${message.type === 'error' ? '#F87171' : '#86EFAC'}`,
@@ -320,36 +328,36 @@ export default function DumpingFacilityDashboard({ onLogout }) {
       {/* MAIN CONTAINER */}
       <main style={{ maxWidth: '1440px', margin: '20px auto', padding: '0 24px' }}>
 
-        {/* 2. TOP FILTER BAR & TOTAL DUMPED WASTE METRICS */}
-        <div style={{ background: '#FFFFFF', padding: '20px 24px', borderRadius: '10px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #E2E8F0', marginBottom: '20px' }}>
+        {/* 2. TOP TOTAL DUMPED INFLOW & CATEGORY SELECTION BAR */}
+        <div style={{ background: '#FFFFFF', padding: '20px 24px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px', marginBottom: '16px' }}>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748B', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                OVERALL FACILITY INFLOW
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748B', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                OVERALL FACILITY DUMPED INFLOW
               </div>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#064E3B', marginTop: '2px' }}>
-                {(totals.totalDumpedKg || 0).toLocaleString()} <span style={{ fontSize: '18px', fontWeight: 'normal', color: '#475569' }}>kg Total Dumped Waste</span>
+              <div style={{ fontSize: '32px', fontWeight: 800, color: '#047857', marginTop: '2px' }}>
+                {(totals.totalDumpedKg || 0).toLocaleString()} <span style={{ fontSize: '18px', fontWeight: 700, color: '#475569' }}>KG</span>
               </div>
             </div>
 
-            {/* Category Filter Dropdown Bar */}
+            {/* Category Dropdown Selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>
-                Select Waste Category Filter:
+              <label style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>
+                Filter by Waste Category:
               </label>
               <select
                 value={selectedCategoryFilter}
                 onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                 style={{
                   padding: '9px 16px',
-                  borderRadius: '6px',
-                  border: '2px solid #064E3B',
+                  borderRadius: '8px',
+                  border: '2px solid #047857',
                   background: '#F0FDF4',
-                  color: '#064E3B',
-                  fontWeight: 'bold',
+                  color: '#047857',
+                  fontWeight: 800,
                   fontSize: '13px',
                   cursor: 'pointer',
-                  minWidth: '240px'
+                  minWidth: '260px'
                 }}
               >
                 <option value="ALL">All Categories (Combined Overview)</option>
@@ -361,7 +369,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
             </div>
           </div>
 
-          {/* 4 Category Metric Cards (Interactive) */}
+          {/* 4 Category Breakdown Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
             <div
               onClick={() => setSelectedCategoryFilter('Plastic')}
@@ -373,9 +381,9 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#1E40AF' }}>PLASTIC WASTE</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1D4ED8', marginTop: '4px' }}>
-                {(totals.totalPlasticKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 'normal' }}>kg</span>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>PLASTIC WASTE</div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#1D4ED8', marginTop: '4px' }}>
+                {(totals.totalPlasticKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 700 }}>KG</span>
               </div>
               <div style={{ fontSize: '11px', color: '#3B82F6', marginTop: '2px' }}>Destination: EcoPak Plastics (Kahuta Rd)</div>
             </div>
@@ -390,9 +398,9 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#92400E' }}>METAL WASTE</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#B45309', marginTop: '4px' }}>
-                {(totals.totalMetalKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 'normal' }}>kg</span>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#92400E' }}>METAL WASTE</div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#B45309', marginTop: '4px' }}>
+                {(totals.totalMetalKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 700 }}>KG</span>
               </div>
               <div style={{ fontSize: '11px', color: '#D97706', marginTop: '2px' }}>Destination: GreenTech Metal (Sector I-10/3)</div>
             </div>
@@ -403,13 +411,13 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 background: selectedCategoryFilter === 'Organic/Compost' ? '#ECFDF5' : '#F8FAFC',
                 padding: '14px 18px',
                 borderRadius: '8px',
-                border: selectedCategoryFilter === 'Organic/Compost' ? '2px solid #059669' : '1px solid #E2E8F0',
+                border: selectedCategoryFilter === 'Organic/Compost' ? '2px solid #047857' : '1px solid #E2E8F0',
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#065F46' }}>ORGANIC / COMPOST</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#047857', marginTop: '4px' }}>
-                {(totals.totalOrganicKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 'normal' }}>kg</span>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#065F46' }}>ORGANIC / COMPOST</div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#047857', marginTop: '4px' }}>
+                {(totals.totalOrganicKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 700 }}>KG</span>
               </div>
               <div style={{ fontSize: '11px', color: '#059669', marginTop: '2px' }}>Destination: Pak Recycling Ltd (Sector I-9/2)</div>
             </div>
@@ -424,9 +432,9 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 cursor: 'pointer'
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>GENERAL MIXED</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>
-                {(totals.totalMixedKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 'normal' }}>kg</span>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>GENERAL MIXED</div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#334155', marginTop: '4px' }}>
+                {(totals.totalMixedKg || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 700 }}>KG</span>
               </div>
               <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Pending Stream Classification</div>
             </div>
@@ -438,60 +446,60 @@ export default function DumpingFacilityDashboard({ onLogout }) {
           <button
             onClick={() => setActiveTab('SITES')}
             style={{
-              padding: '8px 18px',
-              borderRadius: '6px',
+              padding: '9px 18px',
+              borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'SITES' ? '#064E3B' : '#E2E8F0',
-              color: activeTab === 'SITES' ? '#FFF' : '#334155',
-              fontWeight: 'bold',
+              background: activeTab === 'SITES' ? '#047857' : '#E2E8F0',
+              color: activeTab === 'SITES' ? '#FFFFFF' : '#334155',
+              fontWeight: 800,
               fontSize: '13px',
               cursor: 'pointer'
             }}
           >
-            Enrolled Active Client Sites ({enrolledSites.length})
+            Active Deployed Sites Ledger ({enrolledSites.length})
           </button>
 
           <button
             onClick={() => setActiveTab('DISPATCH')}
             style={{
-              padding: '8px 18px',
-              borderRadius: '6px',
+              padding: '9px 18px',
+              borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'DISPATCH' ? '#064E3B' : '#E2E8F0',
-              color: activeTab === 'DISPATCH' ? '#FFF' : '#334155',
-              fontWeight: 'bold',
+              background: activeTab === 'DISPATCH' ? '#047857' : '#E2E8F0',
+              color: activeTab === 'DISPATCH' ? '#FFFFFF' : '#334155',
+              fontWeight: 800,
               fontSize: '13px',
               cursor: 'pointer'
             }}
           >
-            Transporter Dispatch & Route Assignment ({readyRecords.length} Batches Ready)
+            Transporter Dispatch & Route Assignment ({readyRecords.length} Ready)
           </button>
 
           <button
             onClick={() => setActiveTab('LOGISTICS_MAP')}
             style={{
-              padding: '8px 18px',
-              borderRadius: '6px',
+              padding: '9px 18px',
+              borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'LOGISTICS_MAP' ? '#064E3B' : '#E2E8F0',
-              color: activeTab === 'LOGISTICS_MAP' ? '#FFF' : '#334155',
-              fontWeight: 'bold',
+              background: activeTab === 'LOGISTICS_MAP' ? '#047857' : '#E2E8F0',
+              color: activeTab === 'LOGISTICS_MAP' ? '#FFFFFF' : '#334155',
+              fontWeight: 800,
               fontSize: '13px',
               cursor: 'pointer'
             }}
           >
-            Interactive Plant Route Guide (Leaflet Maps)
+            Interactive Plant Route Guide (Leaflet Map)
           </button>
 
           <button
             onClick={() => setActiveTab('INVENTORY')}
             style={{
-              padding: '8px 18px',
-              borderRadius: '6px',
+              padding: '9px 18px',
+              borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'INVENTORY' ? '#064E3B' : '#E2E8F0',
-              color: activeTab === 'INVENTORY' ? '#FFF' : '#334155',
-              fontWeight: 'bold',
+              background: activeTab === 'INVENTORY' ? '#047857' : '#E2E8F0',
+              color: activeTab === 'INVENTORY' ? '#FFFFFF' : '#334155',
+              fontWeight: 800,
               fontSize: '13px',
               cursor: 'pointer'
             }}
@@ -501,15 +509,15 @@ export default function DumpingFacilityDashboard({ onLogout }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* TAB 1: ENROLLED ACTIVE CLIENT SITES                                       */}
+        {/* TAB 1: ACTIVE DEPLOYED SITES LEDGER (Synced 100% with Admin)             */}
         {/* ========================================================================= */}
         {activeTab === 'SITES' && (
           <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', alignItems: 'start' }}>
             
-            {/* Left Column: List of Enrolled Active Sites */}
+            {/* Left Column: List of Active Deployed Sites from Admin Ledger */}
             <div style={{ background: '#FFFFFF', padding: '16px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', textTransform: 'uppercase', marginBottom: '12px' }}>
-                Enrolled Active Sites (Admin Enrolled)
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                Active Deployed Sites (Admin Ledger)
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -522,20 +530,19 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                       style={{
                         padding: '12px 14px',
                         borderRadius: '8px',
-                        border: isSelected ? '2px solid #064E3B' : '1px solid #E2E8F0',
+                        border: isSelected ? '2px solid #047857' : '1px solid #E2E8F0',
                         background: isSelected ? '#ECFDF5' : '#FFFFFF',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
+                        cursor: 'pointer'
                       }}
                     >
-                      <div style={{ fontWeight: 'bold', fontSize: '13px', color: isSelected ? '#064E3B' : '#1E293B' }}>
+                      <div style={{ fontWeight: 800, fontSize: '13px', color: isSelected ? '#047857' : '#1E293B' }}>
                         {site.organizationName || site.siteName}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
-                        {site.town || site.city || 'Islamabad'} | {site.binIds ? site.binIds.join(', ') : 'BIN-01-01'}
+                        {site.address ? `${site.address}, ` : ''}{site.town}
                       </div>
-                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#059669', marginTop: '4px' }}>
-                        Total Dumped: {site.totalKg || 0} kg
+                      <div style={{ fontSize: '11px', color: '#047857', marginTop: '4px', fontWeight: 800 }}>
+                        Total Dumped: {site.totalKg || 0} KG
                       </div>
                     </div>
                   );
@@ -549,56 +556,56 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 {/* Site Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px', marginBottom: '18px' }}>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: '20px', color: '#064E3B', fontWeight: 'bold' }}>
+                    <h2 style={{ margin: 0, fontSize: '20px', color: '#047857', fontWeight: 800 }}>
                       {currentSite.organizationName || currentSite.siteName}
                     </h2>
                     <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
-                      Address: <strong>{currentSite.address || 'Capital Territory'}</strong>, {currentSite.town}, {currentSite.city}
+                      Location: <strong>{currentSite.address || 'Capital Area'}</strong>, {currentSite.town}, {currentSite.city}
                     </div>
                     {currentSite.contactPerson && (
                       <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
-                        Contact Incharge: {currentSite.contactPerson} {currentSite.phone ? `(${currentSite.phone})` : ''}
+                        Contact Person: {currentSite.contactPerson} {currentSite.phone ? `(${currentSite.phone})` : ''}
                       </div>
                     )}
                   </div>
 
                   <div style={{ background: '#F0FDF4', padding: '10px 18px', borderRadius: '8px', border: '1px solid #A7F3D0', textAlign: 'right' }}>
-                    <div style={{ fontSize: '11px', color: '#065F46', fontWeight: 'bold' }}>SITE TOTAL DUMPED</div>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#064E3B' }}>{currentSite.totalKg || 0} kg</div>
+                    <div style={{ fontSize: '11px', color: '#065F46', fontWeight: 800 }}>SITE TOTAL DUMPED</div>
+                    <div style={{ fontSize: '24px', fontWeight: 800, color: '#047857' }}>{currentSite.totalKg || 0} KG</div>
                   </div>
                 </div>
 
                 {/* Site Category Totals */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{ background: '#EFF6FF', padding: '12px', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
-                    <div style={{ fontSize: '11px', color: '#1E40AF', fontWeight: 'bold' }}>PLASTIC TOTAL</div>
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1D4ED8', marginTop: '2px' }}>{currentSite.plasticKg || 0} kg</div>
+                  <div style={{ background: '#EFF6FF', padding: '12px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                    <div style={{ fontSize: '11px', color: '#1E40AF', fontWeight: 800 }}>PLASTIC TOTAL</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#1D4ED8', marginTop: '2px' }}>{currentSite.plasticKg || 0} KG</div>
                   </div>
 
-                  <div style={{ background: '#FEF3C7', padding: '12px', borderRadius: '6px', border: '1px solid #FDE68A' }}>
-                    <div style={{ fontSize: '11px', color: '#92400E', fontWeight: 'bold' }}>METAL TOTAL</div>
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#B45309', marginTop: '2px' }}>{currentSite.metalKg || 0} kg</div>
+                  <div style={{ background: '#FEF3C7', padding: '12px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
+                    <div style={{ fontSize: '11px', color: '#92400E', fontWeight: 800 }}>METAL TOTAL</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#B45309', marginTop: '2px' }}>{currentSite.metalKg || 0} KG</div>
                   </div>
 
-                  <div style={{ background: '#ECFDF5', padding: '12px', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
-                    <div style={{ fontSize: '11px', color: '#065F46', fontWeight: 'bold' }}>ORGANIC / COMPOST</div>
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#047857', marginTop: '2px' }}>{currentSite.organicKg || 0} kg</div>
+                  <div style={{ background: '#ECFDF5', padding: '12px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
+                    <div style={{ fontSize: '11px', color: '#065F46', fontWeight: 800 }}>ORGANIC / COMPOST</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{currentSite.organicKg || 0} KG</div>
                   </div>
 
-                  <div style={{ background: '#F1F5F9', padding: '12px', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
-                    <div style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>GENERAL MIXED</div>
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#334155', marginTop: '2px' }}>{currentSite.mixedKg || 0} kg</div>
+                  <div style={{ background: '#F1F5F9', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                    <div style={{ fontSize: '11px', color: '#475569', fontWeight: 800 }}>GENERAL MIXED</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#334155', marginTop: '2px' }}>{currentSite.mixedKg || 0} KG</div>
                   </div>
                 </div>
 
                 {/* Date-Wise Inflow History Table for this Site */}
                 <div>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#064E3B', fontWeight: 'bold' }}>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#047857', fontWeight: 800 }}>
                     Date-Wise Dump Inflow Records for {currentSite.organizationName}
                   </h3>
 
                   {siteInflowRecords.length === 0 ? (
-                    <div style={{ padding: '28px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '6px' }}>
+                    <div style={{ padding: '28px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '8px' }}>
                       No dump batches recorded for this site yet in the selected category.
                     </div>
                   ) : (
@@ -619,7 +626,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                             const stream = r.wasteType || r.separatedType || 'Organic/Compost';
                             return (
                               <tr key={i} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                                <td style={{ padding: '10px 12px', fontWeight: 'bold', color: '#334155' }}>
+                                <td style={{ padding: '10px 12px', fontWeight: 700, color: '#334155' }}>
                                   {r.dumpedAt ? new Date(r.dumpedAt).toLocaleString() : 'N/A'}
                                 </td>
                                 <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{r.binId || 'BIN-01-01'}</td>
@@ -629,7 +636,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                                     display: 'inline-block',
                                     padding: '2px 8px',
                                     borderRadius: '4px',
-                                    fontWeight: 'bold',
+                                    fontWeight: 700,
                                     fontSize: '11px',
                                     background: stream.toLowerCase().includes('plastic') ? '#DBEAFE' : stream.toLowerCase().includes('metal') ? '#FEF3C7' : '#DCFCE7',
                                     color: stream.toLowerCase().includes('plastic') ? '#1E40AF' : stream.toLowerCase().includes('metal') ? '#92400E' : '#166534'
@@ -637,8 +644,8 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                                     {stream}
                                   </span>
                                 </td>
-                                <td style={{ padding: '10px 12px', fontWeight: 'bold', color: '#064E3B', fontSize: '13px' }}>
-                                  {r.weightKg} kg
+                                <td style={{ padding: '10px 12px', fontWeight: 800, color: '#047857', fontSize: '13px' }}>
+                                  {r.weightKg} KG
                                 </td>
                                 <td style={{ padding: '10px 12px' }}>
                                   <span style={{
@@ -646,7 +653,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                                     padding: '2px 6px',
                                     borderRadius: '4px',
                                     fontSize: '10px',
-                                    fontWeight: 'bold',
+                                    fontWeight: 800,
                                     background: r.status === 'DELIVERED' ? '#DCFCE7' : r.status === 'ASSIGNED_TRANSPORT' || r.status === 'IN_TRANSIT' ? '#FEF3C7' : '#F1F5F9',
                                     color: r.status === 'DELIVERED' ? '#166534' : r.status === 'ASSIGNED_TRANSPORT' || r.status === 'IN_TRANSIT' ? '#92400E' : '#334155'
                                   }}>
@@ -676,7 +683,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
             <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '16px', color: '#064E3B', fontWeight: 'bold' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', color: '#047857', fontWeight: 800 }}>
                     Undispatched Waste Batches at Central Yard ({readyRecords.length})
                   </h3>
                   <div style={{ fontSize: '12px', color: '#64748B' }}>
@@ -688,12 +695,12 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                   onClick={selectAllReady}
                   style={{
                     padding: '6px 12px',
-                    borderRadius: '4px',
+                    borderRadius: '6px',
                     border: '1px solid #CBD5E1',
                     background: '#F8FAFC',
                     cursor: 'pointer',
                     fontSize: '11px',
-                    fontWeight: 'bold'
+                    fontWeight: 700
                   }}
                 >
                   {selectedRecordIds.length === readyRecords.length && readyRecords.length > 0 ? 'Deselect All' : 'Select All Ready'}
@@ -701,7 +708,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
               </div>
 
               {readyRecords.length === 0 ? (
-                <div style={{ padding: '32px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '6px' }}>
+                <div style={{ padding: '32px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '8px' }}>
                   No undispatched waste batches available in the yard for this category.
                 </div>
               ) : (
@@ -739,8 +746,8 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                               />
                             </td>
                             <td style={{ padding: '8px 10px' }}>
-                              <div style={{ fontWeight: 'bold', color: '#064E3B' }}>{r.organizationName}</div>
-                              <div style={{ fontSize: '10px', color: '#64748B' }}>{r.town}</div>
+                              <div style={{ fontWeight: 800, color: '#047857' }}>{r.organizationName}</div>
+                              <div style={{ fontSize: '10px', color: '#64748B' }}>{r.address ? `${r.address}, ` : ''}{r.town}</div>
                             </td>
                             <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>{r.binId || 'BIN-01-01'}</td>
                             <td style={{ padding: '8px 10px' }}>
@@ -749,15 +756,15 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 fontSize: '10px',
-                                fontWeight: 'bold',
+                                fontWeight: 700,
                                 background: stream.toLowerCase().includes('plastic') ? '#DBEAFE' : stream.toLowerCase().includes('metal') ? '#FEF3C7' : '#DCFCE7',
                                 color: stream.toLowerCase().includes('plastic') ? '#1E40AF' : stream.toLowerCase().includes('metal') ? '#92400E' : '#166534'
                               }}>
                                 {stream}
                               </span>
                             </td>
-                            <td style={{ padding: '8px 10px', fontWeight: 'bold', color: '#064E3B', fontSize: '13px' }}>
-                              {r.weightKg} kg
+                            <td style={{ padding: '8px 10px', fontWeight: 800, color: '#047857', fontSize: '13px' }}>
+                              {r.weightKg} KG
                             </td>
                           </tr>
                         );
@@ -770,19 +777,19 @@ export default function DumpingFacilityDashboard({ onLogout }) {
 
             {/* Right: Transporter Assignment & Route Selection Form */}
             <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#064E3B', fontWeight: 'bold' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#047857', fontWeight: 800 }}>
                 Dispatch Transporter to Plant
               </h3>
 
               <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '14px' }}>
                 Selected Cargo: <strong>{selectedRecordIds.length} batch(es)</strong> (
-                {records.filter(r => selectedRecordIds.includes(r._id || r.id)).reduce((s, r) => s + (r.weightKg || 0), 0).toFixed(1)} kg)
+                {records.filter(r => selectedRecordIds.includes(r._id || r.id)).reduce((s, r) => s + (r.weightKg || 0), 0).toFixed(1)} KG)
               </div>
 
               <form onSubmit={handleDispatch}>
                 {/* 1. Transporter Selection */}
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: '#334155', marginBottom: '4px' }}>
                     1. Select Transporter Driver:
                   </label>
                   <select
@@ -802,7 +809,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
 
                 {/* 2. Destination Recycling Plant Selection */}
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: '#334155', marginBottom: '4px' }}>
                     2. Destination Recycling Plant & Map Route:
                   </label>
                   
@@ -811,21 +818,21 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                     <button
                       type="button"
                       onClick={() => handleAutoSelectPlant('plastic')}
-                      style={{ flex: 1, padding: '4px', fontSize: '10px', borderRadius: '4px', border: '1px solid #BFDBFE', background: '#EFF6FF', color: '#1E40AF', cursor: 'pointer', fontWeight: 'bold' }}
+                      style={{ flex: 1, padding: '4px', fontSize: '10px', borderRadius: '4px', border: '1px solid #BFDBFE', background: '#EFF6FF', color: '#1E40AF', cursor: 'pointer', fontWeight: 800 }}
                     >
                       Plastic Plant
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAutoSelectPlant('metal')}
-                      style={{ flex: 1, padding: '4px', fontSize: '10px', borderRadius: '4px', border: '1px solid #FDE68A', background: '#FEF3C7', color: '#92400E', cursor: 'pointer', fontWeight: 'bold' }}
+                      style={{ flex: 1, padding: '4px', fontSize: '10px', borderRadius: '4px', border: '1px solid #FDE68A', background: '#FEF3C7', color: '#92400E', cursor: 'pointer', fontWeight: 800 }}
                     >
                       Metal Plant
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAutoSelectPlant('organic')}
-                      style={{ flex: 1, padding: '4px', fontSize: '10px', borderRadius: '4px', border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#065F46', cursor: 'pointer', fontWeight: 'bold' }}
+                      style={{ flex: 1, padding: '4px', fontSize: '10px', borderRadius: '4px', border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#065F46', cursor: 'pointer', fontWeight: 800 }}
                     >
                       Organic Plant
                     </button>
@@ -848,17 +855,17 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 {/* Route destination details */}
                 {currentSelectedPlant && (
                   <div style={{ background: '#F8FAFC', padding: '10px', borderRadius: '6px', border: '1px solid #E2E8F0', marginBottom: '14px', fontSize: '11px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#064E3B' }}>{currentSelectedPlant.organizationName || currentSelectedPlant.fullName}</div>
+                    <div style={{ fontWeight: 800, color: '#047857' }}>{currentSelectedPlant.organizationName || currentSelectedPlant.fullName}</div>
                     <div style={{ color: '#64748B', marginTop: '2px' }}>{currentSelectedPlant.address}</div>
-                    <div style={{ color: '#1E40AF', marginTop: '2px', fontWeight: 'bold' }}>
-                      GPS Destination: [{plantCoords[0].toFixed(4)}, {plantCoords[1].toFixed(4)}]
+                    <div style={{ color: '#1E40AF', marginTop: '2px', fontWeight: 800 }}>
+                      GPS Coordinates: [{plantCoords[0].toFixed(4)}, {plantCoords[1].toFixed(4)}]
                     </div>
                   </div>
                 )}
 
                 {/* Dispatch Notes */}
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: '#334155', marginBottom: '4px' }}>
                     Haul Instructions:
                   </label>
                   <input
@@ -876,11 +883,11 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                   style={{
                     width: '100%',
                     padding: '12px',
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     border: 'none',
-                    background: selectedRecordIds.length === 0 ? '#94A3B8' : '#064E3B',
-                    color: '#FFF',
-                    fontWeight: 'bold',
+                    background: selectedRecordIds.length === 0 ? '#94A3B8' : '#047857',
+                    color: '#FFFFFF',
+                    fontWeight: 800,
                     fontSize: '13px',
                     cursor: selectedRecordIds.length === 0 ? 'not-allowed' : 'pointer'
                   }}
@@ -900,7 +907,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
           <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '16px', color: '#064E3B', fontWeight: 'bold' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', color: '#047857', fontWeight: 800 }}>
                   Interactive Inter-Facility Transport Route Guide
                 </h3>
                 <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
@@ -910,11 +917,11 @@ export default function DumpingFacilityDashboard({ onLogout }) {
 
               {/* Plant Selector for Map */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select Plant Destination:</span>
+                <span style={{ fontSize: '12px', fontWeight: 800 }}>Select Plant Destination:</span>
                 <select
                   value={selectedPlantId}
                   onChange={(e) => setSelectedPlantId(e.target.value)}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px', fontWeight: 'bold' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px', fontWeight: 800 }}
                 >
                   {plants.map(p => (
                     <option key={p._id || p.id} value={p._id || p.id}>
@@ -926,7 +933,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
             </div>
 
             {/* Leaflet Map */}
-            <div style={{ height: '440px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid #CBD5E1', marginBottom: '16px' }}>
+            <div style={{ height: '440px', width: '100%', borderRadius: '10px', overflow: 'hidden', border: '1px solid #CBD5E1', marginBottom: '16px' }}>
               <MapContainer
                 center={DUMP_FACILITY_COORDS}
                 zoom={12}
@@ -987,11 +994,11 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                       background: isCurrent ? '#ECFDF5' : '#F8FAFC',
                       padding: '14px',
                       borderRadius: '8px',
-                      border: isCurrent ? '2px solid #064E3B' : '1px solid #E2E8F0',
+                      border: isCurrent ? '2px solid #047857' : '1px solid #E2E8F0',
                       cursor: 'pointer'
                     }}
                   >
-                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#064E3B' }}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#047857' }}>
                       {p.organizationName || p.fullName}
                     </div>
                     <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
@@ -1000,7 +1007,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                     <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
                       {p.address}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#1E40AF', marginTop: '4px', fontWeight: 'bold' }}>
+                    <div style={{ fontSize: '11px', color: '#1E40AF', marginTop: '4px', fontWeight: 800 }}>
                       GPS: [{coords[0].toFixed(4)}, {coords[1].toFixed(4)}]
                     </div>
                   </div>
@@ -1016,7 +1023,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
         {activeTab === 'INVENTORY' && (
           <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', color: '#064E3B', fontWeight: 'bold' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', color: '#047857', fontWeight: 800 }}>
                 Master Dump Inflow Record Log ({records.length} Batches)
               </h3>
             </div>
@@ -1041,19 +1048,19 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                         {r.dumpedAt ? new Date(r.dumpedAt).toLocaleString() : 'N/A'}
                       </td>
                       <td style={{ padding: '10px 12px' }}>
-                        <div style={{ fontWeight: 'bold', color: '#064E3B' }}>{r.organizationName}</div>
-                        <div style={{ fontSize: '10px', color: '#64748B' }}>{r.town}</div>
+                        <div style={{ fontWeight: 800, color: '#047857' }}>{r.organizationName}</div>
+                        <div style={{ fontSize: '10px', color: '#64748B' }}>{r.address ? `${r.address}, ` : ''}{r.town}</div>
                       </td>
                       <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{r.binId}</td>
                       <td style={{ padding: '10px 12px' }}>{r.collectorName}</td>
-                      <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{r.wasteType}</td>
-                      <td style={{ padding: '10px 12px', fontWeight: 'bold', color: '#064E3B' }}>{r.weightKg} kg</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 700 }}>{r.wasteType}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 800, color: '#047857' }}>{r.weightKg} KG</td>
                       <td style={{ padding: '10px 12px' }}>
                         <span style={{
                           padding: '2px 6px',
                           borderRadius: '4px',
                           fontSize: '10px',
-                          fontWeight: 'bold',
+                          fontWeight: 800,
                           background: r.status === 'DELIVERED' ? '#DCFCE7' : r.status === 'ASSIGNED_TRANSPORT' || r.status === 'IN_TRANSIT' ? '#FEF3C7' : '#F1F5F9',
                           color: r.status === 'DELIVERED' ? '#166534' : r.status === 'ASSIGNED_TRANSPORT' || r.status === 'IN_TRANSIT' ? '#92400E' : '#334155'
                         }}>

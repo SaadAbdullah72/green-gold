@@ -102,22 +102,43 @@ export const markPickupCompleted = async (req, res) => {
       }, { new: true });
     }
 
-    // Auto-create DumpRecord for Central Dump & Separation Yard tracking
-    const weightKg = Number(linkedRequest?.weightKg || assignment.fillLevel ? (assignment.fillLevel * 0.15).toFixed(1) : 5.0);
+    // Resolve actual site details from linkedRequest or active BIN_DEPLOYMENT site
+    let realOrgName = linkedRequest?.organizationName || assignment.siteName || assignment.locationName || 'Client Site';
+    let realAddress = linkedRequest?.address || assignment.address || '';
+    let realTown = linkedRequest?.town || assignment.town || '';
+    let realCity = linkedRequest?.city || assignment.city || 'Islamabad';
+    const targetBinId = assignment.binId || linkedRequest?.deployedBinIds?.[0] || 'BIN-01-01';
+
+    // If address or town is generic or missing, find the deployed site
+    const matchedSite = await ServiceRequest.findOne({
+      requestType: 'BIN_DEPLOYMENT',
+      $or: [
+        { deployedBinIds: targetBinId },
+        { binPrefix: targetBinId.slice(0, 6) }
+      ]
+    }).lean().catch(() => null);
+
+    if (matchedSite) {
+      realOrgName = matchedSite.organizationName || realOrgName;
+      realAddress = matchedSite.address || realAddress;
+      realTown = matchedSite.town || realTown;
+      realCity = matchedSite.city || realCity;
+    }
+
+    const weightKg = Number(linkedRequest?.weightKg || (assignment.fillLevel ? (assignment.fillLevel * 0.15).toFixed(1) : 5.0));
     const wasteType = linkedRequest?.wasteType || 'Organic/Compost';
-    const orgName = linkedRequest?.organizationName || assignment.siteName || assignment.locationName || 'Client Site';
     const clientCode = linkedRequest?.clientIndex ? `CLIENT-${String(linkedRequest.clientIndex).padStart(2, '0')}` : 'CLIENT-01';
 
     await DumpRecord.create({
       collectorId: req.user._id,
       requestId: linkedRequest?._id || null,
       userId: linkedRequest?.userId || null,
-      organizationName: orgName,
+      organizationName: realOrgName,
       clientCode,
-      binId: assignment.binId || linkedRequest?.deployedBinIds?.[0] || 'BIN-01-01',
-      address: assignment.address || linkedRequest?.address || 'Islamabad',
-      town: assignment.town || linkedRequest?.town || 'F-7',
-      city: assignment.city || linkedRequest?.city || 'Islamabad',
+      binId: targetBinId,
+      address: realAddress || 'Main Campus Site',
+      town: realTown || 'Islamabad',
+      city: realCity || 'Islamabad',
       weightKg: weightKg > 0 ? weightKg : 5.0,
       wasteType,
       status: 'DUMPED',

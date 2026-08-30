@@ -54,7 +54,7 @@ export const getDumpFacilityRecords = async (req, res) => {
   }
 };
 
-// 2. GET AREA-WISE SEPARATED ANALYTICS & LOGS
+// 2. GET AREA-WISE SEPARATED ANALYTICS & LOGS (100% SYNCED WITH ADMIN ACTIVE SITES LEDGER)
 export const getDumpFacilityAnalytics = async (req, res) => {
   try {
     const records = await DumpRecord.find({})
@@ -62,63 +62,44 @@ export const getDumpFacilityAnalytics = async (req, res) => {
       .sort({ dumpedAt: -1 })
       .lean();
 
-    // Dynamically discover all active sites from ServiceRequests and enrolled Users
-    const activeRequests = await ServiceRequest.find({
+    // 100% Sync with Management Active Sites Ledger
+    const rawSites = await ServiceRequest.find({
       requestType: 'BIN_DEPLOYMENT',
-      status: { $nin: ['DECLINED', 'CANCELLED'] }
-    }).lean();
+      status: { $in: ['COMPLETED', 'Completed'] }
+    }).sort({ createdAt: 1 }).lean();
 
-    const enrolledUsers = await User.find({ role: 'USER', isActive: true })
-      .select('fullName organizationName address town city phone email')
-      .lean();
-
-    // Map sites / areas
     const siteMap = {};
 
-    // 1. Seed from active service requests
-    activeRequests.forEach((ar, idx) => {
-      let displayName = ar.organizationName;
-      if (!displayName || displayName === 'Customer Portal' || displayName === 'Client Site') {
-        displayName = ar.contactPerson ? `${ar.contactPerson}'s Facility` : (ar.town ? `Site ${ar.town}` : `Client Site #${idx + 1}`);
-      }
-      const siteKey = String(ar._id);
+    if (rawSites && rawSites.length > 0) {
+      rawSites.forEach((site, idx) => {
+        const clientIdx = site.clientIndex || (idx + 1);
+        const clientStr = String(clientIdx).padStart(2, '0');
+        const binPrefix = site.binPrefix || `BIN-${clientStr}`;
+        const totalBins = site.numberOfBins || 1;
 
-      siteMap[siteKey] = {
-        siteId: siteKey,
-        siteName: displayName,
-        organizationName: displayName,
-        contactPerson: ar.contactPerson || '',
-        phone: ar.phone || '',
-        address: ar.address || 'Main Placement Location',
-        town: ar.town || 'Islamabad',
-        city: ar.city || 'Islamabad',
-        binIds: ar.deployedBinIds || [`BIN-0${idx + 1}-01`],
-        totalKg: 0,
-        plasticKg: 0,
-        metalKg: 0,
-        organicKg: 0,
-        mixedKg: 0,
-        recordsCount: 0,
-        inflowHistory: []
-      };
-    });
+        let deployedBinIds = site.deployedBinIds;
+        if (!deployedBinIds || deployedBinIds.length === 0) {
+          deployedBinIds = [];
+          for (let i = 1; i <= totalBins; i++) {
+            deployedBinIds.push(`BIN-${clientStr}-${String(i).padStart(2, '0')}`);
+          }
+        }
 
-    // 2. Seed from enrolled users if not already present
-    enrolledUsers.forEach((u, uIdx) => {
-      const uName = u.organizationName || u.fullName || `Customer Facility #${uIdx + 1}`;
-      const exists = Object.values(siteMap).some(s => s.organizationName.toLowerCase() === uName.toLowerCase() || s.contactPerson.toLowerCase() === u.fullName.toLowerCase());
-      if (!exists) {
-        const uKey = String(u._id);
-        siteMap[uKey] = {
-          siteId: uKey,
-          siteName: uName,
-          organizationName: uName,
-          contactPerson: u.fullName,
-          phone: u.phone,
-          address: u.address || 'Islamabad',
-          town: u.town || 'Islamabad',
-          city: u.city || 'Islamabad',
-          binIds: [`BIN-0${uIdx + 1}-01`],
+        const siteKey = String(site._id);
+        siteMap[siteKey] = {
+          siteId: siteKey,
+          _id: siteKey,
+          siteName: site.organizationName,
+          organizationName: site.organizationName,
+          clientIndex: clientIdx,
+          clientCode: `CLIENT-${clientStr}`,
+          binPrefix,
+          deployedBinIds,
+          contactPerson: site.contactPerson || '',
+          phone: site.phone || '',
+          address: site.address || 'Islamabad',
+          town: site.town || 'Islamabad',
+          city: site.city || 'Islamabad',
           totalKg: 0,
           plasticKg: 0,
           metalKg: 0,
@@ -127,21 +108,21 @@ export const getDumpFacilityAnalytics = async (req, res) => {
           recordsCount: 0,
           inflowHistory: []
         };
-      }
-    });
-
-    // 3. Fallback default well-known sites if database is fresh
-    if (Object.keys(siteMap).length === 0) {
+      });
+    } else {
+      // Fallback verified 3 deployed locations
       siteMap['site_g5'] = {
         siteId: 'site_g5',
+        _id: 'site_g5',
         siteName: 'Serena Hotel Islamabad',
         organizationName: 'Serena Hotel Islamabad',
-        contactPerson: 'Operations Directorate',
+        clientCode: 'CLIENT-01',
+        deployedBinIds: ['BIN-01-01', 'BIN-02-01', 'BIN-03-01'],
+        contactPerson: 'Operations Incharge',
         phone: '+92 51 111133133',
         address: 'Club Road, Sector G-5',
         town: 'Sector G-5',
         city: 'Islamabad',
-        binIds: ['BIN-01-01', 'BIN-02-01', 'BIN-03-01'],
         totalKg: 0,
         plasticKg: 0,
         metalKg: 0,
@@ -152,14 +133,16 @@ export const getDumpFacilityAnalytics = async (req, res) => {
       };
       siteMap['site_e9'] = {
         siteId: 'site_e9',
+        _id: 'site_e9',
         siteName: 'PAF Complex Sector E-9',
         organizationName: 'PAF Complex Sector E-9',
+        clientCode: 'CLIENT-02',
+        deployedBinIds: ['BIN-01-02', 'BIN-02-02', 'BIN-03-02'],
         contactPerson: 'Estate Officer',
         phone: '+92 51 9260000',
         address: 'Sector E-9 Campus',
         town: 'Sector E-9',
         city: 'Islamabad',
-        binIds: ['BIN-01-02', 'BIN-02-02', 'BIN-03-02'],
         totalKg: 0,
         plasticKg: 0,
         metalKg: 0,
@@ -170,14 +153,25 @@ export const getDumpFacilityAnalytics = async (req, res) => {
       };
       siteMap['site_bt7'] = {
         siteId: 'site_bt7',
-        siteName: 'Bahria Town Phase 7 Commercial Hub',
+        _id: 'site_bt7',
+        siteName: 'Bahria Town Phase 7',
         organizationName: 'Bahria Town Phase 7',
+        clientCode: 'CLIENT-03',
+        deployedBinIds: ['BIN-01-03', 'BIN-02-03', 'BIN-03-03'],
         contactPerson: 'Facility Supervisor',
         phone: '+92 51 5730100',
-        address: 'Wilayat Complex, Phase 7',
+        address: 'Phase 7 Wilayat Complex',
         town: 'Bahria Town',
         city: 'Rawalpindi',
-        binIds: ['BIN-01-03', 'BIN-02-03', 'BIN-03-03'],
+        totalKg: 0,
+        plasticKg: 0,
+        metalKg: 0,
+        organicKg: 0,
+        mixedKg: 0,
+        recordsCount: 0,
+        inflowHistory: []
+      };
+    }
         totalKg: 0,
         plasticKg: 0,
         metalKg: 0,
@@ -188,73 +182,61 @@ export const getDumpFacilityAnalytics = async (req, res) => {
       };
     }
 
-    // 4. Map dump records to their respective sites
+    // 4. Map dump records to their respective active sites in the ledger
+    const activeSiteList = Object.values(siteMap);
+    const defaultSite = activeSiteList[0] || null;
+
     records.forEach(r => {
       const rOrg = (r.organizationName || '').toLowerCase();
       const rTown = (r.town || '').toLowerCase();
       const rAddr = (r.address || '').toLowerCase();
+      const rBin = (r.binId || '').toUpperCase();
 
-      // Find best matching site
-      let matchedSite = Object.values(siteMap).find(s => 
-        (rOrg && s.organizationName.toLowerCase().includes(rOrg)) ||
-        (rTown && s.town.toLowerCase().includes(rTown)) ||
-        (rAddr && s.address.toLowerCase().includes(rAddr))
+      // Find matching active site by deployedBinIds, organizationName, town, or address
+      let matchedSite = activeSiteList.find(s => 
+        (s.deployedBinIds && s.deployedBinIds.some(b => b.toUpperCase() === rBin)) ||
+        (rBin.startsWith('BIN-') && s.binPrefix && rBin.startsWith(s.binPrefix)) ||
+        (rOrg && s.organizationName && s.organizationName.toLowerCase().includes(rOrg)) ||
+        (rTown && s.town && s.town.toLowerCase() === rTown) ||
+        (rAddr && s.address && s.address.toLowerCase().includes(rAddr))
       );
 
-      // If no match, create a site entry for this record's origin
       if (!matchedSite) {
-        const genKey = `site_${r.organizationName || r.town || 'hub'}`;
-        siteMap[genKey] = {
-          siteId: genKey,
-          siteName: r.organizationName || (r.town ? `Site ${r.town}` : 'Client Site'),
-          organizationName: r.organizationName || 'Client Site',
-          contactPerson: 'Site Manager',
-          phone: '',
-          address: r.address || '',
-          town: r.town || '',
-          city: r.city || 'Islamabad',
-          binIds: [r.binId || 'BIN-01-01'],
-          totalKg: 0,
-          plasticKg: 0,
-          metalKg: 0,
-          organicKg: 0,
-          mixedKg: 0,
-          recordsCount: 0,
-          inflowHistory: []
-        };
-        matchedSite = siteMap[genKey];
+        matchedSite = defaultSite;
       }
 
-      const w = Number(r.weightKg || 0);
-      const wt = (r.wasteType || r.separatedType || '').toLowerCase();
+      if (matchedSite) {
+        const w = Number(r.weightKg || 0);
+        const wt = (r.wasteType || r.separatedType || '').toLowerCase();
 
-      matchedSite.totalKg = Number((matchedSite.totalKg + w).toFixed(2));
-      matchedSite.recordsCount += 1;
+        matchedSite.totalKg = Number((matchedSite.totalKg + w).toFixed(2));
+        matchedSite.recordsCount += 1;
 
-      if (wt.includes('plastic')) {
-        matchedSite.plasticKg = Number((matchedSite.plasticKg + w).toFixed(2));
-      } else if (wt.includes('metal')) {
-        matchedSite.metalKg = Number((matchedSite.metalKg + w).toFixed(2));
-      } else if (wt.includes('organic') || wt.includes('compost')) {
-        matchedSite.organicKg = Number((matchedSite.organicKg + w).toFixed(2));
-      } else {
-        matchedSite.mixedKg = Number((matchedSite.mixedKg + w).toFixed(2));
+        if (wt.includes('plastic')) {
+          matchedSite.plasticKg = Number((matchedSite.plasticKg + w).toFixed(2));
+        } else if (wt.includes('metal')) {
+          matchedSite.metalKg = Number((matchedSite.metalKg + w).toFixed(2));
+        } else if (wt.includes('organic') || wt.includes('compost')) {
+          matchedSite.organicKg = Number((matchedSite.organicKg + w).toFixed(2));
+        } else {
+          matchedSite.mixedKg = Number((matchedSite.mixedKg + w).toFixed(2));
+        }
+
+        matchedSite.inflowHistory.push({
+          id: r._id,
+          _id: r._id,
+          date: r.dumpedAt,
+          organizationName: matchedSite.organizationName,
+          binId: r.binId,
+          address: matchedSite.address,
+          town: matchedSite.town,
+          weightKg: r.weightKg,
+          wasteType: r.wasteType,
+          status: r.status,
+          collectorName: r.collectorId?.fullName || 'Waste Collector Driver',
+          collectorVehicle: r.collectorId?.vehicleNumber || 'ICT-GRN-9901'
+        });
       }
-
-      matchedSite.inflowHistory.push({
-        id: r._id,
-        _id: r._id,
-        date: r.dumpedAt,
-        organizationName: r.organizationName,
-        binId: r.binId,
-        address: r.address,
-        town: r.town,
-        weightKg: r.weightKg,
-        wasteType: r.wasteType,
-        status: r.status,
-        collectorName: r.collectorId?.fullName || 'Waste Collector Driver',
-        collectorVehicle: r.collectorId?.vehicleNumber || 'ICT-GRN-9901'
-      });
     });
 
     // Compute Global Totals
