@@ -122,6 +122,28 @@ export default function ManagementDashboard({
   const [collectorAssignMessage, setCollectorAssignMessage] = useState('');
   const [dbCollectors, setDbCollectors] = useState([]);
 
+  // Waste Lifecycle & Transport States
+  const [dbDumpRecords, setDbDumpRecords] = useState([]);
+  const [dbTransporters, setDbTransporters] = useState([]);
+  const [dbRecyclingPlants, setDbRecyclingPlants] = useState([]);
+  const [dbTransportJobs, setDbTransportJobs] = useState([]);
+  const [dbRecyclingReports, setDbRecyclingReports] = useState([]);
+  const [dbWasteTracking, setDbWasteTracking] = useState(null);
+
+  // Separation Modal State
+  const [showSeparateModal, setShowSeparateModal] = useState(false);
+  const [selectedDumpRecord, setSelectedDumpRecord] = useState(null);
+  const [separatedWasteType, setSeparatedWasteType] = useState('Organic/Compost');
+  const [separationNotes, setSeparationNotes] = useState('');
+  const [separationMessage, setSeparationMessage] = useState('');
+
+  // Transporter Assign Modal State
+  const [showTransporterAssignModal, setShowTransporterAssignModal] = useState(false);
+  const [selectedDumpToTransport, setSelectedDumpToTransport] = useState(null);
+  const [selectedTransporterId, setSelectedTransporterId] = useState('');
+  const [selectedPlantId, setSelectedPlantId] = useState('');
+  const [transporterAssignMessage, setTransporterAssignMessage] = useState('');
+
   const loadManagementData = async (isInitial = false) => {
     try {
       const reqRes = await api.management.getRequests();
@@ -154,6 +176,22 @@ export default function ManagementDashboard({
           return sitesRes.sites.length > 0 ? String(sitesRes.sites[0].id || sitesRes.sites[0]._id) : null;
         });
       }
+
+      const [dumpRes, trnRes, plantRes, jobRes, reportRes, trackRes] = await Promise.allSettled([
+        api.management.getDumpRecords(),
+        api.management.getTransporters(),
+        api.management.getRecyclingPlants(),
+        api.management.getAllTransportJobs(),
+        api.management.getAllRecyclingReports(),
+        api.management.getWasteTrackingOverview()
+      ]);
+
+      if (dumpRes.status === 'fulfilled' && dumpRes.value.records) setDbDumpRecords(dumpRes.value.records);
+      if (trnRes.status === 'fulfilled' && trnRes.value.transporters) setDbTransporters(trnRes.value.transporters);
+      if (plantRes.status === 'fulfilled' && plantRes.value.plants) setDbRecyclingPlants(plantRes.value.plants);
+      if (jobRes.status === 'fulfilled' && jobRes.value.jobs) setDbTransportJobs(jobRes.value.jobs);
+      if (reportRes.status === 'fulfilled' && reportRes.value.reports) setDbRecyclingReports(reportRes.value.reports);
+      if (trackRes.status === 'fulfilled' && trackRes.value.userSummaries) setDbWasteTracking(trackRes.value);
 
       const auditRes = await api.audit.getLogs();
       if (auditRes.logs) {
@@ -314,6 +352,49 @@ export default function ManagementDashboard({
       alert(`Failed to remove active site: ${err.message}`);
     } finally {
       setDeletingSiteId(null);
+    }
+  };
+
+  const handleSeparateSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedDumpRecord) return;
+    try {
+      const res = await api.management.separateDumpRecords({
+        dumpRecordIds: [selectedDumpRecord.id || selectedDumpRecord._id],
+        separatedType: separatedWasteType,
+        notes: separationNotes
+      });
+      setSeparationMessage(res.message || 'Batch successfully classified!');
+      setTimeout(() => {
+        setShowSeparateModal(false);
+        setSeparationMessage('');
+      }, 1200);
+      await loadManagementData();
+    } catch (err) {
+      alert(`Separation Error: ${err.message}`);
+    }
+  };
+
+  const handleAssignTransporterSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedDumpToTransport || !selectedTransporterId || !selectedPlantId) {
+      alert('Please select both a Transporter and a Destination Recycling Plant.');
+      return;
+    }
+    try {
+      const res = await api.management.assignTransportJob({
+        dumpRecordIds: [selectedDumpToTransport.id || selectedDumpToTransport._id],
+        transporterId: selectedTransporterId,
+        recyclingPlantId: selectedPlantId
+      });
+      setTransporterAssignMessage(res.message || 'Transport dispatched successfully!');
+      setTimeout(() => {
+        setShowTransporterAssignModal(false);
+        setTransporterAssignMessage('');
+      }, 1200);
+      await loadManagementData();
+    } catch (err) {
+      alert(`Transporter Assignment Error: ${err.message}`);
     }
   };
 
@@ -497,6 +578,18 @@ export default function ManagementDashboard({
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             Active Sites Ledger
+          </button>
+          <button 
+            className={`mgmt-tab-btn ${activeSubTab === 'waste_lifecycle' ? 'active' : ''}`}
+            onClick={() => setActiveSubTab('waste_lifecycle')}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M4 20L20.2 3.8M21 16v5h-5M15 15l5.1 5.1M4 4l5 5"></path></svg>
+            Waste Lifecycle & Transporters
+            {dbDumpRecords.filter(d => d.status === 'DUMPED' || d.status === 'SEPARATED').length > 0 && (
+              <span className="badge-counter" style={{ marginLeft: '6px' }}>
+                {dbDumpRecords.filter(d => d.status === 'DUMPED' || d.status === 'SEPARATED').length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -1249,6 +1342,270 @@ export default function ManagementDashboard({
           </div>
         )}
 
+        {/* ---------------------------------------------------------------------
+            SUB TAB VIEW 6: WASTE LIFECYCLE, SEPARATION & TRANSPORTER FLEET
+            --------------------------------------------------------------------- */}
+        {activeSubTab === 'waste_lifecycle' && (
+          <div className="mgmt-sub-view active">
+            
+            {/* Top Waste Tracking Summary Gauges */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Central Yard Dumped</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#D97706', marginTop: '4px' }}>
+                  {dbDumpRecords.reduce((sum, d) => sum + (d.weightKg || 0), 0).toFixed(1)} <span style={{ fontSize: '13px' }}>KG</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>{dbDumpRecords.length} collection lots dumped</div>
+              </div>
+
+              <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Separated & Ready</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#0284C7', marginTop: '4px' }}>
+                  {dbDumpRecords.filter(d => d.status === 'SEPARATED').length} <span style={{ fontSize: '13px' }}>Lots</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Classified into organic/plastic/metal</div>
+              </div>
+
+              <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>In Transit (Transporters)</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#047857', marginTop: '4px' }}>
+                  {dbTransportJobs.filter(j => j.status === 'IN_TRANSIT' || j.status === 'ASSIGNED' || j.status === 'ACCEPTED').length} <span style={{ fontSize: '13px' }}>Hauls</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>En route to industrial plants</div>
+              </div>
+
+              <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Minted Carbon Credits</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#059669', marginTop: '4px' }}>
+                  {dbRecyclingReports.reduce((sum, r) => sum + (r.carbonCreditsGenerated || 0), 0).toFixed(2)} <span style={{ fontSize: '13px' }}>CC</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Distributed to customer portals</div>
+              </div>
+            </div>
+
+            {/* Section 1: Central Dump Yard & Sorting Ledger */}
+            <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '28px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                    Central Dump Yard & Material Separation Ledger ({dbDumpRecords.length})
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                    Track all waste payloads dumped by collectors, separate by material type, and dispatch with transporters.
+                  </div>
+                </div>
+              </div>
+
+              {dbDumpRecords.length === 0 ? (
+                <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
+                  No dump records recorded yet. Complete a collector pickup to see batches arrive at the Central Dump Yard.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', textTransform: 'uppercase', fontSize: '11px' }}>
+                        <th style={{ padding: '12px' }}>Client / Facility</th>
+                        <th style={{ padding: '12px' }}>Location</th>
+                        <th style={{ padding: '12px' }}>Weight</th>
+                        <th style={{ padding: '12px' }}>Material Stream</th>
+                        <th style={{ padding: '12px' }}>Collector</th>
+                        <th style={{ padding: '12px' }}>Status</th>
+                        <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dbDumpRecords.map((rec) => (
+                        <tr key={rec.id || rec._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '12px' }}>
+                            <strong style={{ color: '#0F172A' }}>{rec.organizationName}</strong>
+                            <div style={{ fontSize: '11px', color: '#64748B' }}>{rec.clientCode} • Bin: {rec.binId}</div>
+                          </td>
+                          <td style={{ padding: '12px', color: '#475569' }}>
+                            {rec.address}, {rec.town}
+                          </td>
+                          <td style={{ padding: '12px', fontWeight: '800', color: '#047857' }}>
+                            {rec.weightKg} KG
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <span style={{
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              background: rec.wasteType === 'Plastic' ? '#EFF6FF' : rec.wasteType === 'Metal' ? '#F3E8FF' : '#ECFDF5',
+                              color: rec.wasteType === 'Plastic' ? '#1E40AF' : rec.wasteType === 'Metal' ? '#6B21A8' : '#065F46'
+                            }}>
+                              {rec.wasteType}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', color: '#475569' }}>
+                            {rec.collectorName}
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <span style={{
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              background: rec.status === 'PROCESSED' ? '#D1FAE5' : rec.status === 'SEPARATED' ? '#E0F2FE' : rec.status === 'IN_TRANSIT' ? '#FEF3C7' : '#F1F5F9',
+                              color: rec.status === 'PROCESSED' ? '#065F46' : rec.status === 'SEPARATED' ? '#0369A1' : rec.status === 'IN_TRANSIT' ? '#92400E' : '#475569'
+                            }}>
+                              {rec.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'right' }}>
+                            {rec.status === 'DUMPED' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDumpRecord(rec);
+                                  setSeparatedWasteType(rec.wasteType || 'Organic/Compost');
+                                  setSeparationNotes('');
+                                  setShowSeparateModal(true);
+                                }}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #0284C7',
+                                  background: '#F0F9FF',
+                                  color: '#0284C7',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Separate Stream ✂️
+                              </button>
+                            )}
+
+                            {rec.status === 'SEPARATED' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDumpToTransport(rec);
+                                  setSelectedTransporterId('');
+                                  setSelectedPlantId('');
+                                  setShowTransporterAssignModal(true);
+                                }}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#047857',
+                                  color: '#FFFFFF',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Dispatch Transporter 🚚
+                              </button>
+                            )}
+
+                            {(rec.status === 'IN_TRANSIT' || rec.status === 'ASSIGNED_TRANSPORT' || rec.status === 'DELIVERED') && (
+                              <span style={{ fontSize: '11px', color: '#D97706', fontWeight: '700' }}>
+                                En Route to Plant
+                              </span>
+                            )}
+
+                            {rec.status === 'PROCESSED' && (
+                              <span style={{ fontSize: '11px', color: '#047857', fontWeight: '800' }}>
+                                ✓ Recycled & Minted
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Section 2: Active Inter-Facility Transport Dispatches */}
+            <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '28px' }}>
+              <h3 style={{ margin: '0 0 14px 0', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                Inter-Facility Transporter Hauls ({dbTransportJobs.length})
+              </h3>
+              {dbTransportJobs.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
+                  No transport dispatches active.
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', textTransform: 'uppercase', fontSize: '11px' }}>
+                      <th style={{ padding: '10px' }}>Job Code</th>
+                      <th style={{ padding: '10px' }}>Transporter Driver</th>
+                      <th style={{ padding: '10px' }}>Vehicle</th>
+                      <th style={{ padding: '10px' }}>Destination Plant</th>
+                      <th style={{ padding: '10px' }}>Waste Stream</th>
+                      <th style={{ padding: '10px' }}>Payload</th>
+                      <th style={{ padding: '10px' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dbTransportJobs.map((j) => (
+                      <tr key={j.id || j._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '10px', fontWeight: '800', color: '#047857' }}>{j.jobCode}</td>
+                        <td style={{ padding: '10px', fontWeight: '700' }}>{j.transporterName}</td>
+                        <td style={{ padding: '10px', color: '#64748B' }}>{j.vehicleNumber}</td>
+                        <td style={{ padding: '10px', fontWeight: '700' }}>{j.plantName}</td>
+                        <td style={{ padding: '10px' }}>{j.wasteType}</td>
+                        <td style={{ padding: '10px', fontWeight: '800' }}>{j.totalWeightKg} KG</td>
+                        <td style={{ padding: '10px' }}>
+                          <span style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', background: j.status === 'COMPLETED' ? '#D1FAE5' : '#FEF3C7', color: j.status === 'COMPLETED' ? '#065F46' : '#92400E' }}>
+                            {j.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Section 3: Per-Customer Lifetime Waste & Carbon Offset Ledger */}
+            <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px' }}>
+              <h3 style={{ margin: '0 0 14px 0', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                Client Facility Waste Generation & Carbon Credit Aggregates
+              </h3>
+              {(!dbWasteTracking || !dbWasteTracking.userSummaries || dbWasteTracking.userSummaries.length === 0) ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
+                  No customer aggregations computed yet.
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', textTransform: 'uppercase', fontSize: '11px' }}>
+                      <th style={{ padding: '10px' }}>Organization Client</th>
+                      <th style={{ padding: '10px' }}>Client ID</th>
+                      <th style={{ padding: '10px' }}>Total Dumped (KG)</th>
+                      <th style={{ padding: '10px' }}>Total Recycled (KG)</th>
+                      <th style={{ padding: '10px' }}>Carbon Credits Earned</th>
+                      <th style={{ padding: '10px' }}>Recycling Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dbWasteTracking.userSummaries.map((u, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '10px', fontWeight: '800', color: '#0F172A' }}>{u.organizationName}</td>
+                        <td style={{ padding: '10px', color: '#64748B' }}>{u.clientCode}</td>
+                        <td style={{ padding: '10px', fontWeight: '800' }}>{u.totalDumpedKg} KG</td>
+                        <td style={{ padding: '10px', fontWeight: '800', color: '#047857' }}>{u.totalRecycledKg} KG</td>
+                        <td style={{ padding: '10px', fontWeight: '900', color: '#059669' }}>+{u.totalCarbonCredits} CC</td>
+                        <td style={{ padding: '10px', fontWeight: '700' }}>{u.recyclingRatePercent}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+          </div>
+        )}
+
       </main>
 
       <DashboardAssistant dashboardName="management" accent="#10B981" />
@@ -1499,6 +1856,188 @@ export default function ManagementDashboard({
                 Assign Collector »
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL D: WASTE SEPARATION & STREAM CLASSIFICATION MODAL
+          ========================================================================= */}
+      {showSeparateModal && selectedDumpRecord && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
+          <div className="soft-card" style={{ maxWidth: '520px', width: '100%', padding: '32px', background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#0284C7', textTransform: 'uppercase' }}>Central Yard Processing</span>
+                <h3 style={{ margin: '2px 0 0', fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>Separate Waste Stream</h3>
+              </div>
+              <button type="button" onClick={() => setShowSeparateModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748B' }}>✕</button>
+            </div>
+
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: '12px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ color: '#64748B' }}>Origin Client:</span>
+                <strong>{selectedDumpRecord.organizationName} ({selectedDumpRecord.clientCode})</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ color: '#64748B' }}>Gross Weight:</span>
+                <strong style={{ color: '#047857', fontSize: '14px' }}>{selectedDumpRecord.weightKg} KG</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748B' }}>Dump Location:</span>
+                <span>{selectedDumpRecord.address}</span>
+              </div>
+            </div>
+
+            {separationMessage && (
+              <div style={{ padding: '10px', background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46', borderRadius: '8px', fontSize: '12px', fontWeight: '700', marginBottom: '16px' }}>
+                {separationMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleSeparateSubmit}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Select Target Recycling Stream *
+                </label>
+                <select
+                  className="modern-input"
+                  value={separatedWasteType}
+                  onChange={(e) => setSeparatedWasteType(e.target.value)}
+                  style={{ width: '100%', height: '46px', fontWeight: '700' }}
+                >
+                  <option value="Organic/Compost">Organic / Food Biomass (Pak Recycling Ltd)</option>
+                  <option value="Plastic">Plastic & Polymers (EcoPak Plastics)</option>
+                  <option value="Metal">Scrap Metal & Cans (GreenTech Metal)</option>
+                  <option value="General Mixed">General Mixed Secondary Waste</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Yard Separation Notes / Quality Tag
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Segregated cleanly into Food Waste Bin Batch A"
+                  value={separationNotes}
+                  onChange={(e) => setSeparationNotes(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowSeparateModal(false)}
+                  style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#475569', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#0284C7', color: '#FFFFFF', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Classify & Prepare for Dispatch »
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL E: ASSIGN TRANSPORTER & DISPATCH TO RECYCLING PLANT
+          ========================================================================= */}
+      {showTransporterAssignModal && selectedDumpToTransport && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
+          <div className="soft-card" style={{ maxWidth: '540px', width: '100%', padding: '32px', background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase' }}>Logistics Dispatch Command</span>
+                <h3 style={{ margin: '2px 0 0', fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>Assign Transporter Haul</h3>
+              </div>
+              <button type="button" onClick={() => setShowTransporterAssignModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748B' }}>✕</button>
+            </div>
+
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: '12px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ color: '#64748B' }}>Cargo Stream:</span>
+                <strong style={{ color: '#047857' }}>{selectedDumpToTransport.wasteType}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ color: '#64748B' }}>Cargo Payload:</span>
+                <strong style={{ color: '#0F172A', fontSize: '14px' }}>{selectedDumpToTransport.weightKg} KG</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748B' }}>Origin Generator:</span>
+                <span>{selectedDumpToTransport.organizationName}</span>
+              </div>
+            </div>
+
+            {transporterAssignMessage && (
+              <div style={{ padding: '10px', background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46', borderRadius: '8px', fontSize: '12px', fontWeight: '700', marginBottom: '16px' }}>
+                {transporterAssignMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleAssignTransporterSubmit}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Select Transporter Carrier Vehicle *
+                </label>
+                <select
+                  className="modern-input"
+                  required
+                  value={selectedTransporterId}
+                  onChange={(e) => setSelectedTransporterId(e.target.value)}
+                  style={{ width: '100%', height: '46px', fontWeight: '700' }}
+                >
+                  <option value="">-- Choose Transporter Carrier --</option>
+                  {dbTransporters.map(t => (
+                    <option key={t.id || t._id} value={t.id || t._id}>
+                      {t.fullName} (Vehicle: {t.vehicleNumber}) — [{t.workerStatus === 'BUSY' ? '🔴 BUSY' : '🟢 AVAILABLE'}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Select Destination Recycling Plant *
+                </label>
+                <select
+                  className="modern-input"
+                  required
+                  value={selectedPlantId}
+                  onChange={(e) => setSelectedPlantId(e.target.value)}
+                  style={{ width: '100%', height: '46px', fontWeight: '700' }}
+                >
+                  <option value="">-- Choose Destination Facility --</option>
+                  {dbRecyclingPlants.map(p => (
+                    <option key={p.id || p._id} value={p.id || p._id}>
+                      {p.name} [{p.plantType}] — {p.address}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowTransporterAssignModal(false)}
+                  style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#475569', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '10px 22px', borderRadius: '8px', border: 'none', background: '#047857', color: '#FFFFFF', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Dispatch Transport Haul »
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

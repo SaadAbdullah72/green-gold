@@ -2,6 +2,9 @@ import { ServiceRequest } from '../models/ServiceRequest.js';
 import { User } from '../models/User.js';
 import { JobAssignment } from '../models/JobAssignment.js';
 import { CollectorAssignment } from '../models/CollectorAssignment.js';
+import { DumpRecord } from '../models/DumpRecord.js';
+import { TransportJob } from '../models/TransportJob.js';
+import { RecyclingReport } from '../models/RecyclingReport.js';
 import { calculateRequiredWorkers } from './requestController.js';
 
 export const getAllRequests = async (req, res) => {
@@ -376,3 +379,347 @@ export const deleteActiveSite = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ==========================================
+// WASTE LIFECYCLE, SEPARATION & TRANSPORT
+// ==========================================
+
+export const getDumpRecords = async (req, res) => {
+  try {
+    const { status, wasteType } = req.query;
+    const query = {};
+    if (status) query.status = status;
+    if (wasteType) query.wasteType = wasteType;
+
+    const records = await DumpRecord.find(query)
+      .populate('collectorId', 'fullName phone employeeId vehicleNumber')
+      .populate('userId', 'fullName email organizationName')
+      .sort({ dumpedAt: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      count: records.length,
+      records: records.map(r => ({
+        id: r._id,
+        _id: r._id,
+        organizationName: r.organizationName,
+        clientCode: r.clientCode || 'CLIENT-01',
+        binId: r.binId,
+        address: r.address,
+        town: r.town,
+        city: r.city,
+        weightKg: r.weightKg,
+        wasteType: r.wasteType,
+        isSeparated: r.isSeparated,
+        separatedType: r.separatedType,
+        separatedAt: r.separatedAt,
+        status: r.status,
+        dumpedAt: r.dumpedAt,
+        collectorName: r.collectorId?.fullName || 'Waste Collector',
+        collectorPhone: r.collectorId?.phone || '',
+        notes: r.notes
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createManualDumpRecord = async (req, res) => {
+  try {
+    const { organizationName, clientCode, binId, weightKg, wasteType, address, town, city, notes } = req.body;
+    if (!organizationName || !weightKg) {
+      return res.status(400).json({ success: false, message: 'Organization name and weight (kg) are required.' });
+    }
+
+    const newRecord = await DumpRecord.create({
+      collectorId: req.user._id,
+      organizationName,
+      clientCode: clientCode || 'CLIENT-01',
+      binId: binId || 'BIN-01-01',
+      weightKg: Number(weightKg),
+      wasteType: wasteType || 'Organic/Compost',
+      address: address || 'Islamabad',
+      town: town || 'F-7',
+      city: city || 'Islamabad',
+      status: 'DUMPED',
+      dumpedAt: new Date(),
+      notes: notes || 'Direct yard weigh-in'
+    });
+
+    return res.status(201).json({ success: true, message: 'Dump record logged in Central Yard.', record: newRecord });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const separateDumpRecords = async (req, res) => {
+  try {
+    const { dumpRecordIds, separatedType, notes } = req.body;
+    if (!dumpRecordIds || !Array.isArray(dumpRecordIds) || dumpRecordIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Select at least one dump record to separate.' });
+    }
+
+    await DumpRecord.updateMany(
+      { _id: { $in: dumpRecordIds } },
+      {
+        isSeparated: true,
+        separatedAt: new Date(),
+        separatedType: separatedType || 'Organic/Compost',
+        wasteType: separatedType || 'Organic/Compost',
+        status: 'SEPARATED',
+        notes: notes ? `Separated into ${separatedType}: ${notes}` : `Separated into ${separatedType}`
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: `Successfully classified ${dumpRecordIds.length} batches as ${separatedType || 'Organic/Compost'}. Ready for transporter dispatch.`
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getTransporters = async (req, res) => {
+  try {
+    const transporters = await User.find({ role: 'TRANSPORTER', isActive: true })
+      .select('fullName email phone vehicleNumber workerStatus employeeId')
+      .lean();
+
+    return res.json({
+      success: true,
+      count: transporters.length,
+      transporters: transporters.map(t => ({
+        id: t._id,
+        _id: t._id,
+        fullName: t.fullName,
+        email: t.email,
+        phone: t.phone,
+        vehicleNumber: t.vehicleNumber || 'ICT-TRN-1001',
+        workerStatus: t.workerStatus || 'IDLE',
+        employeeId: t.employeeId || 'TRN-101'
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getRecyclingPlants = async (req, res) => {
+  try {
+    const plants = await User.find({ role: 'RECYCLING_PLANT', isActive: true })
+      .select('fullName organizationName email phone address plantType plantCapacityTons')
+      .lean();
+
+    return res.json({
+      success: true,
+      count: plants.length,
+      plants: plants.map(p => ({
+        id: p._id,
+        _id: p._id,
+        name: p.organizationName || p.fullName,
+        plantName: p.organizationName || p.fullName,
+        email: p.email,
+        phone: p.phone,
+        address: p.address || 'Industrial Area I-9, Islamabad',
+        plantType: p.plantType || 'Organic/Compost',
+        capacityTons: p.plantCapacityTons || 50
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const assignTransportJob = async (req, res) => {
+  try {
+    const { dumpRecordIds, transporterId, recyclingPlantId, notes } = req.body;
+
+    if (!dumpRecordIds || !Array.isArray(dumpRecordIds) || dumpRecordIds.length === 0 || !transporterId || !recyclingPlantId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select dump records, an assigned transporter, and a destination recycling plant.'
+      });
+    }
+
+    const transporter = await User.findById(transporterId);
+    const plant = await User.findById(recyclingPlantId);
+    const dumps = await DumpRecord.find({ _id: { $in: dumpRecordIds } });
+
+    if (!transporter || !plant) {
+      return res.status(404).json({ success: false, message: 'Transporter or Recycling Plant not found.' });
+    }
+
+    const totalWeightKg = Number(dumps.reduce((sum, d) => sum + (d.weightKg || 0), 0).toFixed(2));
+    const wasteType = dumps[0]?.wasteType || dumps[0]?.separatedType || 'Organic/Compost';
+
+    const jobCount = await TransportJob.countDocuments();
+    const jobCode = `LOG-JOB-${String(jobCount + 101).padStart(4, '0')}`;
+
+    const job = await TransportJob.create({
+      jobCode,
+      transporterId: transporter._id,
+      assignedBy: req.user._id,
+      dumpRecordIds: dumps.map(d => d._id),
+      recyclingPlantId: plant._id,
+      plantName: plant.organizationName || plant.fullName,
+      plantAddress: plant.address || 'Industrial Area, Sector I-9, Islamabad',
+      plantType: plant.plantType || wasteType,
+      totalWeightKg: totalWeightKg > 0 ? totalWeightKg : 10.0,
+      wasteType,
+      vehicleNumber: transporter.vehicleNumber || 'ICT-TRN-1001',
+      status: 'ASSIGNED',
+      notes: notes || '',
+      assignedAt: new Date()
+    });
+
+    // Update Dump records to ASSIGNED_TRANSPORT
+    await DumpRecord.updateMany(
+      { _id: { $in: dumpRecordIds } },
+      { status: 'ASSIGNED_TRANSPORT' }
+    );
+
+    // Update Transporter status
+    await User.findByIdAndUpdate(transporter._id, { workerStatus: 'ASSIGNED' });
+
+    return res.status(201).json({
+      success: true,
+      message: `Transport Job ${jobCode} assigned to ${transporter.fullName} destined for ${plant.organizationName || plant.fullName}.`,
+      job
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllTransportJobs = async (req, res) => {
+  try {
+    const jobs = await TransportJob.find({})
+      .populate('transporterId', 'fullName phone vehicleNumber')
+      .populate('recyclingPlantId', 'fullName organizationName address plantType')
+      .populate('dumpRecordIds')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      count: jobs.length,
+      jobs: jobs.map(j => ({
+        id: j._id,
+        _id: j._id,
+        jobCode: j.jobCode,
+        transporterName: j.transporterId?.fullName || 'Transporter',
+        transporterPhone: j.transporterId?.phone || '',
+        vehicleNumber: j.transporterId?.vehicleNumber || j.vehicleNumber,
+        plantName: j.plantName || j.recyclingPlantId?.organizationName || j.recyclingPlantId?.fullName,
+        plantAddress: j.plantAddress || j.recyclingPlantId?.address,
+        plantType: j.plantType,
+        totalWeightKg: j.totalWeightKg,
+        wasteType: j.wasteType,
+        status: j.status,
+        dumpRecordCount: j.dumpRecordIds?.length || 0,
+        dumpRecords: j.dumpRecordIds || [],
+        notes: j.notes,
+        assignedAt: j.assignedAt,
+        deliveredAt: j.deliveredAt,
+        createdAt: j.createdAt
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllRecyclingReports = async (req, res) => {
+  try {
+    const reports = await RecyclingReport.find({})
+      .populate('plantId', 'fullName organizationName address')
+      .populate('transportJobId')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      count: reports.length,
+      reports
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getWasteTrackingOverview = async (req, res) => {
+  try {
+    const dumps = await DumpRecord.find({}).lean();
+    const reports = await RecyclingReport.find({}).lean();
+
+    // Aggregations per User / Organization
+    const userMap = {};
+
+    dumps.forEach(d => {
+      const key = d.organizationName || 'General Client';
+      if (!userMap[key]) {
+        userMap[key] = {
+          organizationName: key,
+          clientCode: d.clientCode || 'CLIENT-01',
+          totalDumpedKg: 0,
+          totalRecycledKg: 0,
+          totalCarbonCredits: 0,
+          dumpBatchesCount: 0,
+          types: {},
+          lastDumpedAt: d.dumpedAt
+        };
+      }
+      userMap[key].totalDumpedKg += (d.weightKg || 0);
+      userMap[key].dumpBatchesCount += 1;
+      const t = d.wasteType || 'Organic/Compost';
+      userMap[key].types[t] = (userMap[key].types[t] || 0) + (d.weightKg || 0);
+      if (new Date(d.dumpedAt) > new Date(userMap[key].lastDumpedAt)) {
+        userMap[key].lastDumpedAt = d.dumpedAt;
+      }
+    });
+
+    // Merge in recycling report contributions
+    reports.forEach(r => {
+      if (r.userContributions && Array.isArray(r.userContributions)) {
+        r.userContributions.forEach(uc => {
+          const key = uc.organizationName || 'General Client';
+          if (userMap[key]) {
+            userMap[key].totalRecycledKg += (uc.recycledKg || 0);
+            userMap[key].totalCarbonCredits += (uc.carbonCreditsEarned || 0);
+          }
+        });
+      }
+    });
+
+    const userSummaries = Object.values(userMap).map(u => ({
+      ...u,
+      totalDumpedKg: Number(u.totalDumpedKg.toFixed(2)),
+      totalRecycledKg: Number(u.totalRecycledKg.toFixed(2)),
+      totalCarbonCredits: Number(u.totalCarbonCredits.toFixed(2)),
+      recyclingRatePercent: u.totalDumpedKg > 0 ? Number(((u.totalRecycledKg / u.totalDumpedKg) * 100).toFixed(1)) : 0
+    }));
+
+    const totalDumpsKg = dumps.reduce((sum, d) => sum + (d.weightKg || 0), 0);
+    const totalRecycledKg = reports.reduce((sum, r) => sum + (r.recycledWeightKg || 0), 0);
+    const totalCarbonCredits = reports.reduce((sum, r) => sum + (r.carbonCreditsGenerated || 0), 0);
+
+    return res.json({
+      success: true,
+      stats: {
+        totalDumpsKg: Number(totalDumpsKg.toFixed(2)),
+        totalRecycledKg: Number(totalRecycledKg.toFixed(2)),
+        totalCarbonCredits: Number(totalCarbonCredits.toFixed(2)),
+        activeDumpBatches: dumps.filter(d => d.status === 'DUMPED' || d.status === 'SEPARATED').length,
+        inTransitBatches: dumps.filter(d => d.status === 'IN_TRANSIT').length,
+        processedBatches: dumps.filter(d => d.status === 'PROCESSED').length
+      },
+      userSummaries
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

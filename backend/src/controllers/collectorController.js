@@ -1,5 +1,6 @@
 import { CollectorAssignment } from '../models/CollectorAssignment.js';
 import { ServiceRequest } from '../models/ServiceRequest.js';
+import { DumpRecord } from '../models/DumpRecord.js';
 import { User } from '../models/User.js';
 
 export const getMyPickupAssignments = async (req, res) => {
@@ -91,14 +92,38 @@ export const markPickupCompleted = async (req, res) => {
     assignment.completedAt = new Date();
     await assignment.save();
 
+    let linkedRequest = null;
     // Update associated ServiceRequest
     if (assignment.requestId || assignment.pickupId) {
       const sId = assignment.requestId || assignment.pickupId;
-      await ServiceRequest.findByIdAndUpdate(sId, { 
+      linkedRequest = await ServiceRequest.findByIdAndUpdate(sId, { 
         status: 'COMPLETED',
         collectedDate: new Date()
-      });
+      }, { new: true });
     }
+
+    // Auto-create DumpRecord for Central Dump & Separation Yard tracking
+    const weightKg = Number(linkedRequest?.weightKg || assignment.fillLevel ? (assignment.fillLevel * 0.15).toFixed(1) : 5.0);
+    const wasteType = linkedRequest?.wasteType || 'Organic/Compost';
+    const orgName = linkedRequest?.organizationName || assignment.siteName || assignment.locationName || 'Client Site';
+    const clientCode = linkedRequest?.clientIndex ? `CLIENT-${String(linkedRequest.clientIndex).padStart(2, '0')}` : 'CLIENT-01';
+
+    await DumpRecord.create({
+      collectorId: req.user._id,
+      requestId: linkedRequest?._id || null,
+      userId: linkedRequest?.userId || null,
+      organizationName: orgName,
+      clientCode,
+      binId: assignment.binId || linkedRequest?.deployedBinIds?.[0] || 'BIN-01-01',
+      address: assignment.address || linkedRequest?.address || 'Islamabad',
+      town: assignment.town || linkedRequest?.town || 'F-7',
+      city: assignment.city || linkedRequest?.city || 'Islamabad',
+      weightKg: weightKg > 0 ? weightKg : 5.0,
+      wasteType,
+      status: 'DUMPED',
+      dumpedAt: new Date(),
+      notes: `Collected & dumped by ${req.user.fullName || 'Collector'}`
+    });
 
     // Check if collector has any other active jobs
     const activeRemaining = await CollectorAssignment.countDocuments({
@@ -110,7 +135,11 @@ export const markPickupCompleted = async (req, res) => {
       workerStatus: activeRemaining > 0 ? 'BUSY' : 'IDLE' 
     });
 
-    return res.json({ success: true, message: 'Pickup completed successfully.', assignment });
+    return res.json({ 
+      success: true, 
+      message: 'Pickup completed & waste payload dumped at Central Separation Yard.', 
+      assignment 
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

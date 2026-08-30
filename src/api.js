@@ -112,6 +112,32 @@ export const api = {
       return data;
     },
 
+    registerTransporter: async (transporterData) => {
+      const data = await fetchJson(`${API_BASE}/auth/register/transporter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transporterData)
+      });
+      if (data.token) {
+        localStorage.setItem('greengold_token', data.token);
+        localStorage.setItem('greengold_user', JSON.stringify(data.user));
+      }
+      return data;
+    },
+
+    registerRecyclingPlant: async (plantData) => {
+      const data = await fetchJson(`${API_BASE}/auth/register/recycling-plant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(plantData)
+      });
+      if (data.token) {
+        localStorage.setItem('greengold_token', data.token);
+        localStorage.setItem('greengold_user', JSON.stringify(data.user));
+      }
+      return data;
+    },
+
     getMe: async () => {
       const res = await fetchJson(`${API_BASE}/auth/me`, { headers: getHeaders() });
       return res;
@@ -225,6 +251,122 @@ export const api = {
         method: 'DELETE',
         headers: getHeaders()
       });
+      return await handleResponse(res);
+    },
+
+    getDumpRecords: async (query = {}) => {
+      const qs = new URLSearchParams(query).toString();
+      const url = qs ? `${API_BASE}/management/dump-records?${qs}` : `${API_BASE}/management/dump-records`;
+      const res = await fetch(url, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    createManualDumpRecord: async (dumpData) => {
+      const res = await fetch(`${API_BASE}/management/dump-records`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(dumpData)
+      });
+      return await handleResponse(res);
+    },
+
+    separateDumpRecords: async (separationData) => {
+      const res = await fetch(`${API_BASE}/management/dump-records/separate`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(separationData)
+      });
+      return await handleResponse(res);
+    },
+
+    getTransporters: async () => {
+      const res = await fetch(`${API_BASE}/management/transporters`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getRecyclingPlants: async () => {
+      const res = await fetch(`${API_BASE}/management/recycling-plants`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    assignTransportJob: async (jobData) => {
+      const res = await fetch(`${API_BASE}/management/transport-jobs/assign`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(jobData)
+      });
+      return await handleResponse(res);
+    },
+
+    getAllTransportJobs: async () => {
+      const res = await fetch(`${API_BASE}/management/transport-jobs`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getAllRecyclingReports: async () => {
+      const res = await fetch(`${API_BASE}/management/recycling-reports`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getWasteTrackingOverview: async () => {
+      const res = await fetch(`${API_BASE}/management/waste-tracking`, { headers: getHeaders() });
+      return await handleResponse(res);
+    }
+  },
+
+  transporter: {
+    getMyJobs: async () => {
+      const res = await fetch(`${API_BASE}/transporter/jobs`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    acceptJob: async (jobId) => {
+      const res = await fetch(`${API_BASE}/transporter/jobs/${jobId}/accept`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    startTransit: async (jobId) => {
+      const res = await fetch(`${API_BASE}/transporter/jobs/${jobId}/transit`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    },
+
+    markDelivered: async (jobId) => {
+      const res = await fetch(`${API_BASE}/transporter/jobs/${jobId}/delivered`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      });
+      return await handleResponse(res);
+    }
+  },
+
+  recycling: {
+    getMyDeliveries: async () => {
+      const res = await fetch(`${API_BASE}/recycling/deliveries`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    submitReport: async (reportData) => {
+      const res = await fetch(`${API_BASE}/recycling/report`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(reportData)
+      });
+      return await handleResponse(res);
+    },
+
+    getMyReports: async () => {
+      const res = await fetch(`${API_BASE}/recycling/reports`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
+    getStats: async () => {
+      const res = await fetch(`${API_BASE}/recycling/stats`, { headers: getHeaders() });
       return await handleResponse(res);
     }
   },

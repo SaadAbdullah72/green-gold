@@ -39,6 +39,14 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
       setIsRegister(false);
       setEmail('collector@greengold.com');
       setPassword('collector123');
+    } else if (newRole === 'TRANSPORTER') {
+      setIsRegister(false);
+      setEmail('transporter1@greengold.com');
+      setPassword('transport123');
+    } else if (newRole === 'RECYCLING_PLANT') {
+      setIsRegister(false);
+      setEmail('pakrecycling@greengold.com');
+      setPassword('plant123');
     } else {
       setEmail('');
       setPassword('');
@@ -93,9 +101,29 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             vehicleNumber: 'ICT-GRN-9912',
             zone: town || 'F-7'
           });
+        } else if (selectedRoleProfile === 'TRANSPORTER') {
+          data = await api.auth.registerTransporter({
+            fullName,
+            email,
+            phone,
+            secondaryPhone,
+            password,
+            vehicleNumber: 'ICT-TRN-1001'
+          });
+        } else if (selectedRoleProfile === 'RECYCLING_PLANT') {
+          data = await api.auth.registerRecyclingPlant({
+            organizationName: organizationName || fullName,
+            fullName,
+            email,
+            phone,
+            password,
+            address: address || 'Sector I-9/2 Industrial Area, Islamabad',
+            plantType: 'Organic/Compost',
+            plantCapacityTons: 60
+          });
         }
       } else {
-        data = await api.auth.login(email, password, selectedRoleProfile);
+        data = await api.auth.login(email, password);
       }
 
       if (data && data.user) {
@@ -107,7 +135,11 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
               ? 'ROLE_GENERATOR'
               : data.user.role === 'COLLECTOR'
                 ? 'ROLE_COLLECTOR'
-                : 'ROLE_GENERATOR';
+                : data.user.role === 'TRANSPORTER'
+                  ? 'ROLE_TRANSPORTER'
+                  : data.user.role === 'RECYCLING_PLANT'
+                    ? 'ROLE_RECYCLING_PLANT'
+                    : 'ROLE_GENERATOR';
 
         login({ ...data.user, role: normalizedRole }, data.token);
 
@@ -122,6 +154,8 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
           ROLE_GENERATOR: '/generator',
           ROLE_TECHNICIAN: '/technician',
           ROLE_COLLECTOR: '/collector',
+          ROLE_TRANSPORTER: '/transporter',
+          ROLE_RECYCLING_PLANT: '/recycling-plant'
         };
         navigate(routeMap[normalizedRole] || '/generator');
       }
@@ -217,8 +251,10 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             >
               <option value="MANAGEMENT">Management Operations</option>
               <option value="USER">Customer / Waste Generator</option>
+              <option value="COLLECTOR">Waste Collector Driver</option>
+              <option value="TRANSPORTER">Logistics & Inter-Facility Transporter</option>
+              <option value="RECYCLING_PLANT">Industrial Recycling & Recovery Plant</option>
               <option value="TECHNICAL">Technical Workforce Crew</option>
-              <option value="COLLECTOR">Waste Collector</option>
             </select>
           </div>
 
@@ -262,11 +298,12 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             </div>
           )}
 
-          {(selectedRoleProfile === 'MANAGEMENT' || selectedRoleProfile === 'COLLECTOR') && !isRegister && (
+          {(selectedRoleProfile === 'MANAGEMENT' || selectedRoleProfile === 'COLLECTOR' || selectedRoleProfile === 'TRANSPORTER' || selectedRoleProfile === 'RECYCLING_PLANT') && !isRegister && (
             <div style={{ padding: '12px 16px', background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0369A1', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '20px' }}>
-              {selectedRoleProfile === 'MANAGEMENT'
-                ? <>Management Admin Account Loaded: <strong>saad489254@gmail.com</strong> / <strong>saad123</strong></>
-                : <>Collector Demo Account Loaded: <strong>collector@greengold.com</strong> / <strong>collector123</strong></>}
+              {selectedRoleProfile === 'MANAGEMENT' && <>Management Admin Account Loaded: <strong>saad489254@gmail.com</strong> / <strong>saad123</strong></>}
+              {selectedRoleProfile === 'COLLECTOR' && <>Collector Demo Account Loaded: <strong>collector@greengold.com</strong> / <strong>collector123</strong></>}
+              {selectedRoleProfile === 'TRANSPORTER' && <>Transporter Demo Account Loaded: <strong>transporter1@greengold.com</strong> / <strong>transport123</strong></>}
+              {selectedRoleProfile === 'RECYCLING_PLANT' && <>Recycling Plant Demo Account Loaded: <strong>pakrecycling@greengold.com</strong> / <strong>plant123</strong></>}
             </div>
           )}
 

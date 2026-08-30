@@ -10,6 +10,8 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 import iotRoutes from './routes/iotRoutes.js';
 import collectorRoutes from './routes/collectorRoutes.js';
+import transporterRoutes from './routes/transporterRoutes.js';
+import recyclingRoutes from './routes/recyclingRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -40,6 +42,8 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/management', managementRoutes);
 app.use('/api/technical', technicalRoutes);
 app.use('/api/collector', collectorRoutes);
+app.use('/api/transporter', transporterRoutes);
+app.use('/api/recycling', recyclingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/iot', iotRoutes);

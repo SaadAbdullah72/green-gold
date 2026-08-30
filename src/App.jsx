@@ -7,6 +7,8 @@ import ManagementDashboard from './components/ManagementDashboard';
 import UserDashboard from './components/UserDashboard';
 import TechnicianDashboard from './components/TechnicianDashboard';
 import CollectorDashboard from './components/CollectorDashboard';
+import TransporterDashboard from './components/TransporterDashboard';
+import RecyclingPlantDashboard from './components/RecyclingPlantDashboard';
 
 function getHomeRoute(role) {
   switch (role) {
@@ -18,6 +20,10 @@ function getHomeRoute(role) {
       return '/technician';
     case 'ROLE_COLLECTOR':
       return '/collector';
+    case 'ROLE_TRANSPORTER':
+      return '/transporter';
+    case 'ROLE_RECYCLING_PLANT':
+      return '/recycling-plant';
     default:
       return '/login';
   }
@@ -81,6 +87,24 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['ROLE_COLLECTOR']}>
             <CollectorDashboard onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/transporter"
+        element={
+          <ProtectedRoute allowedRoles={['ROLE_TRANSPORTER', 'ROLE_ADMIN']}>
+            <TransporterDashboard onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/recycling-plant"
+        element={
+          <ProtectedRoute allowedRoles={['ROLE_RECYCLING_PLANT', 'ROLE_ADMIN']}>
+            <RecyclingPlantDashboard onLogout={handleLogout} />
           </ProtectedRoute>
         }
       />

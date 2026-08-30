@@ -4,6 +4,8 @@ import {
   registerManagement, 
   registerTechnical, 
   registerCollector,
+  registerTransporter,
+  registerRecyclingPlant,
   login, 
   logout, 
   getMe 
@@ -16,9 +18,12 @@ router.post('/register/user', registerUser);
 router.post('/register/management', registerManagement);
 router.post('/register/technical', registerTechnical);
 router.post('/register/collector', registerCollector);
+router.post('/register/transporter', registerTransporter);
+router.post('/register/recycling-plant', registerRecyclingPlant);
 
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', authenticateUser, getMe);
 
 export default router;
+

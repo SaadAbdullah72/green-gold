@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true, select: false },
     role: { 
       type: String, 
-      enum: ['USER', 'MANAGEMENT', 'TECHNICAL', 'COLLECTOR'], 
+      enum: ['USER', 'MANAGEMENT', 'TECHNICAL', 'COLLECTOR', 'TRANSPORTER', 'RECYCLING_PLANT'], 
       default: 'USER',
       required: true 
     },
@@ -20,9 +20,12 @@ const userSchema = new mongoose.Schema(
     address: { type: String, trim: true },
     town: { type: String, trim: true },
     city: { type: String, trim: true, default: 'Islamabad' },
+    vehicleNumber: { type: String, trim: true },
+    plantType: { type: String, enum: ['Organic/Compost', 'Plastic', 'Metal', 'General Mixed', 'Multi-Stream'], default: 'Organic/Compost' },
+    plantCapacityTons: { type: Number, default: 50 },
     workerStatus: { 
       type: String, 
-      enum: ['IDLE', 'ASSIGNED', 'WORKING', 'COMPLETED', 'OFFLINE'], 
+      enum: ['IDLE', 'ASSIGNED', 'WORKING', 'BUSY', 'COMPLETED', 'OFFLINE'], 
       default: 'IDLE' 
     },
     isActive: { type: Boolean, default: true },
