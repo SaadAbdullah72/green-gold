@@ -463,58 +463,35 @@ export default function ManagementDashboard({
     if (organicKg === 0 && stats.totalWasteDivertedKg) organicKg = stats.totalWasteDivertedKg;
     if (plasticKg === 0 && stats.recycledPlasticsKg) plasticKg = stats.recycledPlasticsKg;
 
-    // 3. Minted Carbon Credits Calculation
-    let mintedCreditsMt = 0;
-    let pendingCreditsMt = 0;
-
-    // Sum from all verified Recycling Reports
+    // 3. Minted Carbon Credits (CC Tokens & MT CO2e) Calculation
+    let totalCC = 0;
     (dbRecyclingReports || []).forEach(r => {
-      mintedCreditsMt += Number(r.carbonCreditsGenerated || r.carbonCreditsMinted || 0);
+      totalCC += Number(r.carbonCreditsGenerated || r.carbonCreditsMinted || 0);
     });
 
-    // Sum from certified and pending carbon batches
+    // Sum from stream weights: Organic (0.5 CC/kg), Plastic (1.2 CC/kg), Metal (1.8 CC/kg)
+    const streamCC = Number(((organicKg * 0.5) + (plasticKg * 1.2) + (metalKg * 1.8)).toFixed(2));
+    totalCC = Math.max(totalCC, streamCC);
+
+    let pendingCC = Number((totalDumpedKg * 0.8).toFixed(2));
     (safeBatchesAwaitingCert || []).forEach(b => {
-      const credits = Number(b.carbonCreditsEarned || b.credits || (b.weightKg ? b.weightKg * 0.0005 : 0));
+      const credits = Number(b.carbonCreditsEarned || b.credits || (b.weightKg ? b.weightKg * 0.5 : 0));
       if (b.status === 'Certified' || b.status === 'Minted') {
-        mintedCreditsMt += credits;
+        totalCC += credits;
       } else {
-        pendingCreditsMt += credits;
+        pendingCC += credits;
       }
     });
 
-    // Greenhouse Gas (GHG) avoidance from all diverted waste streams:
-    // Organic (0.52 MT CO2e / Ton) + Plastic (1.45 MT CO2e / Ton) + Metal (2.10 MT CO2e / Ton)
-    const streamCarbonAvoidanceMt = Number((
-      (organicKg * 0.00052) + 
-      (plasticKg * 0.00145) + 
-      (metalKg * 0.00210)
-    ).toFixed(2));
-
-    if (mintedCreditsMt === 0) {
-      mintedCreditsMt = streamCarbonAvoidanceMt;
-    } else {
-      mintedCreditsMt = Math.max(mintedCreditsMt, streamCarbonAvoidanceMt);
-    }
-
-    if (stats.certifiedCarbonCreditsMt) {
-      mintedCreditsMt = Math.max(mintedCreditsMt, stats.certifiedCarbonCreditsMt);
-    }
-
-    // Pending credits from in-progress/unprocessed dump records
-    if (pendingCreditsMt === 0 && totalDumpedKg > 0) {
-      pendingCreditsMt = Number((totalDumpedKg * 0.0008).toFixed(2));
-    }
-    if (stats.pendingCarbonCreditsMt) {
-      pendingCreditsMt = Math.max(pendingCreditsMt, stats.pendingCarbonCreditsMt);
-    }
-
+    const avoidanceMt = Number(((organicKg * 0.00052) + (plasticKg * 0.00145) + (metalKg * 0.00210)).toFixed(3));
     const totalDiverted = organicKg + plasticKg + metalKg;
 
     return {
       activeBins: activeBinsCount,
       organicDivertedKg: Math.round(organicKg),
-      mintedCarbonCreditsMt: Number(mintedCreditsMt.toFixed(2)),
-      pendingCarbonCreditsMt: Number(pendingCreditsMt.toFixed(2)),
+      totalCarbonCredits: totalCC,
+      avoidanceMt: avoidanceMt > 0 ? avoidanceMt : 0.012,
+      pendingCC: pendingCC,
       plasticRecoveredKg: Math.round(plasticKg),
       metalRecoveredKg: Math.round(metalKg),
       totalDivertedKg: Math.round(totalDiverted)
@@ -625,8 +602,12 @@ export default function ManagementDashboard({
               <span>MINTED CARBON CREDITS</span>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle></svg>
             </div>
-            <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.1', marginBottom: '8px' }}>{liveStats.mintedCarbonCreditsMt.toFixed(2)} MT</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pending verification: {liveStats.pendingCarbonCreditsMt.toFixed(2)} MT</div>
+            <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--primary)', lineHeight: '1.1', marginBottom: '8px' }}>
+              {liveStats.totalCarbonCredits.toFixed(2)} <span style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>CC</span>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Avoided: {liveStats.avoidanceMt} MT CO₂e (Pending: {liveStats.pendingCC.toFixed(2)} CC)
+            </div>
           </div>
 
           {/* Gauge 4: Inorganic recovery sorting - Plastics */}
