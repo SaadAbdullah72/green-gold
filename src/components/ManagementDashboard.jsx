@@ -555,8 +555,8 @@ export default function ManagementDashboard({
           ========================================================================= */}
       <aside className="sidebar-left">
         {/* Brand Header */}
-        <div style={{ marginBottom: '28px' }}>
-          <GreenGoldLogo size={44} subtitle="Management Hub" />
+        <div style={{ marginBottom: '32px' }}>
+          <GreenGoldLogo size={58} subtitle="Executive Management Hub" />
         </div>
 
         {/* Portal selection list */}

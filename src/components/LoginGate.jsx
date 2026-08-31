@@ -203,8 +203,8 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', my: 'auto', flex: 1 }}>
           {/* Prominent Main Vector Logo */}
-          <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <GreenGoldLogo size={80} subtitle="CIRCULAR BIO-ECONOMY SYSTEM" />
+          <div style={{ marginBottom: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <GreenGoldLogo size={108} subtitle="CIRCULAR BIO-ECONOMY SYSTEM" />
           </div>
 
           <div style={{ maxWidth: '420px', margin: '0 auto' }}>

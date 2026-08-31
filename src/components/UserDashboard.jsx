@@ -431,8 +431,8 @@ export default function UserDashboard({ username, userData, onLogout }) {
       <aside className="sidebar-left" style={{ width: '280px', background: '#0B2822', color: '#FFFFFF', padding: '28px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
         <div>
           {/* Brand Header */}
-          <div style={{ marginBottom: '32px', padding: '0 8px' }}>
-            <GreenGoldLogo size={44} subtitle="Waste Generator Portal" />
+          <div style={{ marginBottom: '32px', padding: '0 4px' }}>
+            <GreenGoldLogo size={58} subtitle="Waste Generator Portal" />
           </div>
 
           {/* Navigation Menu */}
