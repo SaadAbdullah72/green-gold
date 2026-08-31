@@ -3,6 +3,7 @@ import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { IconBrandLogo } from './Icons';
 import DashboardAssistant from './DashboardAssistant';
+import GreenGoldLogo from './GreenGoldLogo';
 
 const CC_FACTORS = {
   'Organic/Compost': 0.5,
@@ -151,15 +152,7 @@ export default function RecyclingPlantDashboard({ onLogout }) {
         boxShadow: '0 4px 20px rgba(6,78,59,0.25)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <IconBrandLogo />
-          <div>
-            <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85 }}>
-              INDUSTRIAL RECYCLING & RESOURCE RECOVERY FACILITY
-            </div>
-            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
-              {user?.organizationName || user?.fullName || 'Industrial Processing Plant'}
-            </h1>
-          </div>
+          <GreenGoldLogo size={44} subtitle="Industrial Recycling & Resource Recovery Facility" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { TECH_CREWS, LOGISTICS_PARTNERS, FACTORY_REPORTS } from '../mockData';
 import { api } from '../api';
 import DashboardAssistant from './DashboardAssistant';
+import GreenGoldLogo from './GreenGoldLogo';
 
 const siteActivePinIcon = L.divIcon({
   className: '',
@@ -554,14 +555,8 @@ export default function ManagementDashboard({
           ========================================================================= */}
       <aside className="sidebar-left">
         {/* Brand Header */}
-        <div className="app-logo">
-          <div className="logo-icon">
-            <img src="/logo.png" alt="Logo" style={{ width: '56px', height: '56px', objectFit: 'contain' }} />
-          </div>
-          <div className="logo-text">
-            <h1>GreenGoldOS</h1>
-            <span>Management Hub</span>
-          </div>
+        <div style={{ marginBottom: '28px' }}>
+          <GreenGoldLogo size={44} subtitle="Management Hub" />
         </div>
 
         {/* Portal selection list */}

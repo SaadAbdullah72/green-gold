@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { IconBrandLogo } from './Icons';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
+import GreenGoldLogo from './GreenGoldLogo';
 
 export default function LoginGate({ onLogin, onLoginSuccess }) {
   const [selectedRoleProfile, setSelectedRoleProfile] = useState('USER'); // 'MANAGEMENT', 'USER', 'TECHNICAL'
@@ -201,12 +202,9 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
         className="login-hero-sidebar"
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', my: 'auto', flex: 1 }}>
-          {/* Prominent Main Logo */}
-          <div style={{ marginBottom: '-10px', display: 'inline-flex' }}>
-            <img src="/logo.png" alt="GreenGold Logo" style={{ width: '260px', height: '260px', objectFit: 'contain', filter: 'drop-shadow(0 10px 30px rgba(16, 185, 129, 0.3))' }} />
-          </div>
-          <div style={{ fontSize: '13px', color: '#34D399', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '32px' }}>
-            CIRCULAR BIO-ECONOMY SYSTEM
+          {/* Prominent Main Vector Logo */}
+          <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <GreenGoldLogo size={80} subtitle="CIRCULAR BIO-ECONOMY SYSTEM" />
           </div>
 
           <div style={{ maxWidth: '420px', margin: '0 auto' }}>

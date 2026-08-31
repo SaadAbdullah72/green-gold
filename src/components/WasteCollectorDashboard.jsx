@@ -3,6 +3,7 @@ import { IconBrandLogo, IconBox, IconUser } from './Icons';
 import { api } from '../api';
 import DashboardAssistant from './DashboardAssistant';
 import RequestProgressTracker from './RequestProgressTracker';
+import GreenGoldLogo from './GreenGoldLogo';
 
 export default function WasteCollectorDashboard({ username, userData, onLogout }) {
   const [activeTab, setActiveTab] = useState('assigned_jobs');
@@ -219,16 +220,8 @@ export default function WasteCollectorDashboard({ username, userData, onLogout }
       <aside className="sidebar-left" style={{ width: '280px', background: '#0B2822', color: '#FFFFFF', padding: '28px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
         <div>
           {/* Brand Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px', padding: '0 8px' }}>
-            <img src="/logo.png" alt="Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: 0, letterSpacing: '-0.02em' }}>
-                GreenGold OS
-              </h2>
-              <span style={{ fontSize: '11px', color: '#34D399', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Technical Workforce Console
-              </span>
-            </div>
+          <div style={{ marginBottom: '32px', padding: '0 8px' }}>
+            <GreenGoldLogo size={44} subtitle="Technical Workforce Console" />
           </div>
 
           {/* Navigation Menu */}

@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { IconBrandLogo } from './Icons';
+import GreenGoldLogo from './GreenGoldLogo';
 
 // Formal Custom Map Pin Markers
 const yardIcon = L.divIcon({
@@ -300,15 +301,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
         gap: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <img src="/logo.png" alt="GreenGold Logo" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
-          <div>
-            <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#A7F3D0', fontWeight: 800 }}>
-              INTER-MUNICIPAL RESOURCE CONVERGENCE & RECYCLING DISPATCH
-            </div>
-            <h1 style={{ margin: '2px 0 0 0', fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>
-              GreenGold OS — Central Waste Dumping & Separation Facility
-            </h1>
-          </div>
+          <GreenGoldLogo size={46} subtitle="Central Waste Dumping & Separation Facility" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

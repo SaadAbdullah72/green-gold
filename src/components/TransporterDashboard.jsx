@@ -6,6 +6,7 @@ import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { IconBrandLogo, IconBox, IconUser } from './Icons';
 import DashboardAssistant from './DashboardAssistant';
+import GreenGoldLogo from './GreenGoldLogo';
 
 const depotIcon = L.divIcon({
   className: '',
@@ -133,15 +134,7 @@ export default function TransporterDashboard({ onLogout }) {
         boxShadow: '0 4px 20px rgba(4,120,87,0.2)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <IconBrandLogo />
-          <div>
-            <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85 }}>
-              LOGISTICS & INTER-FACILITY TRANSIT FLEET
-            </div>
-            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
-              GreenGold OS — Transporter Operations Console
-            </h1>
-          </div>
+          <GreenGoldLogo size={44} subtitle="Logistics & Inter-Facility Transit Fleet" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

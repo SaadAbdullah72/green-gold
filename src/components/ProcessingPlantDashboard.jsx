@@ -3,6 +3,7 @@ import {
   IconDashboard, IconPlus, IconBox, IconLeaf, 
   IconTruck, IconUser, IconShield, IconChart, IconCheck
 } from './Icons';
+import GreenGoldLogo from './GreenGoldLogo';
 
 export default function ProcessingPlantDashboard({ 
   username = "Plant Supervisor", 
@@ -122,14 +123,8 @@ export default function ProcessingPlantDashboard({
       
       {/* LEFT SIDEBAR NAVIGATION */}
       <aside className="sidebar-left" style={{ overflowY: 'auto' }}>
-        <div className="app-logo">
-          <div className="logo-icon">
-            <img src="/logo.png" alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
-          </div>
-          <div className="logo-text">
-            <h1>GreenGoldOS</h1>
-            <span>Compost Processing</span>
-          </div>
+        <div style={{ marginBottom: '28px' }}>
+          <GreenGoldLogo size={42} subtitle="Compost Processing" />
         </div>
         {/* RENDER ALIGNED SUB-TABS NAVIGATION */}
         {menuSections.map((section, idx) => (

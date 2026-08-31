@@ -6,6 +6,7 @@ import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import DashboardAssistant from './DashboardAssistant';
 import RequestProgressTracker from './RequestProgressTracker';
+import GreenGoldLogo from './GreenGoldLogo';
 
 const collectorIcon = L.divIcon({
   className: '',
@@ -168,8 +169,7 @@ export default function CollectorDashboard({ onLogout }) {
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #064e3b, #047857)', borderRadius: '20px', padding: '24px 28px', boxShadow: '0 16px 32px rgba(6, 78, 59, 0.18)', color: 'white' }}>
           <div>
-            <div style={{ fontSize: '11px', letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>Waste Collector Portal</div>
-            <h1 style={{ margin: '8px 0 0', fontSize: '30px', fontWeight: 800 }}>Route & Pickup Operations</h1>
+            <GreenGoldLogo size={40} subtitle="Route & Pickup Operations" />
           </div>
 
           <button

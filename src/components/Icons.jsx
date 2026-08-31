@@ -109,34 +109,23 @@ export const IconLab = ({ size = 18, color = "currentColor" }) => (
 export const IconBrandLogo = ({ size = 48 }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="gg-top" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#10B981" />
-        <stop offset="100%" stopColor="#059669" />
+      <linearGradient id="gg-icon-leaf" x1="15%" y1="10%" x2="85%" y2="90%">
+        <stop offset="0%" stopColor="#34D399" />
+        <stop offset="50%" stopColor="#10B981" />
+        <stop offset="100%" stopColor="#047857" />
       </linearGradient>
-      <linearGradient id="gg-right" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F59E0B" />
+      <linearGradient id="gg-icon-gold" x1="80%" y1="15%" x2="20%" y2="85%">
+        <stop offset="0%" stopColor="#FDE047" />
+        <stop offset="45%" stopColor="#F59E0B" />
         <stop offset="100%" stopColor="#D97706" />
       </linearGradient>
-      <linearGradient id="gg-left" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#34D399" />
-        <stop offset="100%" stopColor="#10B981" />
-      </linearGradient>
     </defs>
-
-    {/* Isometric Tech Cube - Top Face */}
-    <path d="M50 12 L85 30 L50 48 L15 30 Z" fill="url(#gg-top)" />
-    
-    {/* Left Face */}
-    <path d="M15 30 L50 48 L50 88 L15 70 Z" fill="url(#gg-left)" />
-    
-    {/* Right Face */}
-    <path d="M85 30 L50 48 L50 88 L85 70 Z" fill="url(#gg-right)" />
-
-    {/* Precision Inner Tech Cutout Prism */}
-    <path d="M50 32 L68 41 L50 50 L32 41 Z" fill="#F8FAFC" opacity="0.9" />
-    <path d="M32 41 L50 50 L50 68 L32 59 Z" fill="#F1F5F9" opacity="0.7" />
-    <path d="M68 41 L50 50 L50 68 L68 59 Z" fill="#FFFFFF" opacity="0.8" />
+    <path d="M50 12 C30 12, 14 30, 14 54 C14 74, 29 88, 50 88 C44 76, 42 62, 47 48 C51 37, 59 26, 70 18 C64 14, 57 12, 50 12 Z" fill="url(#gg-icon-leaf)" />
+    <path d="M50 88 C70 88, 86 70, 86 46 C86 28, 73 14, 52 14 C58 26, 60 40, 55 54 C51 65, 43 76, 32 84 C38 87, 44 88, 50 88 Z" fill="url(#gg-icon-gold)" />
+    <path d="M50 32 C43 42, 43 56, 50 68 C57 56, 57 42, 50 32 Z" fill="#FFFFFF" fillOpacity="0.95" />
+    <circle cx="50" cy="50" r="4.5" fill="#F59E0B" />
+    <circle cx="50" cy="50" r="2.2" fill="#FFFFFF" />
+    <path d="M68 28 A 12 12 0 0 1 76 38" stroke="#F59E0B" strokeWidth="3.5" strokeLinecap="round" />
+    <path d="M74 20 A 20 20 0 0 1 86 36" stroke="#34D399" strokeWidth="3" strokeLinecap="round" />
   </svg>
 );
-
-

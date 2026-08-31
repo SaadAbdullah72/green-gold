@@ -3,6 +3,7 @@ import { api } from '../api';
 import { IconBox, IconTruck, IconUser } from './Icons';
 import DashboardAssistant from './DashboardAssistant';
 import RequestProgressTracker from './RequestProgressTracker';
+import GreenGoldLogo from './GreenGoldLogo';
 
 const workerProfile = {
   name: 'Ahmed Nawaz',
@@ -125,17 +126,8 @@ export default function TechnicianDashboard({ onLogout }) {
           borderRight: '1px solid rgba(255,255,255,0.08)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 8px 20px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#0A403A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconBox size={22} color="#86EFAC" />
-          </div>
-          <div>
-            <div style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1.2, color: '#FFFFFF', fontFamily: 'Georgia, serif' }}>GreenGold OS</div>
-          </div>
-        </div>
-
-        <div style={{ padding: '6px 8px 18px', color: '#7EE7C4', textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: '12px', fontWeight: 800 }}>
-          Technical Workforce
+        <div style={{ padding: '8px 8px 24px' }}>
+          <GreenGoldLogo size={42} subtitle="Technical Workforce" />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
