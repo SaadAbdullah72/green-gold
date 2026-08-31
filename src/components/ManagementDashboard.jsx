@@ -608,15 +608,6 @@ export default function ManagementDashboard({
               <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-primary)', fontWeight: '800', letterSpacing: '-0.02em' }}>{username}</h2>
             </div>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--primary)" strokeWidth="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            </div>
-            <span className="pill-badge">
-              Executive Authority
-            </span>
-          </div>
         </div>
 
         {/* KPI Indicators Grid */}
