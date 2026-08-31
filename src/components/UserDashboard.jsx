@@ -1072,15 +1072,15 @@ export default function UserDashboard({ username, userData, onLogout }) {
                             </td>
                             <td style={{ padding: '12px' }}>
                               <div style={{ fontWeight: '800', color: '#047857' }}>
-                                {r.recycledWeightKg} KG Recycled
+                                {(r.userRecycledKg || r.recycledWeightKg)} KG Recycled
                               </div>
                               <div style={{ fontSize: '11px', color: '#64748B' }}>
-                                Yield: {r.recoveryEfficiencyPercent || 86}% of {r.receivedWeightKg} KG
+                                Recovery Efficiency: {r.recoveryEfficiencyPercent || 86}%
                               </div>
                             </td>
                             <td style={{ padding: '12px' }}>
                               <div style={{ fontSize: '15px', fontWeight: '900', color: '#059669' }}>
-                                +{r.carbonCreditsGenerated} CC
+                                +{(r.userCarbonCredits || r.carbonCreditsGenerated)} CC
                               </div>
                               <div style={{ fontSize: '10px', color: '#64748B' }}>Factor: {r.ccFactorUsed || 1.2} CC/kg</div>
                             </td>

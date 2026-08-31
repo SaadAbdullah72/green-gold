@@ -250,7 +250,7 @@ export const getRequestById = async (req, res) => {
   }
 };
 
-// Customer Carbon Credits & Waste Lifecycle History
+// Customer Carbon Credits & Waste Lifecycle History (Strictly Logged-in User's Data)
 export const getMyCarbonLifecycle = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -268,30 +268,58 @@ export const getMyCarbonLifecycle = async (req, res) => {
       ...(deploymentSite?.organizationName ? [{ organizationName: new RegExp(`^${deploymentSite.organizationName}$`, 'i') }] : [])
     ];
 
-    // Find all dump batches for this client
+    // Find all dump batches strictly for this client
     let dumps = [];
     if (matchCriteria.length > 0) {
       dumps = await DumpRecord.find({ $or: matchCriteria }).sort({ dumpedAt: -1 }).lean().catch(() => []);
     }
 
-    if (dumps.length === 0) {
-      dumps = await DumpRecord.find({}).sort({ dumpedAt: -1 }).limit(10).lean().catch(() => []);
+    const dumpIds = dumps.map(d => d._id);
+
+    // Find certified recycling reports strictly linked to this customer
+    const reportMatchCriteria = [
+      ...(userId ? [{ 'userContributions.userId': userId }] : []),
+      ...(userOrg ? [{ 'userContributions.organizationName': new RegExp(`^${userOrg}$`, 'i') }] : []),
+      ...(deploymentSite?.organizationName ? [{ 'userContributions.organizationName': new RegExp(`^${deploymentSite.organizationName}$`, 'i') }] : []),
+      ...(dumpIds.length > 0 ? [{ dumpBatchIds: { $in: dumpIds } }] : [])
+    ];
+
+    let reports = [];
+    if (reportMatchCriteria.length > 0) {
+      reports = await RecyclingReport.find({ $or: reportMatchCriteria }).sort({ processedAt: -1 }).lean().catch(() => []);
     }
 
-    // Find certified recycling reports
-    let reports = await RecyclingReport.find({}).sort({ processedAt: -1 }).lean().catch(() => []);
+    // Filter user's individual portion from each report
+    let totalRecycledKg = 0;
+    let totalCarbonCredits = 0;
 
-    // Calculate live aggregated totals
+    const userSpecificReports = reports.map(r => {
+      let matchedContrib = (r.userContributions || []).find(uc => 
+        (userId && String(uc.userId) === String(userId)) ||
+        (userOrg && uc.organizationName && uc.organizationName.toLowerCase() === userOrg.toLowerCase())
+      );
+
+      const userRecKg = matchedContrib ? matchedContrib.recycledKg : (r.recycledWeightKg || 0);
+      const userCc = matchedContrib ? matchedContrib.carbonCreditsEarned : (r.carbonCreditsGenerated || 0);
+
+      totalRecycledKg += (userRecKg || 0);
+      totalCarbonCredits += (userCc || 0);
+
+      return {
+        ...r,
+        userRecycledKg: Number((userRecKg || 0).toFixed(2)),
+        userCarbonCredits: Number((userCc || 0).toFixed(2))
+      };
+    });
+
     const totalDumpedKg = dumps.reduce((sum, d) => sum + (d.weightKg || 0), 0);
-    const totalRecycledKg = reports.reduce((sum, r) => sum + (r.recycledWeightKg || 0), 0);
-    const totalCarbonCredits = reports.reduce((sum, r) => sum + (r.carbonCreditsGenerated || 0), 0);
-    const avoidedCo2eMt = reports.reduce((sum, r) => sum + ((r.carbonCreditsGenerated || 0) * 0.0012), 0);
+    const avoidedCo2eMt = totalCarbonCredits * 0.0012;
 
     return res.json({
       success: true,
       data: {
         dumps,
-        reports,
+        reports: userSpecificReports,
         stats: {
           totalDumpedKg: Number(totalDumpedKg.toFixed(2)),
           totalRecycledKg: Number(totalRecycledKg.toFixed(2)),
