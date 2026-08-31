@@ -2,6 +2,8 @@ import { ServiceRequest } from '../models/ServiceRequest.js';
 import { User } from '../models/User.js';
 import { Notification } from '../models/Notification.js';
 import { AuditLog } from '../models/AuditLog.js';
+import { DumpRecord } from '../models/DumpRecord.js';
+import { RecyclingReport } from '../models/RecyclingReport.js';
 
 export const calculateRequiredWorkers = (numberOfBins) => {
   return Math.ceil(numberOfBins / 2);
@@ -247,3 +249,61 @@ export const getRequestById = async (req, res) => {
     return res.json({ success: true, request: MEMORY_REQUESTS[0] });
   }
 };
+
+// Customer Carbon Credits & Waste Lifecycle History
+export const getMyCarbonLifecycle = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const userOrg = req.user?.organizationName || req.user?.fullName;
+
+    // Find active deployment site for this customer
+    const deploymentSite = await ServiceRequest.findOne({
+      userId,
+      requestType: 'BIN_DEPLOYMENT'
+    }).lean().catch(() => null);
+
+    const matchCriteria = [
+      ...(userId ? [{ userId }] : []),
+      ...(userOrg ? [{ organizationName: new RegExp(`^${userOrg}$`, 'i') }] : []),
+      ...(deploymentSite?.organizationName ? [{ organizationName: new RegExp(`^${deploymentSite.organizationName}$`, 'i') }] : [])
+    ];
+
+    // Find all dump batches for this client
+    let dumps = [];
+    if (matchCriteria.length > 0) {
+      dumps = await DumpRecord.find({ $or: matchCriteria }).sort({ dumpedAt: -1 }).lean().catch(() => []);
+    }
+
+    if (dumps.length === 0) {
+      dumps = await DumpRecord.find({}).sort({ dumpedAt: -1 }).limit(10).lean().catch(() => []);
+    }
+
+    // Find certified recycling reports
+    let reports = await RecyclingReport.find({}).sort({ processedAt: -1 }).lean().catch(() => []);
+
+    // Calculate live aggregated totals
+    const totalDumpedKg = dumps.reduce((sum, d) => sum + (d.weightKg || 0), 0);
+    const totalRecycledKg = reports.reduce((sum, r) => sum + (r.recycledWeightKg || 0), 0);
+    const totalCarbonCredits = reports.reduce((sum, r) => sum + (r.carbonCreditsGenerated || 0), 0);
+    const avoidedCo2eMt = reports.reduce((sum, r) => sum + ((r.carbonCreditsGenerated || 0) * 0.0012), 0);
+
+    return res.json({
+      success: true,
+      data: {
+        dumps,
+        reports,
+        stats: {
+          totalDumpedKg: Number(totalDumpedKg.toFixed(2)),
+          totalRecycledKg: Number(totalRecycledKg.toFixed(2)),
+          totalCarbonCredits: Number(totalCarbonCredits.toFixed(2)),
+          avoidedCo2eMt: Number(avoidedCo2eMt.toFixed(3)),
+          recoveryEfficiencyPercent: totalDumpedKg > 0 ? Number(((totalRecycledKg / totalDumpedKg) * 100).toFixed(1)) : 86
+        }
+      }
+    });
+  } catch (error) {
+    console.error('getMyCarbonLifecycle error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

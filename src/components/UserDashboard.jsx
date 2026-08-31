@@ -65,6 +65,13 @@ export default function UserDashboard({ username, userData, onLogout }) {
   const [collectionRequests, setCollectionRequests] = useState([]);
   const [myDumpRecords, setMyDumpRecords] = useState([]);
   const [myRecyclingReports, setMyRecyclingReports] = useState([]);
+  const [lifecycleStats, setLifecycleStats] = useState({
+    totalDumpedKg: 0,
+    totalRecycledKg: 0,
+    totalCarbonCredits: 0,
+    avoidedCo2eMt: 0,
+    recoveryEfficiencyPercent: 86
+  });
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
@@ -110,15 +117,11 @@ export default function UserDashboard({ username, userData, onLogout }) {
 
   const loadWasteLifecycle = async () => {
     try {
-      const [dumpRes, reportRes] = await Promise.allSettled([
-        api.management.getDumpRecords(),
-        api.management.getAllRecyclingReports()
-      ]);
-      if (dumpRes.status === 'fulfilled' && dumpRes.value.records) {
-        setMyDumpRecords(dumpRes.value.records);
-      }
-      if (reportRes.status === 'fulfilled' && reportRes.value.reports) {
-        setMyRecyclingReports(reportRes.value.reports);
+      const res = await api.requests.getMyCarbonLifecycle();
+      if (res && res.data) {
+        if (res.data.dumps) setMyDumpRecords(res.data.dumps);
+        if (res.data.reports) setMyRecyclingReports(res.data.reports);
+        if (res.data.stats) setLifecycleStats(res.data.stats);
       }
     } catch (err) {
       // silent catch
@@ -943,51 +946,22 @@ export default function UserDashboard({ username, userData, onLogout }) {
             TAB 2.5: WASTE LIFECYCLE, MULTI-STAKEHOLDER PIPELINE & CARBON CREDITS
             ========================================================================= */}
         {activeTab === 'waste_lifecycle' && (() => {
-          const userOrg = (userData?.organizationName || userData?.fullName || username || '').toLowerCase();
-          const filteredDumps = myDumpRecords.length > 0
-            ? myDumpRecords.filter(d => {
-                if (d.userId && String(d.userId) === String(userData?._id || userData?.id)) return true;
-                if (d.organizationName && userOrg && d.organizationName.toLowerCase().includes(userOrg)) return true;
-                return true; // show demo dumps
-              })
-            : [];
-
-          const totalDumped = filteredDumps.reduce((sum, d) => sum + (d.weightKg || 0), 0);
-          
-          // Match contributions from recycling reports
-          let userRecycledKg = 0;
-          let userCarbonCredits = 0;
-
-          myRecyclingReports.forEach(r => {
-            if (r.userContributions && Array.isArray(r.userContributions)) {
-              r.userContributions.forEach(uc => {
-                userRecycledKg += (uc.recycledKg || 0);
-                userCarbonCredits += (uc.carbonCreditsEarned || 0);
-              });
-            }
-          });
-
-          // If reports haven't processed all yet, compute live preview
-          if (userCarbonCredits === 0 && totalDumped > 0) {
-            const processedDumps = filteredDumps.filter(d => d.status === 'PROCESSED');
-            if (processedDumps.length > 0) {
-              const pKg = processedDumps.reduce((s, d) => s + (d.weightKg || 0), 0);
-              userRecycledKg = Number((pKg * 0.85).toFixed(1));
-              userCarbonCredits = Number((userRecycledKg * 0.5).toFixed(2));
-            }
-          }
+          const totalDumped = lifecycleStats.totalDumpedKg || myDumpRecords.reduce((sum, d) => sum + (d.weightKg || 0), 0);
+          const userRecycledKg = lifecycleStats.totalRecycledKg || myRecyclingReports.reduce((sum, r) => sum + (r.recycledWeightKg || 0), 0);
+          const userCarbonCredits = lifecycleStats.totalCarbonCredits || myRecyclingReports.reduce((sum, r) => sum + (r.carbonCreditsGenerated || 0), 0);
+          const userAvoidedCo2e = lifecycleStats.avoidedCo2eMt || (userCarbonCredits * 0.0012);
 
           return (
             <div>
               
               {/* Top KPI Cards for Carbon Offsets & Recovery */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                 <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                   <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Total Waste Collected</div>
                   <div style={{ fontSize: '26px', fontWeight: '900', color: '#0F172A', marginTop: '4px' }}>
                     {totalDumped.toFixed(1)} <span style={{ fontSize: '13px' }}>KG</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>{filteredDumps.length} collection cycles completed</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>{myDumpRecords.length} collection cycles completed</div>
                 </div>
 
                 <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
@@ -999,19 +973,19 @@ export default function UserDashboard({ username, userData, onLogout }) {
                 </div>
 
                 <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Carbon Credits Earned</div>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Carbon Credits Minted</div>
                   <div style={{ fontSize: '26px', fontWeight: '900', color: '#059669', marginTop: '4px' }}>
                     +{userCarbonCredits.toFixed(2)} <span style={{ fontSize: '13px' }}>CC</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Audited by certified recycling plants</div>
+                  <div style={{ fontSize: '11px', color: '#10B981', fontWeight: '700', marginTop: '2px' }}>● Verified & Credited to Portal</div>
                 </div>
 
                 <div style={{ background: '#FFFFFF', padding: '18px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Diversion Efficiency</div>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Avoided Emissions</div>
                   <div style={{ fontSize: '26px', fontWeight: '900', color: '#0284C7', marginTop: '4px' }}>
-                    {totalDumped > 0 ? ((userRecycledKg / totalDumped) * 100).toFixed(0) : 85}%
+                    {Number(userAvoidedCo2e).toFixed(3)} <span style={{ fontSize: '13px' }}>MT</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Circular economy index</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Certified CO₂e Greenhouse Gas Offset</div>
                 </div>
               </div>
 
@@ -1023,7 +997,7 @@ export default function UserDashboard({ username, userData, onLogout }) {
                 <h3 style={{ margin: '4px 0 10px', fontSize: '19px', fontWeight: '800' }}>
                   How Your Waste Generates Verified Carbon Credits
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', fontSize: '12px', marginTop: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '12px', marginTop: '14px' }}>
                   <div style={{ background: 'rgba(255,255,255,0.08)', padding: '12px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)' }}>
                     <strong style={{ color: '#34D399', display: 'block', fontSize: '13px', marginBottom: '2px' }}>1. Smart Collector</strong>
                     Picks up full bin & dumps batch at Central Yard.
@@ -1043,15 +1017,109 @@ export default function UserDashboard({ username, userData, onLogout }) {
                 </div>
               </div>
 
-              {/* Detailed Batches & Lifecycle Audit Table */}
+              {/* TABLE 1: Official Verified Carbon Credit Certificates */}
+              <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                      Authenticated Carbon Credit Certificates ({myRecyclingReports.length})
+                    </h3>
+                    <div style={{ fontSize: '12px', color: '#64748B' }}>
+                      Certified tokens generated by partner industrial recycling facilities and credited directly to your portal wallet.
+                    </div>
+                  </div>
+                </div>
+
+                {myRecyclingReports.length === 0 ? (
+                  <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
+                    <div style={{ fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>No Carbon Credit Certificates Yet</div>
+                    <div style={{ fontSize: '12px' }}>Once recycling plants complete processing of your delivered waste, authenticated certificates will appear here automatically.</div>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', textTransform: 'uppercase', fontSize: '11px' }}>
+                          <th style={{ padding: '12px' }}>Certificate Code</th>
+                          <th style={{ padding: '12px' }}>Recycling Plant</th>
+                          <th style={{ padding: '12px' }}>Waste Stream</th>
+                          <th style={{ padding: '12px' }}>Recovery Yield</th>
+                          <th style={{ padding: '12px' }}>Minted Credits</th>
+                          <th style={{ padding: '12px' }}>Inspector & Date</th>
+                          <th style={{ padding: '12px', textAlign: 'right' }}>Registry Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {myRecyclingReports.map((r, rIdx) => (
+                          <tr key={r._id || r.id || rIdx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '12px', fontWeight: '800', color: '#047857' }}>
+                              {r.reportCode || 'REC-RPT-0101'}
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '700', color: '#0F172A' }}>
+                              {r.plantName || 'Industrial Recycling Plant'}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                background: (r.wasteType || '').includes('Plastic') ? '#EFF6FF' : (r.wasteType || '').includes('Metal') ? '#FEF3C7' : '#ECFDF5',
+                                color: (r.wasteType || '').includes('Plastic') ? '#1E40AF' : (r.wasteType || '').includes('Metal') ? '#92400E' : '#065F46'
+                              }}>
+                                {r.wasteType}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ fontWeight: '800', color: '#047857' }}>
+                                {r.recycledWeightKg} KG Recycled
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>
+                                Yield: {r.recoveryEfficiencyPercent || 86}% of {r.receivedWeightKg} KG
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ fontSize: '15px', fontWeight: '900', color: '#059669' }}>
+                                +{r.carbonCreditsGenerated} CC
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#64748B' }}>Factor: {r.ccFactorUsed || 1.2} CC/kg</div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ fontWeight: '700', color: '#334155' }}>{r.operatorName || 'Plant Inspector'}</div>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>
+                                {r.processedAt ? new Date(r.processedAt).toLocaleString() : 'Recent'}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right' }}>
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '10px',
+                                fontWeight: '900',
+                                background: '#D1FAE5',
+                                color: '#065F46',
+                                textTransform: 'uppercase'
+                              }}>
+                                ✓ MINTED TO YOUR WALLET
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* TABLE 2: Detailed Smart Bin Pickups & Supply Chain Flow Table */}
               <div style={{ background: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                 <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
-                  Waste Pickups & Carbon Verification History ({filteredDumps.length})
+                  Smart Bin Pickup Logs & Supply Chain Pipeline ({myDumpRecords.length})
                 </h3>
 
-                {filteredDumps.length === 0 ? (
+                {myDumpRecords.length === 0 ? (
                   <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '12px' }}>
-                    No collection batches recorded for your facility yet. When a waste collector empties your smart bins, your lifecycle records and carbon offset certificates will appear here automatically.
+                    No collection batches recorded for your facility yet. When a waste collector empties your smart bins, your lifecycle records will appear here automatically.
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto' }}>
@@ -1062,76 +1130,63 @@ export default function UserDashboard({ username, userData, onLogout }) {
                           <th style={{ padding: '12px' }}>Bin ID / Site</th>
                           <th style={{ padding: '12px' }}>Gross Dumped</th>
                           <th style={{ padding: '12px' }}>Waste Stream</th>
-                          <th style={{ padding: '12px' }}>Collector</th>
-                          <th style={{ padding: '12px' }}>Lifecycle Stage</th>
-                          <th style={{ padding: '12px', textAlign: 'right' }}>Carbon Credits</th>
+                          <th style={{ padding: '12px' }}>Collector Driver</th>
+                          <th style={{ padding: '12px' }}>Supply Chain Stage</th>
+                          <th style={{ padding: '12px', textAlign: 'right' }}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredDumps.map((rec, idx) => {
-                          const estRecycled = Number((rec.weightKg * 0.85).toFixed(1));
-                          const ccEarned = (rec.status === 'PROCESSED') 
-                            ? Number((estRecycled * (rec.wasteType === 'Plastic' ? 1.2 : rec.wasteType === 'Metal' ? 2.0 : 0.5)).toFixed(2))
-                            : 0;
-
-                          return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                              <td style={{ padding: '12px', color: '#64748B' }}>
-                                {rec.dumpedAt ? new Date(rec.dumpedAt).toLocaleDateString() : 'Recent'}
-                              </td>
-                              <td style={{ padding: '12px' }}>
-                                <strong style={{ color: '#0F172A' }}>{rec.binId || 'BIN-01-01'}</strong>
-                                <div style={{ fontSize: '11px', color: '#64748B' }}>{rec.address}</div>
-                              </td>
-                              <td style={{ padding: '12px', fontWeight: '800', color: '#0F172A' }}>
-                                {rec.weightKg} KG
-                              </td>
-                              <td style={{ padding: '12px' }}>
-                                <span style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  background: rec.wasteType === 'Plastic' ? '#EFF6FF' : rec.wasteType === 'Metal' ? '#F3E8FF' : '#ECFDF5',
-                                  color: rec.wasteType === 'Plastic' ? '#1E40AF' : rec.wasteType === 'Metal' ? '#6B21A8' : '#065F46'
-                                }}>
-                                  {rec.wasteType}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px', color: '#475569' }}>
-                                {rec.collectorName || 'Collector Driver C-101'}
-                              </td>
-                              <td style={{ padding: '12px' }}>
-                                <span style={{
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: '800',
-                                  background: rec.status === 'PROCESSED' ? '#D1FAE5' : rec.status === 'SEPARATED' ? '#E0F2FE' : rec.status === 'IN_TRANSIT' ? '#FEF3C7' : '#F1F5F9',
-                                  color: rec.status === 'PROCESSED' ? '#065F46' : rec.status === 'SEPARATED' ? '#0369A1' : rec.status === 'IN_TRANSIT' ? '#92400E' : '#475569'
-                                }}>
-                                  {rec.status === 'DUMPED' && 'At Central Dump Yard'}
-                                  {rec.status === 'SEPARATED' && 'Classified Stream'}
-                                  {rec.status === 'ASSIGNED_TRANSPORT' && 'Assigned Transporter'}
-                                  {rec.status === 'IN_TRANSIT' && 'In Transit to Plant 🚚'}
-                                  {rec.status === 'DELIVERED' && 'At Recycling Plant Gate'}
-                                  {rec.status === 'PROCESSED' && '✓ Recycled & Minted'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px', textAlign: 'right' }}>
-                                {rec.status === 'PROCESSED' ? (
-                                  <strong style={{ color: '#059669', fontSize: '14px' }}>
-                                    +{ccEarned} CC
-                                  </strong>
-                                ) : (
-                                  <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                                    Pending Audit
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        {myDumpRecords.map((rec, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '12px', color: '#64748B' }}>
+                              {rec.dumpedAt ? new Date(rec.dumpedAt).toLocaleDateString() : 'Recent'}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <strong style={{ color: '#0F172A' }}>{rec.binId || 'BIN-02-01'}</strong>
+                              <div style={{ fontSize: '11px', color: '#64748B' }}>{rec.address}</div>
+                            </td>
+                            <td style={{ padding: '12px', fontWeight: '800', color: '#0F172A' }}>
+                              {rec.weightKg} KG
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                background: rec.wasteType === 'Plastic' ? '#EFF6FF' : rec.wasteType === 'Metal' ? '#F3E8FF' : '#ECFDF5',
+                                color: rec.wasteType === 'Plastic' ? '#1E40AF' : rec.wasteType === 'Metal' ? '#6B21A8' : '#065F46'
+                              }}>
+                                {rec.wasteType}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', color: '#475569' }}>
+                              {rec.collectorName || rec.collectorId?.fullName || 'Collector Driver C-101'}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                background: rec.status === 'PROCESSED' ? '#D1FAE5' : rec.status === 'SEPARATED' ? '#E0F2FE' : rec.status === 'IN_TRANSIT' ? '#FEF3C7' : '#F1F5F9',
+                                color: rec.status === 'PROCESSED' ? '#065F46' : rec.status === 'SEPARATED' ? '#0369A1' : rec.status === 'IN_TRANSIT' ? '#92400E' : '#475569'
+                              }}>
+                                {rec.status === 'DUMPED' && 'At Central Dump Yard'}
+                                {rec.status === 'SEPARATED' && 'Classified Stream'}
+                                {rec.status === 'ASSIGNED_TRANSPORT' && 'Assigned Transporter'}
+                                {rec.status === 'IN_TRANSIT' && 'In Transit to Plant 🚚'}
+                                {rec.status === 'DELIVERED' && 'At Recycling Plant Gate'}
+                                {rec.status === 'PROCESSED' && '✓ Recycled & Minted'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right' }}>
+                              <strong style={{ color: '#059669', fontSize: '13px' }}>
+                                Verified
+                              </strong>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>

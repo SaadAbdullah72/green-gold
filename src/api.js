@@ -189,6 +189,11 @@ export const api = {
       return await handleResponse(res);
     },
 
+    getMyCarbonLifecycle: async () => {
+      const res = await fetch(`${API_BASE}/requests/my-carbon-lifecycle`, { headers: getHeaders() });
+      return await handleResponse(res);
+    },
+
     getById: async (id) => {
       const res = await fetch(`${API_BASE}/requests/${id}`, { headers: getHeaders() });
       return await handleResponse(res);
