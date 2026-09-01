@@ -213,12 +213,12 @@ export default function TechnicianDashboard({ onLogout }) {
         </button>
       </aside>
 
-      <main style={{ flex: 1, padding: '28px 36px 32px', background: '#F3F4F6' }}>
+      <main style={{ flex: 1, padding: '28px 36px 32px', background: '#F8FAF8' }}>
         <header style={{ marginBottom: '24px' }}>
-          <h1 style={{ margin: 0, fontSize: '38px', lineHeight: 1.1, color: '#0F172A', fontFamily: 'Georgia, serif' }}>
+          <h1 style={{ margin: 0, fontSize: '32px', lineHeight: 1.2, color: '#0F172A', fontWeight: 900 }}>
             Technical Worker Dispatch Console ({workerProfile.employeeId})
           </h1>
-          <p style={{ margin: '8px 0 0', fontSize: '15px', color: '#475569' }}>
+          <p style={{ margin: '8px 0 0', fontSize: '15px', color: '#64748B' }}>
             Logged in as <strong>{workerProfile.name}</strong> (Employee ID: <strong>{workerProfile.employeeId}</strong>). Real-time job acceptance & installation.
           </p>
         </header>
@@ -246,7 +246,7 @@ export default function TechnicianDashboard({ onLogout }) {
                         <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.08em', color: '#047857', textTransform: 'uppercase' }}>
                           Request #{job.requestNumber}
                         </div>
-                        <h2 style={{ margin: '4px 0 0', fontSize: '24px', fontWeight: 800, color: '#0F172A', fontFamily: 'Georgia, serif' }}>
+                        <h2 style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 900, color: '#0F172A' }}>
                           {job.organizationName}
                         </h2>
                         <div style={{ marginTop: '6px', fontSize: '13px', color: '#64748B' }}>
@@ -321,7 +321,6 @@ export default function TechnicianDashboard({ onLogout }) {
                             borderRadius: '8px',
                             padding: '12px 24px',
                             fontSize: '14px',
-                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                             fontWeight: 700,
                             cursor: 'pointer',
                             boxShadow: '0 4px 12px rgba(4, 120, 87, 0.2)'
@@ -343,7 +342,6 @@ export default function TechnicianDashboard({ onLogout }) {
                               borderRadius: '8px',
                               padding: '12px 20px',
                               fontSize: '14px',
-                              fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                               fontWeight: 700,
                               cursor: 'pointer',
                               boxShadow: '0 4px 12px rgba(29, 78, 216, 0.2)'
@@ -361,7 +359,6 @@ export default function TechnicianDashboard({ onLogout }) {
                               borderRadius: '8px',
                               padding: '12px 20px',
                               fontSize: '14px',
-                              fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                               fontWeight: 700,
                               cursor: 'pointer',
                               boxShadow: '0 4px 12px rgba(4, 120, 87, 0.2)'
@@ -383,7 +380,6 @@ export default function TechnicianDashboard({ onLogout }) {
                             borderRadius: '8px',
                             padding: '12px 24px',
                             fontSize: '14px',
-                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                             fontWeight: 700,
                             cursor: 'pointer',
                             boxShadow: '0 4px 12px rgba(4, 120, 87, 0.2)'

@@ -268,7 +268,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC', fontFamily: 'Times New Roman, serif' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', justifyContent: 'center', alignItems: 'center', background: '#F8FAF8' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#047857' }}>
             GreenGold OS — Central Waste Dumping Facility
@@ -286,42 +286,44 @@ export default function DumpingFacilityDashboard({ onLogout }) {
   const plantCoords = currentSelectedPlant?.coords || [33.6628, 73.0489];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAF6', fontFamily: 'Times New Roman, serif', color: '#0F172A', paddingBottom: '60px' }}>
+    <div style={{ minHeight: '100vh', background: '#F8FAF8', color: '#0F172A', paddingBottom: '60px' }}>
       
-      {/* 1. TOP PROFESSIONAL HEADER (Theme matched with Management, Collector, and Transporter) */}
+      {/* 1. TOP PROFESSIONAL HEADER (Clean Modern Theme) */}
       <header style={{
-        background: '#047857',
-        color: '#FFFFFF',
-        padding: '16px 28px',
+        background: '#FFFFFF',
+        color: '#0F172A',
+        padding: '16px 32px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 4px 20px rgba(4,120,87,0.2)',
+        borderBottom: '1px solid #E2E8F0',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
         flexWrap: 'wrap',
         gap: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <GreenGoldLogo size={46} subtitle="Central Waste Dumping & Separation Facility" />
+          <GreenGoldLogo size={46} textColor="#0F172A" subtextColor="#065F46" subtitle="Central Waste Dumping & Separation Facility" />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ textAlign: 'right', fontSize: '12px', color: '#FFFFFF' }}>
-            <div style={{ fontWeight: 800, color: '#FFFFFF' }}>{user?.fullName || 'Supervisor Rashid Mahmood'}</div>
-            <div style={{ color: '#E2E8F0', marginTop: '2px' }}>Facility ID: <strong style={{ color: '#FFFFFF' }}>DUMP-101</strong> (Sector I-9/1 Industrial Hub)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ textAlign: 'right', fontSize: '12px' }}>
+            <div style={{ fontWeight: 800, color: '#0F172A' }}>{user?.fullName || 'Supervisor Rashid Mahmood'}</div>
+            <div style={{ color: '#64748B', marginTop: '2px' }}>Facility ID: <strong style={{ color: '#064E3B' }}>DUMP-101</strong> (Sector I-9/1 Industrial Hub)</div>
           </div>
 
           <button
             onClick={loadData}
             disabled={refreshing}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.3)',
-              background: 'rgba(255,255,255,0.12)',
-              color: '#FFFFFF',
+              padding: '9px 16px',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              background: '#F1F5F9',
+              color: '#0F172A',
               fontSize: '12px',
               fontWeight: 700,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
           >
             {refreshing ? 'Syncing...' : 'Refresh'}
@@ -330,14 +332,15 @@ export default function DumpingFacilityDashboard({ onLogout }) {
           <button
             onClick={handleClearAllRecords}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1px solid #F87171',
-              background: '#991B1B',
-              color: '#FFFFFF',
+              padding: '9px 16px',
+              borderRadius: '10px',
+              border: '1px solid #FECACA',
+              background: '#FEF2F2',
+              color: '#DC2626',
               fontSize: '12px',
               fontWeight: 700,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
             title="Clear all yard dump records"
           >
@@ -347,14 +350,16 @@ export default function DumpingFacilityDashboard({ onLogout }) {
           <button
             onClick={() => { logout(); if (onLogout) onLogout(); }}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
+              padding: '9px 18px',
+              borderRadius: '10px',
               border: 'none',
-              background: '#DC2626',
+              background: '#EF4444',
               color: '#FFFFFF',
               fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer'
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
+              transition: 'all 0.2s ease'
             }}
           >
             Sign Out
@@ -1024,7 +1029,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 {/* Central Dump Origin Marker */}
                 <Marker position={DUMP_FACILITY_COORDS} icon={yardIcon}>
                   <Popup>
-                    <div style={{ fontFamily: 'Times New Roman, serif', fontSize: '12px' }}>
+                    <div style={{ fontSize: '12px' }}>
                       <strong>Central Waste Dumping & Separation Hub</strong><br />
                       Sector I-9/1 Industrial Area, Islamabad<br />
                       <em>(Transit Origin Point)</em>
@@ -1036,7 +1041,7 @@ export default function DumpingFacilityDashboard({ onLogout }) {
                 {currentSelectedPlant && (
                   <Marker position={plantCoords} icon={plantIcon}>
                     <Popup>
-                      <div style={{ fontFamily: 'Times New Roman, serif', fontSize: '12px' }}>
+                      <div style={{ fontSize: '12px' }}>
                         <strong>{currentSelectedPlant.organizationName || currentSelectedPlant.fullName}</strong><br />
                         Type: {currentSelectedPlant.plantType}<br />
                         {currentSelectedPlant.address}<br />

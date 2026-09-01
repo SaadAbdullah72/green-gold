@@ -165,19 +165,19 @@ export default function CollectorDashboard({ onLogout }) {
   const currentCenter = route?.currentLocation ? [route.currentLocation.lat, route.currentLocation.lng] : [location.lat, location.lng];
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '24px' }}>
+    <div style={{ background: '#F8FAF8', minHeight: '100vh', padding: '24px' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #064e3b, #047857)', borderRadius: '20px', padding: '24px 28px', boxShadow: '0 16px 32px rgba(6, 78, 59, 0.18)', color: 'white' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', borderRadius: '18px', padding: '18px 28px', boxShadow: '0 2px 14px rgba(15, 23, 42, 0.04)', border: '1px solid #E2E8F0', color: '#0F172A' }}>
           <div>
-            <GreenGoldLogo size={40} subtitle="Route & Pickup Operations" />
+            <GreenGoldLogo size={42} textColor="#0F172A" subtextColor="#065F46" subtitle="Route & Pickup Operations" />
           </div>
 
           <button
             type="button"
             onClick={onLogout}
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '12px', padding: '10px 16px', fontWeight: 700, cursor: 'pointer' }}
+            style={{ background: '#EF4444', border: 'none', color: '#FFFFFF', borderRadius: '10px', padding: '9px 18px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)', transition: 'all 0.2s ease' }}
           >
-            Logout
+            Sign Out
           </button>
         </header>
 
@@ -281,7 +281,6 @@ export default function CollectorDashboard({ onLogout }) {
                             border: 'none',
                             borderRadius: '8px',
                             padding: '10px 16px',
-                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                             fontWeight: 700,
                             cursor: 'pointer',
                             display: 'flex',
@@ -302,7 +301,6 @@ export default function CollectorDashboard({ onLogout }) {
                             border: 'none',
                             borderRadius: '8px',
                             padding: '10px 16px',
-                            fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                             fontWeight: 700,
                             cursor: 'pointer',
                             display: 'flex',
@@ -323,7 +321,6 @@ export default function CollectorDashboard({ onLogout }) {
                           border: '1px solid #FCD34D',
                           borderRadius: '8px',
                           padding: '10px 14px',
-                          fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                           fontWeight: 700,
                           cursor: 'pointer'
                         }}

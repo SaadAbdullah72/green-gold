@@ -121,38 +121,41 @@ export default function TransporterDashboard({ onLogout }) {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAF6', fontFamily: 'Times New Roman, serif', color: '#0F172A' }}>
+    <div style={{ minHeight: '100vh', background: '#F8FAF8', color: '#0F172A' }}>
       
-      {/* Top Professional Header */}
+      {/* Top Professional Header (Clean Modern Theme) */}
       <header style={{
-        background: '#047857',
-        color: '#FFFFFF',
-        padding: '16px 28px',
+        background: '#FFFFFF',
+        color: '#0F172A',
+        padding: '16px 32px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 4px 20px rgba(4,120,87,0.2)'
+        borderBottom: '1px solid #E2E8F0',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <GreenGoldLogo size={44} subtitle="Logistics & Inter-Facility Transit Fleet" />
+          <GreenGoldLogo size={44} textColor="#0F172A" subtextColor="#065F46" subtitle="Logistics & Inter-Facility Transit Fleet" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ textAlign: 'right', fontSize: '12px' }}>
-            <div style={{ fontWeight: 800 }}>{user?.fullName || 'Transporter Driver'}</div>
-            <div style={{ opacity: 0.85 }}>Vehicle: <strong>{user?.vehicleNumber || 'ICT-TRN-1001'}</strong> ({user?.employeeId || 'TRN-101'})</div>
+            <div style={{ fontWeight: 800, color: '#0F172A' }}>{user?.fullName || 'Transporter Driver'}</div>
+            <div style={{ color: '#64748B', marginTop: '2px' }}>Vehicle: <strong style={{ color: '#064E3B' }}>{user?.vehicleNumber || 'ICT-TRN-1001'}</strong> ({user?.employeeId || 'TRN-101'})</div>
           </div>
           <button
             onClick={onLogout}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.3)',
-              background: 'rgba(255,255,255,0.12)',
+              padding: '9px 18px',
+              borderRadius: '10px',
+              border: 'none',
+              background: '#EF4444',
               color: '#FFFFFF',
               fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer'
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
+              transition: 'all 0.2s ease'
             }}
           >
             Sign Out

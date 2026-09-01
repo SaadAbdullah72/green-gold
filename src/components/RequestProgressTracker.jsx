@@ -97,7 +97,6 @@ export default function RequestProgressTracker({
                   borderRadius: '8px',
                   padding: '8px 10px',
                   fontSize: '12px',
-                  fontFamily: 'var(--font-body, "Times New Roman", Times, serif)',
                   fontWeight: 700,
                   cursor: isDisabled ? 'default' : 'pointer',
                   opacity: isDisabled ? 0.85 : 1,

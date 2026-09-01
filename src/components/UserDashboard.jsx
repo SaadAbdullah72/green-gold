@@ -46,8 +46,8 @@ function MapLocationSelector({ coords, onCoordsChange, onLocationSelected }) {
       }}
     >
       <Popup>
-        <div style={{ fontWeight: 800, color: '#0F172A', fontFamily: 'Times New Roman, serif' }}>Selected Smart Bin Placement Site</div>
-        <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'Times New Roman, serif' }}>
+        <div style={{ fontWeight: 800, color: '#0F172A' }}>Selected Smart Bin Placement Site</div>
+        <div style={{ fontSize: '11px', color: '#64748B' }}>
           GPS: {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
         </div>
       </Popup>
