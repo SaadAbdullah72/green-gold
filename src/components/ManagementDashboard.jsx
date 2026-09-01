@@ -566,7 +566,11 @@ export default function ManagementDashboard({
       {/* =========================================================================
           LEFT SIDEBAR NAVIGATION
           ========================================================================= */}
-      <aside className="sidebar-left">
+      <aside className="sidebar-left" style={{
+        background: '#FFFFFF',
+        borderRight: '1px solid #E2E8F0',
+        color: '#0F172A'
+      }}>
         {/* Brand Header */}
         <div style={{ marginBottom: '32px' }}>
           <GreenGoldLogo size={58} subtitle="Executive Management Hub" />
@@ -575,12 +579,18 @@ export default function ManagementDashboard({
         {/* Portal selection list */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '15px', flexGrow: 1 }}>
           <div>
-            <h4 className="menu-label">Active Portal</h4>
+            <h4 style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94A3B8', letterSpacing: '0.08em', fontWeight: '800', marginBottom: '12px', paddingLeft: '8px' }}>Active Portal</h4>
             <ul className="menu-list">
               <li>
-                <button className="menu-btn active">
-                  <span className="menu-btn-content">
-                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+                <button style={{
+                  display: 'flex', alignItems: 'center', width: '100%', padding: '12px 18px',
+                  background: 'linear-gradient(90deg, rgba(5,150,105,0.10), rgba(5,150,105,0.04))',
+                  border: 'none', borderLeft: '4px solid #059669', borderRadius: '4px 10px 10px 4px',
+                  color: '#0F172A', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+                  fontFamily: 'var(--font-body)'
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#059669" strokeWidth="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
                     System Management
                   </span>
                 </button>
@@ -590,12 +600,20 @@ export default function ManagementDashboard({
         </nav>
 
         {/* Logout session Profile Card */}
-        <div className="sidebar-footer">
-          <div className="profile-card" onClick={onLogout} style={{ cursor: 'pointer' }} title="Click to log out">
-            <div className="profile-avatar">{initials}</div>
-            <div className="profile-info">
-              <span className="name">{username}</span>
-              <span className="role" style={{ color: 'var(--gold-light)', fontWeight: '600' }}>Logout ⮞</span>
+        <div style={{ marginTop: 'auto', borderTop: '1px solid #E2E8F0', paddingTop: '20px' }}>
+          <div onClick={onLogout} style={{
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '12px 14px', borderRadius: '12px', transition: 'background 0.2s',
+            background: '#F8FAFC', border: '1px solid #E2E8F0'
+          }} title="Click to log out">
+            <div style={{
+              width: '38px', height: '38px', background: '#059669', color: '#FFFFFF',
+              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: '800', fontSize: '14px', boxShadow: '0 4px 12px rgba(5,150,105,0.25)', flexShrink: 0
+            }}>{initials}</div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#0F172A' }}>{username}</span>
+              <span style={{ fontSize: '11px', color: '#059669', fontWeight: '600' }}>Logout ⮞</span>
             </div>
           </div>
         </div>
