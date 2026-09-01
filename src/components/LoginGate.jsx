@@ -247,138 +247,23 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             </p>
           </div>
 
-          {/* QUICK ROLE SELECTOR BUTTONS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '18px' }}>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('MANAGEMENT')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'MANAGEMENT' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'MANAGEMENT' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'MANAGEMENT' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Management
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('USER')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'USER' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'USER' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'USER' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Customer
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('COLLECTOR')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'COLLECTOR' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'COLLECTOR' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'COLLECTOR' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Collector
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('TRANSPORTER')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'TRANSPORTER' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'TRANSPORTER' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'TRANSPORTER' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Transporter
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('RECYCLING_PLANT')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'RECYCLING_PLANT' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'RECYCLING_PLANT' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'RECYCLING_PLANT' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Recycling Plant
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('DUMP_FACILITY')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'DUMP_FACILITY' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'DUMP_FACILITY' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'DUMP_FACILITY' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Dump Yard
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleProfileChange('TECHNICAL')}
-              style={{
-                padding: '9px 6px',
-                borderRadius: '8px',
-                border: selectedRoleProfile === 'TECHNICAL' ? '2px solid #047857' : '1px solid #CBD5E1',
-                background: selectedRoleProfile === 'TECHNICAL' ? '#ECFDF5' : '#F8FAFC',
-                color: selectedRoleProfile === 'TECHNICAL' ? '#047857' : '#334155',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Technician
-            </button>
-          </div>
-
           {/* ROLE PROFILE SELECTION DROPDOWN */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
               Access Profile Role *
             </label>
             <select
               className="modern-input"
               value={selectedRoleProfile}
               onChange={(e) => handleRoleProfileChange(e.target.value)}
-              style={{ width: '100%', height: '48px', fontWeight: '700', fontSize: '14px', borderRadius: '10px', borderColor: '#CBD5E1' }}
+              style={{ width: '100%', height: '50px', fontWeight: '700', fontSize: '14px', borderRadius: '12px', borderColor: '#CBD5E1', background: '#F8FAFC', color: '#0F172A', padding: '0 14px' }}
             >
-              <option value="MANAGEMENT">Management Operations</option>
               <option value="USER">Customer / Waste Generator</option>
+              <option value="MANAGEMENT">Management Operations Hub</option>
+              <option value="DUMP_FACILITY">Central Waste Dumping & Separation Facility</option>
+              <option value="TRANSPORTER">Logistics & Inter-Facility Transit Fleet</option>
+              <option value="RECYCLING_PLANT">Industrial Recycling & Recovery Facility</option>
               <option value="COLLECTOR">Waste Collector Driver</option>
-              <option value="TRANSPORTER">Logistics & Inter-Facility Transporter</option>
-              <option value="RECYCLING_PLANT">Industrial Recycling & Recovery Plant</option>
               <option value="TECHNICAL">Technical Workforce Crew</option>
             </select>
           </div>
