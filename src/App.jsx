@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginGate from './components/LoginGate';
+import LandingPage from './components/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import ManagementDashboard from './components/ManagementDashboard';
 import UserDashboard from './components/UserDashboard';
@@ -49,7 +50,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={user ? getHomeRoute(user.role) : '/login'} replace />} />
+      {/* Landing page for unauthenticated visitors; redirect logged-in users to their home */}
+      <Route path="/" element={user ? <Navigate to={getHomeRoute(user.role)} replace /> : <LandingPage />} />
 
       <Route
         path="/login"
