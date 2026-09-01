@@ -927,7 +927,8 @@ export const getManagementBootstrap = async (req, res) => {
       plants,
       transportJobs,
       recyclingReports,
-      auditLogs
+      auditLogs,
+      iotCollectionRequests
     ] = await Promise.all([
       ServiceRequest.find({ requestType: 'BIN_DEPLOYMENT' }).sort({ createdAt: -1 }).lean(),
       CollectorAssignment.find({}).populate('requestId').populate('collectorId', 'fullName phone employeeId vehicleNumber').sort({ assignedAt: -1 }).lean().catch(() => []),
@@ -939,7 +940,8 @@ export const getManagementBootstrap = async (req, res) => {
       User.find({ role: 'RECYCLING_PLANT' }).select('-passwordHash').lean().catch(() => []),
       TransportJob.find({}).populate('transporterId', 'fullName phone vehicleNumber').sort({ assignedAt: -1 }).lean().catch(() => []),
       RecyclingReport.find({}).sort({ processedAt: -1 }).lean().catch(() => []),
-      AuditLog.find({}).sort({ timestamp: -1 }).limit(20).lean().catch(() => [])
+      AuditLog.find({}).sort({ timestamp: -1 }).limit(20).lean().catch(() => []),
+      ServiceRequest.find({ requestType: 'WASTE_COLLECTION' }).populate('assignedCollectorId', 'fullName phone vehicleNumber').sort({ createdAt: -1 }).lean().catch(() => [])
     ]);
 
     // Format requests with active worker assignments
@@ -995,8 +997,8 @@ export const getManagementBootstrap = async (req, res) => {
       };
     });
 
-    // Format collection queue
-    const collectionQueue = assignments.map(a => ({
+    // Format collection queue from CollectorAssignments (manually assigned)
+    const assignmentQueue = assignments.map(a => ({
       id: a._id,
       _id: a._id,
       requestId: a.requestId?._id || a.requestId,
@@ -1014,8 +1016,52 @@ export const getManagementBootstrap = async (req, res) => {
       vehicleNumber: a.collectorId?.vehicleNumber,
       status: a.status,
       assignedAt: a.assignedAt,
-      collectedDate: a.collectedDate
+      collectedDate: a.collectedDate,
+      source: 'manual'
     }));
+
+    // Also include IoT-generated WASTE_COLLECTION ServiceRequests (from Proteus telemetry)
+    const iotQueue = (iotCollectionRequests || []).map(r => {
+      let dynamicStatus = 'Awaiting Partner';
+      if (r.status === 'COMPLETED') dynamicStatus = 'Completed';
+      else if (r.status === 'ASSIGNED_TO_COLLECTOR') dynamicStatus = 'Assigned to Collector (Waiting for Response)';
+      else if (r.status === 'ROUTED_FOR_COLLECTION') dynamicStatus = 'Assigned to Collector (Waiting for Response)';
+      else if (r.status === 'WAITING_COLLECTION') dynamicStatus = 'Awaiting Partner';
+
+      return {
+        id: r._id,
+        _id: r._id,
+        requestId: r._id,
+        requestNumber: r.requestNumber || 'IOT-COLL',
+        site: r.siteName || r.organizationName,
+        locationName: r.siteName || r.organizationName,
+        town: r.town,
+        address: r.address,
+        wasteType: r.wasteType,
+        weightKg: r.weightKg || 0,
+        notes: r.notes || r.description || '',
+        assignedCollectorId: r.assignedCollectorId?._id || r.assignedCollectorId || null,
+        assignedCollectorName: r.assignedCollectorId?.fullName || null,
+        collectorPhone: r.assignedCollectorId?.phone || null,
+        vehicleNumber: r.assignedCollectorId?.vehicleNumber || null,
+        status: dynamicStatus,
+        collectedDate: new Date(r.createdAt).toISOString().slice(0, 10),
+        createdAt: r.createdAt,
+        source: 'iot'
+      };
+    });
+
+    // Merge: IoT queue entries first (most urgent), then manual assignments
+    // Deduplicate by requestId to avoid double-entries
+    const seenIds = new Set();
+    const collectionQueue = [];
+    for (const item of [...iotQueue, ...assignmentQueue]) {
+      const key = String(item.requestId || item.id || item._id);
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        collectionQueue.push(item);
+      }
+    }
 
     // User waste tracking calculations
     const userMap = {};
