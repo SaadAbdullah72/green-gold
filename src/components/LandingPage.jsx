@@ -100,20 +100,6 @@ export default function LandingPage() {
         }} />
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '5px 14px 5px 8px', borderRadius: '999px',
-            background: '#FFFFFF', border: '1px solid #E2E8F0',
-            fontSize: '12px', fontWeight: '700', color: '#374151',
-            letterSpacing: '0.01em', marginBottom: '36px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
-          }}>
-            <span style={{
-              background: '#059669', color: '#fff', fontSize: '10px', fontWeight: '800',
-              padding: '2px 8px', borderRadius: '999px', letterSpacing: '0.05em'
-            }}>LIVE</span>
-            Rawalpindi &amp; Islamabad Smart Waste Network
-          </div>
 
           <h1 style={{
             fontSize: 'clamp(40px, 7vw, 76px)', fontWeight: '900',
