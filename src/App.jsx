@@ -34,7 +34,7 @@ function getHomeRoute(role) {
 }
 
 function AppRoutes() {
-  const { user, restoreSession, logout } = useAuth();
+  const { user, isLoading, restoreSession, logout } = useAuth();
 
   useEffect(() => {
     restoreSession();
@@ -44,9 +44,9 @@ function AppRoutes() {
     logout();
   };
 
-  if (!user && !window.location.pathname.startsWith('/login')) {
-    // kept intentionally light; the route guard handles the redirect
-  }
+  // Wait for session restore to complete before rendering any route
+  // This prevents the landing page being bypassed due to stale localStorage state
+  if (isLoading) return null;
 
   return (
     <Routes>
