@@ -183,41 +183,42 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
   };
 
   return (
-    <div className="login-gate-wrapper" style={{ display: 'flex', minHeight: '100vh', width: '100vw', background: '#F8FAFC', overflow: 'hidden', margin: 0, padding: 0 }}>
+    <div className="login-gate-wrapper" style={{ display: 'flex', minHeight: '100vh', width: '100vw', background: '#F8FAF8', overflow: 'hidden', margin: 0, padding: 0 }}>
       
-      {/* LEFT HAND HERO SIDEBAR (Clean Carbon-Free Environment Banner) */}
+      {/* LEFT HAND HERO SIDEBAR (Crisp Eco-Modern Environmental Showcase) */}
       <div 
         style={{ 
           flex: 1, 
-          background: 'linear-gradient(135deg, #064E3B 0%, #022C22 100%)', 
+          background: '#F8FAF8', 
+          borderRight: '1px solid #E2E8F0',
           padding: '60px 48px', 
           display: 'flex', 
           flexDirection: 'column', 
           justifyContent: 'space-between',
           alignItems: 'center',
           textAlign: 'center',
-          color: '#FFFFFF',
+          color: '#0F172A',
           position: 'relative'
         }}
         className="login-hero-sidebar"
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', my: 'auto', flex: 1 }}>
-          {/* Prominent Main Vector Logo */}
-          <div style={{ marginBottom: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <GreenGoldLogo size={108} subtitle="CIRCULAR BIO-ECONOMY SYSTEM" />
+          {/* Prominent Stacked Vector Brand Emblem */}
+          <div style={{ marginBottom: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <GreenGoldLogo size={96} variant="stacked" textColor="#0F172A" subtextColor="#065F46" subtitle="CIRCULAR BIO-ECONOMY SYSTEM" />
           </div>
 
-          <div style={{ maxWidth: '420px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '26px', fontWeight: '800', lineHeight: '1.3', marginBottom: '16px', color: '#F0FDF4' }}>
+          <div style={{ maxWidth: '440px', margin: '0 auto' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1.3', marginBottom: '16px', color: '#0F172A', letterSpacing: '-0.02em' }}>
               Building a Sustainable, Carbon-Free Environment
             </h2>
-            <p style={{ fontSize: '15px', color: '#A7F3D0', lineHeight: '1.7', margin: 0, fontWeight: '400' }}>
+            <p style={{ fontSize: '15px', color: '#64748B', lineHeight: '1.7', margin: 0, fontWeight: '500' }}>
               Empowering communities, businesses, and cities with intelligent smart bin deployment, organic waste recycling, and zero-emissions resource recovery.
             </p>
           </div>
         </div>
 
-        <div style={{ fontSize: '12px', color: '#059669', borderTop: '1px solid rgba(255,255,255,0.1)', width: '100%', paddingTop: '20px' }}>
+        <div style={{ fontSize: '12px', color: '#94A3B8', borderTop: '1px solid #E2E8F0', width: '100%', paddingTop: '20px', fontWeight: '500' }}>
           GreenGold OS Circular Governance © 2026. All Rights Reserved.
         </div>
       </div>
@@ -229,7 +230,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
           flex: 1, 
           display: 'flex', 
           alignItems: 'center', 
-          justify: 'center', 
+          justifyContent: 'center', 
           padding: '40px', 
           background: '#FFFFFF',
           maxWidth: '640px',
@@ -239,24 +240,24 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
         <div style={{ width: '100%', maxWidth: '440px' }}>
           
           <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.02em', marginBottom: '6px' }}>
+            <h2 style={{ fontSize: '32px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.02em', marginBottom: '6px' }}>
               {isRegister ? 'Sign Up Account' : 'Portal Login'}
             </h2>
-            <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
+            <p style={{ fontSize: '14px', color: '#64748B', margin: 0, fontWeight: '500' }}>
               Select your access profile role and authenticate below.
             </p>
           </div>
 
           {/* ROLE PROFILE SELECTION DROPDOWN */}
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
               Access Profile Role *
             </label>
             <select
               className="modern-input"
               value={selectedRoleProfile}
               onChange={(e) => handleRoleProfileChange(e.target.value)}
-              style={{ width: '100%', height: '50px', fontWeight: '700', fontSize: '14px', borderRadius: '12px', borderColor: '#CBD5E1', background: '#F8FAFC', color: '#0F172A', padding: '0 14px' }}
+              style={{ width: '100%', height: '48px', fontWeight: '700', fontSize: '14px', borderRadius: '10px', borderColor: '#E2E8F0', background: '#F1F5F9', color: '#0F172A', padding: '0 14px' }}
             >
               <option value="USER">Customer / Waste Generator</option>
               <option value="MANAGEMENT">Management Operations Hub</option>
@@ -274,8 +275,9 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
               type="button"
               style={{
                 flex: 1, padding: '12px', fontSize: '15px', fontWeight: '800', border: 'none', background: 'none',
-                borderBottom: !isRegister ? '3px solid #10B981' : '3px solid transparent',
-                color: !isRegister ? '#047857' : '#64748B', cursor: 'pointer'
+                borderBottom: !isRegister ? '3px solid #065F46' : '3px solid transparent',
+                color: !isRegister ? '#065F46' : '#64748B', cursor: 'pointer',
+                transition: 'all 0.2s ease'
               }}
               onClick={() => handleTabChange(false)}
             >
@@ -285,9 +287,10 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
               type="button"
               style={{
                 flex: 1, padding: '12px', fontSize: '15px', fontWeight: '800', border: 'none', background: 'none',
-                borderBottom: isRegister ? '3px solid #10B981' : '3px solid transparent',
-                color: isRegister ? '#047857' : '#64748B', cursor: 'pointer',
-                opacity: selectedRoleProfile === 'MANAGEMENT' ? 0.35 : 1
+                borderBottom: isRegister ? '3px solid #065F46' : '3px solid transparent',
+                color: isRegister ? '#065F46' : '#64748B', cursor: 'pointer',
+                opacity: selectedRoleProfile === 'MANAGEMENT' ? 0.35 : 1,
+                transition: 'all 0.2s ease'
               }}
               onClick={() => handleTabChange(true)}
             >
@@ -303,26 +306,18 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
           )}
 
           {successMsg && (
-            <div style={{ padding: '12px 16px', background: '#ECFDF5', border: '1px solid #6EE7B7', color: '#065F46', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '20px' }}>
+            <div style={{ padding: '12px 16px', background: '#DCFCE7', border: '1px solid #86EFAC', color: '#166534', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '20px' }}>
               {successMsg}
             </div>
           )}
 
-          {(selectedRoleProfile === 'MANAGEMENT' || selectedRoleProfile === 'COLLECTOR' || selectedRoleProfile === 'TRANSPORTER' || selectedRoleProfile === 'RECYCLING_PLANT') && !isRegister && (
-            <div style={{ padding: '12px 16px', background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0369A1', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '20px' }}>
-              {selectedRoleProfile === 'MANAGEMENT' && <>Management Admin Account Loaded: <strong>saad489254@gmail.com</strong> / <strong>saad123</strong></>}
-              {selectedRoleProfile === 'COLLECTOR' && <>Collector Demo Account Loaded: <strong>collector@greengold.com</strong> / <strong>collector123</strong></>}
-              {selectedRoleProfile === 'TRANSPORTER' && <>Transporter Demo Account Loaded: <strong>transporter1@greengold.com</strong> / <strong>transport123</strong></>}
-              {selectedRoleProfile === 'RECYCLING_PLANT' && <>Recycling Plant Demo Account Loaded: <strong>pakrecycling@greengold.com</strong> / <strong>plant123</strong></>}
-            </div>
-          )}
-
-          {/* AUTH FORM */}
+          {/* FORM FIELDS */}
           <form onSubmit={handleSubmit}>
+            
             {isRegister && (
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Full Name *
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                  Full Legal Name *
                 </label>
                 <input
                   type="text"
@@ -331,13 +326,13 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  style={{ width: '100%', height: '44px' }}
+                  style={{ width: '100%', height: '46px', borderRadius: '10px' }}
                 />
               </div>
             )}
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                 Email Address *
               </label>
               <input
@@ -348,23 +343,23 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="username"
                 required
-                style={{ width: '100%', height: '44px' }}
+                style={{ width: '100%', height: '46px', borderRadius: '10px' }}
               />
             </div>
 
             {isRegister && (
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Phone Number *
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                  Primary Contact Phone Number *
                 </label>
                 <input
                   type="tel"
                   className="modern-input"
-                  placeholder="+92 300 1234567"
+                  placeholder="e.g. +92 300 1234567"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                  style={{ width: '100%', height: '44px' }}
+                  style={{ width: '100%', height: '46px', borderRadius: '10px' }}
                 />
               </div>
             )}
@@ -372,8 +367,8 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
             {isRegister && selectedRoleProfile === 'USER' && (
               <>
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Organization / Hotel Name
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                    Organization / Entity Name
                   </label>
                   <input
                     type="text"
@@ -381,12 +376,12 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                     placeholder="e.g. Hotel Marriott Islamabad"
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
-                    style={{ width: '100%', height: '44px' }}
+                    style={{ width: '100%', height: '46px', borderRadius: '10px' }}
                   />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                       Town
                     </label>
                     <input
@@ -395,11 +390,11 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                       placeholder="e.g. F-7"
                       value={town}
                       onChange={(e) => setTown(e.target.value)}
-                      style={{ width: '100%', height: '44px' }}
+                      style={{ width: '100%', height: '46px', borderRadius: '10px' }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                       Street Address
                     </label>
                     <input
@@ -408,7 +403,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                       placeholder="e.g. Plot 5, Sector F-7/2"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      style={{ width: '100%', height: '44px' }}
+                      style={{ width: '100%', height: '46px', borderRadius: '10px' }}
                     />
                   </div>
                 </div>
@@ -417,7 +412,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
 
             {isRegister && selectedRoleProfile === 'TECHNICAL' && (
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                   Secondary Emergency Phone Number *
                 </label>
                 <input
@@ -427,13 +422,13 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                   value={secondaryPhone}
                   onChange={(e) => setSecondaryPhone(e.target.value)}
                   required
-                  style={{ width: '100%', height: '44px' }}
+                  style={{ width: '100%', height: '46px', borderRadius: '10px' }}
                 />
               </div>
             )}
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                 Password *
               </label>
               <input
@@ -444,7 +439,7 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
-                style={{ width: '100%', height: '44px' }}
+                style={{ width: '100%', height: '46px', borderRadius: '10px' }}
               />
             </div>
 
@@ -452,9 +447,26 @@ export default function LoginGate({ onLogin, onLoginSuccess }) {
               type="submit"
               className="btn-eco-primary"
               disabled={loading}
-              style={{ width: '100%', height: '48px', fontSize: '15px', justifyContent: 'center', fontWeight: '800', borderRadius: '10px' }}
+              style={{
+                width: '100%',
+                height: '52px',
+                fontSize: '14px',
+                fontWeight: '900',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                background: '#BEF264',
+                color: '#14532D',
+                borderRadius: '14px',
+                cursor: 'pointer',
+                border: 'none',
+                boxShadow: '0 4px 16px rgba(190, 242, 100, 0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
             >
-              {loading ? 'Authenticating...' : isRegister ? 'Sign Up & Continue »' : 'Login to Portal »'}
+              {loading ? 'Authenticating...' : isRegister ? 'SIGN UP & CONTINUE »' : 'LOGIN TO PORTAL »'}
             </button>
           </form>
 

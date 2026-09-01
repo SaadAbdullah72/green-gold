@@ -7,10 +7,11 @@ import React from 'react';
  */
 export default function GreenGoldLogo({
   size = 58,
-  variant = 'full', // 'full' | 'icon' | 'stacked' | 'horizontal'
+  variant = 'full', // 'full' | 'icon' | 'stacked'
   title = 'GreenGold',
   subtitle = 'CIRCULAR BIO-ECONOMY SYSTEM',
-  textColor = '#FFFFFF',
+  textColor = '#0F172A',
+  subtextColor = '#047857',
   style = {}
 }) {
   const iconMarkup = (
@@ -99,6 +100,52 @@ export default function GreenGoldLogo({
 
   const isLarge = size >= 60;
 
+  if (variant === 'stacked') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', textDecoration: 'none', gap: '14px', ...style }}>
+        {iconMarkup}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1 }}>
+          <div style={{
+            fontSize: isLarge ? '32px' : '24px',
+            fontWeight: 900,
+            color: textColor,
+            letterSpacing: '-0.03em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span>Green<span style={{ color: '#F59E0B' }}>Gold</span></span>
+            <span style={{
+              background: '#042F2E',
+              color: '#A3E635',
+              fontSize: isLarge ? '14px' : '12px',
+              fontWeight: 900,
+              padding: '3px 8px',
+              borderRadius: '7px',
+              letterSpacing: '0.04em',
+              border: '1px solid rgba(163, 230, 53, 0.4)'
+            }}>
+              OS
+            </span>
+          </div>
+          {subtitle && (
+            <span style={{
+              fontSize: isLarge ? '11px' : '9.5px',
+              fontWeight: 800,
+              color: subtextColor,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              marginTop: '6px',
+              opacity: 0.95
+            }}>
+              {subtitle}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: isLarge ? '18px' : '14px', textDecoration: 'none', ...style }}>
       {iconMarkup}
@@ -114,14 +161,14 @@ export default function GreenGoldLogo({
         }}>
           <span>Green<span style={{ color: '#F59E0B' }}>Gold</span></span>
           <span style={{
-            background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
-            color: '#FFFFFF',
+            background: '#042F2E',
+            color: '#A3E635',
             fontSize: isLarge ? '13px' : '11px',
             fontWeight: 900,
             padding: '2px 7px',
             borderRadius: '6px',
             letterSpacing: '0.04em',
-            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+            border: '1px solid rgba(163, 230, 53, 0.3)'
           }}>
             OS
           </span>
@@ -130,7 +177,7 @@ export default function GreenGoldLogo({
           <span style={{
             fontSize: isLarge ? '11px' : '9.5px',
             fontWeight: 800,
-            color: '#34D399',
+            color: subtextColor,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
             marginTop: '5px',
