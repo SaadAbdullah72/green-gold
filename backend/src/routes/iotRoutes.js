@@ -412,49 +412,26 @@ router.post('/reset-requests', async (req, res) => {
 router.get('/public-stats', async (req, res) => {
   try {
     const { RecyclingReport } = await import('../models/RecyclingReport.js');
-    const { DumpRecord } = await import('../models/DumpRecord.js');
 
-    const [activeSites, recyclingReports, dumpRecords, wasteCollectionReqs] = await Promise.all([
+    const [activeSites, recyclingReports, totalUsers] = await Promise.all([
       ServiceRequest.find({
         requestType: 'BIN_DEPLOYMENT',
         status: { $in: ['COMPLETED', 'Completed'] }
       }).lean().catch(() => []),
       RecyclingReport.find({}).lean().catch(() => []),
-      DumpRecord.find({}).lean().catch(() => []),
-      ServiceRequest.find({ requestType: 'WASTE_COLLECTION' }).lean().catch(() => [])
+      User.countDocuments({}).catch(() => 0)
     ]);
 
-    // Active bins count
     const activeBins = activeSites.reduce((sum, s) => sum + (s.numberOfBins || 1), 0);
-
-    // Carbon credits from recycling reports
     const totalCarbonCredits = recyclingReports.reduce((sum, r) =>
       sum + Number(r.carbonCreditsGenerated || r.carbonCreditsMinted || 0), 0);
-
-    // Total waste diverted from recycling reports
-    const totalWasteKg = recyclingReports.reduce((sum, r) =>
-      sum + Number(r.recycledWeightKg || r.inputWeightKg || 0), 0);
-
-    // CO2 avoided
-    const co2AvoidedMt = Number(((totalWasteKg * 0.001)).toFixed(3));
-
-    // Pickup requests completed
-    const completedPickups = wasteCollectionReqs.filter(r =>
-      r.status === 'COMPLETED').length;
-
-    // Active client sites
-    const activeClients = activeSites.length;
 
     return res.json({
       success: true,
       stats: {
         activeBins,
-        activeClients,
         totalCarbonCredits: Number(totalCarbonCredits.toFixed(2)),
-        totalWasteKg: Math.round(totalWasteKg),
-        co2AvoidedMt,
-        completedPickups,
-        recyclingBatches: recyclingReports.length
+        totalUsers
       }
     });
   } catch (err) {

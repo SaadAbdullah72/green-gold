@@ -2,365 +2,341 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GreenGoldLogo from './GreenGoldLogo';
 
-const API_BASE = '/api';
-
-// Animated counter hook
-function useCountUp(target, duration = 1800, started = false) {
+function useCountUp(target, duration = 2000, started = false) {
   const [value, setValue] = useState(0);
   useEffect(() => {
-    if (!started || target === 0) return;
-    let start = null;
-    const step = (ts) => {
-      if (!start) start = ts;
-      const progress = Math.min((ts - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.floor(eased * target));
-      if (progress < 1) requestAnimationFrame(step);
-      else setValue(target);
+    if (!started || !target) return;
+    let startTs = null;
+    const animate = (ts) => {
+      if (!startTs) startTs = ts;
+      const p = Math.min((ts - startTs) / duration, 1);
+      const eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      setValue(Math.round(eased * target));
+      if (p < 1) requestAnimationFrame(animate);
     };
-    requestAnimationFrame(step);
+    requestAnimationFrame(animate);
   }, [target, started, duration]);
   return value;
 }
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [statsVisible, setStatsVisible] = useState(false);
+  const [stats, setStats] = useState({ activeBins: 0, totalCarbonCredits: 0, totalUsers: 0 });
+  const [ready, setReady] = useState(false);
+  const [started, setStarted] = useState(false);
   const statsRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/iot/public-stats`)
+    fetch('/api/iot/public-stats')
       .then(r => r.json())
-      .then(d => { if (d.success) setStats(d.stats); })
+      .then(d => { if (d.success && d.stats) setStats(d.stats); })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => setReady(true));
   }, []);
 
-  // Trigger counter animation when stats section scrolls into view
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setStatsVisible(true); },
-      { threshold: 0.3 }
+    if (!ready) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setStarted(true); },
+      { threshold: 0.4 }
     );
-    if (statsRef.current) observer.observe(statsRef.current);
-    return () => observer.disconnect();
-  }, []);
+    if (statsRef.current) obs.observe(statsRef.current);
+    return () => obs.disconnect();
+  }, [ready]);
 
-  const bins = useCountUp(stats?.activeBins || 0, 1500, statsVisible);
-  const clients = useCountUp(stats?.activeClients || 0, 1500, statsVisible);
-  const cc = useCountUp(Math.round(stats?.totalCarbonCredits || 0), 2000, statsVisible);
-  const wasteKg = useCountUp(stats?.totalWasteKg || 0, 2000, statsVisible);
-  const pickups = useCountUp(stats?.completedPickups || 0, 1500, statsVisible);
-  const batches = useCountUp(stats?.recyclingBatches || 0, 1500, statsVisible);
+  const bins  = useCountUp(stats.activeBins, 1800, started);
+  const cc    = useCountUp(Math.round(stats.totalCarbonCredits * 100) / 100 === 0 ? 0 : Math.round(stats.totalCarbonCredits), 2200, started);
+  const users = useCountUp(stats.totalUsers, 1600, started);
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif", background: '#F8FAF8', minHeight: '100vh', color: '#0F172A' }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif", background: '#FAFAFA', minHeight: '100vh', color: '#0A0A0A' }}>
 
-      {/* NAVBAR */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid #E2E8F0',
-        padding: '0 48px', height: '68px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+      {/* ─── NAVBAR ─── */}
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
+        background: 'rgba(250,250,250,0.88)', backdropFilter: 'blur(20px) saturate(180%)',
+        borderBottom: '1px solid rgba(0,0,0,0.07)',
+        height: '64px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', padding: '0 56px'
       }}>
-        <GreenGoldLogo size={44} subtitle="Smart Waste OS" subtextColor="#059669" />
+        <GreenGoldLogo size={40} subtitle="Smart Waste OS" subtextColor="#059669" />
         <button
           onClick={() => navigate('/login')}
           style={{
-            padding: '10px 28px', borderRadius: '10px',
-            background: '#059669', color: '#FFFFFF',
-            border: 'none', fontWeight: '700', fontSize: '14px',
-            cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: '0 4px 14px rgba(5,150,105,0.30)',
-            transition: 'all 0.2s'
+            padding: '9px 24px', borderRadius: '8px',
+            background: '#0A0A0A', color: '#FFFFFF',
+            border: 'none', fontWeight: '600', fontSize: '13.5px',
+            cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em',
+            transition: 'opacity 0.15s'
           }}
-          onMouseEnter={e => { e.target.style.background = '#047857'; e.target.style.transform = 'translateY(-1px)'; }}
-          onMouseLeave={e => { e.target.style.background = '#059669'; e.target.style.transform = 'translateY(0)'; }}
+          onMouseEnter={e => e.target.style.opacity = '0.75'}
+          onMouseLeave={e => e.target.style.opacity = '1'}
         >
-          Portal Login →
+          Sign in
         </button>
-      </nav>
+      </header>
 
-      {/* HERO */}
+      {/* ─── HERO ─── */}
       <section style={{
-        padding: '90px 48px 70px',
-        maxWidth: '1100px', margin: '0 auto',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center'
+        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '120px 56px 80px', textAlign: 'center', position: 'relative', overflow: 'hidden'
       }}>
-        <div>
+        {/* Subtle background grid */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          backgroundImage: `
+            linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px'
+        }} />
+        {/* Green radial glow */}
+        <div style={{
+          position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
+          width: '800px', height: '500px', zIndex: 0,
+          background: 'radial-gradient(ellipse at center, rgba(5,150,105,0.10) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '6px 14px', borderRadius: '999px',
-            background: '#DCFCE7', border: '1px solid #BBF7D0',
-            fontSize: '12px', fontWeight: '800', color: '#15803D',
-            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '24px'
+            padding: '5px 14px 5px 8px', borderRadius: '999px',
+            background: '#FFFFFF', border: '1px solid #E2E8F0',
+            fontSize: '12px', fontWeight: '700', color: '#374151',
+            letterSpacing: '0.01em', marginBottom: '36px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
           }}>
-            <span style={{ width: '7px', height: '7px', background: '#22C55E', borderRadius: '50%', display: 'inline-block' }} />
-            &nbsp;Live Platform — Rawalpindi / Islamabad
-          </div>
-          <h1 style={{
-            fontSize: 'clamp(34px, 5vw, 54px)', fontWeight: '900', lineHeight: '1.08',
-            color: '#0F172A', letterSpacing: '-0.03em', margin: '0 0 20px'
-          }}>
-            Intelligent Waste<br />
             <span style={{
-              background: 'linear-gradient(135deg, #059669, #10B981)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>Management OS</span>
+              background: '#059669', color: '#fff', fontSize: '10px', fontWeight: '800',
+              padding: '2px 8px', borderRadius: '999px', letterSpacing: '0.05em'
+            }}>LIVE</span>
+            Rawalpindi &amp; Islamabad Smart Waste Network
+          </div>
+
+          <h1 style={{
+            fontSize: 'clamp(40px, 7vw, 76px)', fontWeight: '900',
+            lineHeight: '1.03', letterSpacing: '-0.04em', margin: '0 0 28px',
+            color: '#0A0A0A'
+          }}>
+            The Operating System<br />
+            <span style={{ color: '#059669' }}>for Sustainable Cities</span>
           </h1>
-          <p style={{ fontSize: '17px', color: '#475569', lineHeight: '1.7', margin: '0 0 36px', maxWidth: '460px' }}>
-            A fully integrated smart bin network tracking waste collection, recycling, and carbon credit generation — built for Rawalpindi &amp; Islamabad.
+
+          <p style={{
+            fontSize: '18px', color: '#6B7280', lineHeight: '1.65',
+            maxWidth: '560px', margin: '0 auto 48px', fontWeight: '400'
+          }}>
+            GreenGold OS connects IoT smart bins, waste collectors, recycling plants,
+            and carbon registries into a single real-time platform.
           </p>
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <button
               onClick={() => navigate('/login')}
               style={{
-                padding: '14px 32px', borderRadius: '12px',
+                padding: '14px 36px', borderRadius: '10px',
                 background: '#059669', color: '#FFFFFF',
-                border: 'none', fontWeight: '800', fontSize: '15px',
-                cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: '0 6px 20px rgba(5,150,105,0.35)',
+                border: 'none', fontWeight: '700', fontSize: '15px',
+                cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em',
+                boxShadow: '0 4px 16px rgba(5,150,105,0.30)',
                 transition: 'all 0.2s'
               }}
-              onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 10px 28px rgba(5,150,105,0.45)'; }}
-              onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 6px 20px rgba(5,150,105,0.35)'; }}
+              onMouseEnter={e => { e.target.style.background = '#047857'; e.target.style.boxShadow = '0 6px 24px rgba(5,150,105,0.40)'; e.target.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.target.style.background = '#059669'; e.target.style.boxShadow = '0 4px 16px rgba(5,150,105,0.30)'; e.target.style.transform = 'translateY(0)'; }}
             >
-              Access Your Portal →
+              Access Portal
             </button>
             <a
-              href="#live-stats"
+              href="#metrics"
               style={{
-                padding: '14px 28px', borderRadius: '12px',
-                background: '#FFFFFF', color: '#0F172A',
-                border: '1.5px solid #E2E8F0', fontWeight: '700', fontSize: '15px',
+                padding: '14px 30px', borderRadius: '10px',
+                background: 'transparent', color: '#374151',
+                border: '1px solid #D1D5DB', fontWeight: '600', fontSize: '15px',
                 cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none',
-                transition: 'all 0.2s', display: 'inline-block'
+                letterSpacing: '-0.01em', transition: 'all 0.2s', display: 'inline-block'
               }}
-              onMouseEnter={e => { e.target.style.borderColor = '#059669'; e.target.style.color = '#059669'; }}
-              onMouseLeave={e => { e.target.style.borderColor = '#E2E8F0'; e.target.style.color = '#0F172A'; }}
+              onMouseEnter={e => { e.target.style.borderColor = '#9CA3AF'; e.target.style.background = '#FFFFFF'; }}
+              onMouseLeave={e => { e.target.style.borderColor = '#D1D5DB'; e.target.style.background = 'transparent'; }}
             >
-              View Live Stats ↓
+              View Live Data
             </a>
           </div>
         </div>
+      </section>
 
-        {/* Hero Visual */}
-        <div>
-          <div style={{
-            background: '#FFFFFF', borderRadius: '24px',
-            border: '1px solid #E2E8F0', padding: '32px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.06)'
+      {/* ─── LIVE METRICS ─── */}
+      <section id="metrics" ref={statsRef} style={{
+        background: '#FFFFFF',
+        borderTop: '1px solid #F3F4F6',
+        borderBottom: '1px solid #F3F4F6',
+        padding: '100px 56px'
+      }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <p style={{
+            fontSize: '11px', fontWeight: '800', letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#9CA3AF', marginBottom: '64px',
+            textAlign: 'center'
           }}>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '20px' }}>
-              System Flow
-            </div>
+            Platform Metrics — Pulled Live from Database
+          </p>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '1px',
+            background: '#F3F4F6',
+            border: '1px solid #F3F4F6',
+            borderRadius: '16px',
+            overflow: 'hidden'
+          }}>
             {[
-              { icon: '📡', label: 'Proteus Smart Bin', sub: 'Ultrasonic + Gas sensors', color: '#EEF2FF', border: '#C7D2FE' },
-              { icon: '🔗', label: 'IoT Bridge Script', sub: 'COM2 → UART → REST API', color: '#F0FDF4', border: '#BBF7D0' },
-              { icon: '🗄️', label: 'GreenGold Backend', sub: 'MongoDB + Vercel Serverless', color: '#FFF7ED', border: '#FED7AA' },
-              { icon: '♻️', label: 'Carbon Credits Minted', sub: 'Automatic on recycling report', color: '#F0FDF4', border: '#86EFAC' },
-            ].map((step, i) => (
-              <div key={i}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
-                  <div style={{
-                    width: '44px', height: '44px', borderRadius: '12px',
-                    background: step.color, border: `1.5px solid ${step.border}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '20px', flexShrink: 0
-                  }}>{step.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#0F172A' }}>{step.label}</div>
-                    <div style={{ fontSize: '12px', color: '#64748B' }}>{step.sub}</div>
+              {
+                value: cc,
+                suffix: ' CC',
+                label: 'Carbon Credits Minted',
+                desc: 'Total carbon credits issued on the registry from verified recycling batches.'
+              },
+              {
+                value: bins,
+                suffix: '',
+                label: 'Active Smart Bins',
+                desc: 'IoT-enabled bins currently deployed and transmitting telemetry in the field.'
+              },
+              {
+                value: users,
+                suffix: '',
+                label: 'Registered Users',
+                desc: 'Stakeholders across all 7 roles — management, collectors, transporters and more.'
+              }
+            ].map((metric, i) => (
+              <div key={i} style={{
+                background: '#FFFFFF', padding: '52px 44px',
+                display: 'flex', flexDirection: 'column', gap: '16px'
+              }}>
+                <div style={{
+                  fontSize: 'clamp(44px, 6vw, 72px)',
+                  fontWeight: '900',
+                  letterSpacing: '-0.04em',
+                  lineHeight: '1',
+                  color: '#0A0A0A',
+                  fontVariantNumeric: 'tabular-nums'
+                }}>
+                  {metric.value.toLocaleString()}{metric.suffix}
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827', marginBottom: '6px' }}>
+                    {metric.label}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: '1.6', maxWidth: '260px' }}>
+                    {metric.desc}
                   </div>
                 </div>
-                {i < 3 && (
-                  <div style={{ paddingLeft: '21px', color: '#CBD5E1', fontSize: '18px', lineHeight: '1', marginBottom: '8px' }}>↓</div>
-                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* LIVE STATS */}
-      <section id="live-stats" ref={statsRef} style={{
-        background: '#FFFFFF', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0',
-        padding: '80px 48px'
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              padding: '6px 14px', borderRadius: '999px',
-              background: '#F0FDF4', border: '1px solid #BBF7D0',
-              fontSize: '12px', fontWeight: '800', color: '#15803D',
-              textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px'
-            }}>
-              <span style={{ width: '7px', height: '7px', background: '#22C55E', borderRadius: '50%', display: 'inline-block' }} />
-              &nbsp;Live from Database — Real Data Only
-            </div>
-            <h2 style={{ fontSize: '36px', fontWeight: '900', color: '#0F172A', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-              Platform Impact at a Glance
-            </h2>
-            <p style={{ fontSize: '15px', color: '#64748B', margin: 0 }}>
-              All numbers pulled live from GreenGold OS MongoDB — no estimates.
-            </p>
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#94A3B8', fontSize: '15px' }}>
-              Fetching live data...
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '20px' }}>
-              {[
-                { value: bins, suffix: '', label: 'Active Smart Bins', sub: 'Deployed in the field', icon: '🗑️', valColor: '#4338CA', hoverBg: '#EEF2FF', hoverBorder: '#C7D2FE' },
-                { value: clients, suffix: '', label: 'Client Sites', sub: 'Active service locations', icon: '🏢', valColor: '#EA580C', hoverBg: '#FFF7ED', hoverBorder: '#FED7AA' },
-                { value: cc, suffix: ' CC', label: 'Carbon Credits', sub: 'Minted on registry', icon: '🌍', valColor: '#15803D', hoverBg: '#F0FDF4', hoverBorder: '#BBF7D0' },
-                { value: wasteKg, suffix: ' kg', label: 'Waste Recycled', sub: 'Total across all streams', icon: '♻️', valColor: '#059669', hoverBg: '#F0FDF4', hoverBorder: '#86EFAC' },
-                { value: pickups, suffix: '', label: 'Pickups Done', sub: 'Waste collection trips', icon: '🚛', valColor: '#B45309', hoverBg: '#FEF3C7', hoverBorder: '#FDE68A' },
-                { value: batches, suffix: '', label: 'Recycling Batches', sub: 'Processed at facilities', icon: '🏭', valColor: '#0369A1', hoverBg: '#F0F9FF', hoverBorder: '#BAE6FD' },
-              ].map((stat, i) => (
-                <div key={i}
-                  style={{ background: '#FAFAFA', border: '1.5px solid #E2E8F0', borderRadius: '20px', padding: '26px 22px', transition: 'all 0.2s', cursor: 'default' }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = stat.hoverBg;
-                    e.currentTarget.style.borderColor = stat.hoverBorder;
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.07)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = '#FAFAFA';
-                    e.currentTarget.style.borderColor = '#E2E8F0';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontSize: '26px', marginBottom: '12px' }}>{stat.icon}</div>
-                  <div style={{ fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: '900', color: stat.valColor, lineHeight: 1, marginBottom: '6px', letterSpacing: '-0.02em' }}>
-                    {stat.value.toLocaleString()}{stat.suffix}
-                  </div>
-                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0F172A', marginBottom: '3px' }}>{stat.label}</div>
-                  <div style={{ fontSize: '12px', color: '#94A3B8' }}>{stat.sub}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section style={{ padding: '80px 48px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <h2 style={{ fontSize: '34px', fontWeight: '900', color: '#0F172A', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-            End-to-End Waste Intelligence
+      {/* ─── PIPELINE SECTION ─── */}
+      <section style={{ padding: '100px 56px', maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '64px' }}>
+          <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: '16px' }}>
+            How It Works
+          </p>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: '800', letterSpacing: '-0.03em', color: '#0A0A0A', margin: 0, maxWidth: '520px', lineHeight: '1.15' }}>
+            Sensor to carbon credit.<br />Fully automated.
           </h2>
-          <p style={{ fontSize: '15px', color: '#64748B', margin: 0 }}>From sensor to carbon credit — fully automated.</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '18px' }}>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', background: '#F3F4F6', borderRadius: '16px', overflow: 'hidden', border: '1px solid #F3F4F6' }}>
           {[
-            { step: '01', icon: '📡', title: 'Proteus Smart Bin', desc: 'Ultrasonic + gas sensors transmit fill level, weight & air quality via UART every 3 seconds.', hoverBg: '#EEF2FF', accent: '#4338CA' },
-            { step: '02', icon: '⚡', title: 'Automatic Dispatch', desc: 'When a bin hits 86%+ fill, the OS auto-generates a waste collection ticket for the nearest collector.', hoverBg: '#FFF7ED', accent: '#EA580C' },
-            { step: '03', icon: '🚚', title: 'Collector Routing', desc: 'Collectors see live pickup assignments and mark collections in real time on their mobile portal.', hoverBg: '#F0FDF4', accent: '#15803D' },
-            { step: '04', icon: '🏭', title: 'Recycling & Minting', desc: 'Waste goes to partner plants. Carbon credits are calculated and minted automatically on the registry.', hoverBg: '#F0F9FF', accent: '#0369A1' },
-          ].map((item, i) => (
-            <div key={i}
-              style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '18px', padding: '26px 22px', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = item.hoverBg; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.07)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <span style={{ fontSize: '30px' }}>{item.icon}</span>
-                <span style={{ fontSize: '11px', fontWeight: '900', color: item.accent, background: item.hoverBg, padding: '3px 8px', borderRadius: '6px' }}>{item.step}</span>
+            { n: '01', title: 'Smart Bin Telemetry', body: 'Proteus-simulated bins transmit fill level, weight and gas concentration via UART serial every 3 seconds to the bridge service.' },
+            { n: '02', title: 'Automatic Collection Dispatch', body: 'When fill exceeds 86%, the system auto-creates an urgent waste collection ticket routed directly to the logistics queue.' },
+            { n: '03', title: 'Collector & Transport Chain', body: 'Collectors confirm pickup on their portal. Waste moves to the dump facility, is separated by stream, then dispatched to recycling plants.' },
+            { n: '04', title: 'Carbon Credit Issuance', body: 'Recycling plants log verified output. The platform calculates carbon avoidance and mints credits to the organisation\'s registry account.' },
+          ].map((step, i) => (
+            <div key={i} style={{ background: '#FFFFFF', padding: '40px 36px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.10em', color: '#D1D5DB', marginBottom: '20px' }}>
+                {step.n}
               </div>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: '0 0 8px' }}>{item.title}</h3>
-              <p style={{ fontSize: '13px', color: '#64748B', lineHeight: '1.6', margin: 0 }}>{item.desc}</p>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#0A0A0A', marginBottom: '10px', letterSpacing: '-0.01em' }}>
+                {step.title}
+              </div>
+              <div style={{ fontSize: '13.5px', color: '#6B7280', lineHeight: '1.65' }}>
+                {step.body}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* PORTALS */}
-      <section style={{ background: '#FFFFFF', borderTop: '1px solid #E2E8F0', padding: '80px 48px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: '900', color: '#0F172A', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-              7 Role-Based Portals
-            </h2>
-            <p style={{ fontSize: '15px', color: '#64748B', margin: 0 }}>Every stakeholder in the waste value chain has a dedicated portal.</p>
+      {/* ─── CTA ─── */}
+      <section style={{
+        margin: '0 56px 80px',
+        background: '#0A0A0A',
+        borderRadius: '20px',
+        padding: '80px 64px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: '32px',
+        position: 'relative', overflow: 'hidden'
+      }}>
+        {/* Subtle green accent */}
+        <div style={{
+          position: 'absolute', top: '-40px', right: '-40px',
+          width: '300px', height: '300px',
+          background: 'radial-gradient(circle, rgba(5,150,105,0.15) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: '28px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '-0.03em', marginBottom: '10px' }}>
+            Ready to get started?
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))', gap: '14px' }}>
-            {[
-              { icon: '🏛️', role: 'Management Hub', desc: 'Approve requests, logistics, carbon registry' },
-              { icon: '🏢', role: 'Customer Portal', desc: 'Submit bin requests & view impact' },
-              { icon: '🔧', role: 'Technician', desc: 'Install & maintain smart bins' },
-              { icon: '🚛', role: 'Collector Driver', desc: 'Pickup assignments & collection tracking' },
-              { icon: '🏗️', role: 'Dump Facility', desc: 'Log & separate incoming waste batches' },
-              { icon: '🚚', role: 'Transporter', desc: 'Haul waste to recycling plants' },
-              { icon: '♻️', role: 'Recycling Plant', desc: 'Process batches & generate carbon reports' },
-            ].map((p, i) => (
-              <div key={i}
-                style={{ padding: '20px 16px', borderRadius: '14px', border: '1.5px solid #E2E8F0', background: '#FAFAFA', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(5,150,105,0.10)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#FAFAFA'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                <div style={{ fontSize: '24px', marginBottom: '10px' }}>{p.icon}</div>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', marginBottom: '5px' }}>{p.role}</div>
-                <div style={{ fontSize: '12px', color: '#64748B', lineHeight: '1.5' }}>{p.desc}</div>
-              </div>
-            ))}
+          <div style={{ fontSize: '14px', color: '#9CA3AF' }}>
+            Log in with your credentials to access your role-based portal.
           </div>
         </div>
+        <button
+          onClick={() => navigate('/login')}
+          style={{
+            position: 'relative', zIndex: 1,
+            padding: '14px 32px', borderRadius: '10px',
+            background: '#059669', color: '#FFFFFF',
+            border: 'none', fontWeight: '700', fontSize: '14px',
+            cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em',
+            boxShadow: '0 4px 20px rgba(5,150,105,0.40)',
+            transition: 'all 0.2s', whiteSpace: 'nowrap'
+          }}
+          onMouseEnter={e => { e.target.style.background = '#047857'; e.target.style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={e => { e.target.style.background = '#059669'; e.target.style.transform = 'translateY(0)'; }}
+        >
+          Access Portal
+        </button>
       </section>
 
-      {/* CTA */}
-      <section style={{ padding: '80px 48px', background: 'linear-gradient(135deg, #064E3B 0%, #065F46 60%, #047857 100%)', textAlign: 'center' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <div style={{ fontSize: '40px', marginBottom: '18px' }}>🌿</div>
-          <h2 style={{ fontSize: '34px', fontWeight: '900', color: '#FFFFFF', margin: '0 0 14px', letterSpacing: '-0.02em' }}>
-            Ready to Access Your Portal?
-          </h2>
-          <p style={{ fontSize: '16px', color: '#A7F3D0', lineHeight: '1.7', margin: '0 0 34px' }}>
-            Log in with your credentials to access your role-specific dashboard and contribute to a circular waste economy.
-          </p>
-          <button
-            onClick={() => navigate('/login')}
-            style={{
-              padding: '16px 44px', borderRadius: '14px',
-              background: '#FFFFFF', color: '#065F46',
-              border: 'none', fontWeight: '900', fontSize: '16px',
-              cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 14px 36px rgba(0,0,0,0.28)'; }}
-            onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)'; }}
-          >
-            Login to GreenGold OS →
-          </button>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{ background: '#0F172A', color: '#94A3B8', padding: '28px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <GreenGoldLogo size={30} subtitle="" />
-          <span style={{ fontSize: '13px' }}>GreenGold OS — Smart Waste Management Platform</span>
-        </div>
-        <div style={{ fontSize: '12px', color: '#475569' }}>
-          Rawalpindi &amp; Islamabad · IoT + MongoDB + React
+      {/* ─── FOOTER ─── */}
+      <footer style={{
+        borderTop: '1px solid #F3F4F6', padding: '28px 56px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        flexWrap: 'wrap', gap: '12px'
+      }}>
+        <GreenGoldLogo size={30} subtitle="" />
+        <div style={{ fontSize: '12px', color: '#D1D5DB', letterSpacing: '0.01em' }}>
+          GreenGold OS &nbsp;·&nbsp; Rawalpindi &amp; Islamabad &nbsp;·&nbsp; IoT · MongoDB · React
         </div>
       </footer>
 
       <style>{`
-        * { box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
         @media (max-width: 768px) {
-          section { padding-left: 20px !important; padding-right: 20px !important; }
-          footer { padding: 24px 20px !important; flex-direction: column; text-align: center; }
+          header { padding: 0 24px !important; }
+          section, footer { padding-left: 24px !important; padding-right: 24px !important; }
+          section[id="metrics"] > div > div { grid-template-columns: 1fr !important; }
+          section:last-of-type > div { grid-template-columns: 1fr !important; }
+          section[style*="padding: '100px 56px'"] > div:last-child { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
