@@ -181,6 +181,19 @@ export default function ManagementDashboard({
         if (onLogout) onLogout();
       }
     }
+
+    // Always fetch IoT collection queue from dedicated endpoint
+    // (Bootstrap collectionQueue only covers CollectorAssignment records,
+    //  but Proteus telemetry creates ServiceRequest WASTE_COLLECTION records
+    //  which are only returned by /management/collection-queue)
+    try {
+      const cqRes = await api.management.getCollectionQueue();
+      if (cqRes && cqRes.requests) {
+        setDbCollectionQueue(cqRes.requests);
+      }
+    } catch (err2) {
+      // silently ignore — bootstrap data already set above
+    }
   };
 
   useEffect(() => {
