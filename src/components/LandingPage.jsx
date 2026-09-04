@@ -87,32 +87,24 @@ export default function LandingPage() {
       }}>
         {/* Left — Copy */}
         <div style={{ padding: '0 48px' }}>
-          <div style={{
-            display: 'inline-block', fontSize: '11px', fontWeight: '800',
-            letterSpacing: '0.14em', textTransform: 'uppercase',
-            color: '#059669', marginBottom: '24px'
-          }}>
-            Rawalpindi · Islamabad
-          </div>
-
           <h1 style={{
-            fontSize: 'clamp(38px, 4.5vw, 62px)', fontWeight: '900',
-            lineHeight: '1.05', letterSpacing: '-0.04em',
+            fontSize: 'clamp(36px, 4.2vw, 58px)', fontWeight: '900',
+            lineHeight: '1.1', letterSpacing: '-0.03em',
             color: '#111827', margin: '0 0 24px'
           }}>
-            Waste management,<br />
+            Smart Waste Management &<br />
             <span style={{
               background: 'linear-gradient(135deg, #065F46, #10B981)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
             }}>
-              reengineered.
+              Carbon Recovery Platform
             </span>
           </h1>
 
           <p style={{
             fontSize: '16px', color: '#6B7280', lineHeight: '1.7',
-            margin: '0 0 40px', maxWidth: '420px', fontWeight: '400'
+            margin: '0 0 40px', maxWidth: '440px', fontWeight: '400'
           }}>
             An integrated operating system connecting smart bins, collectors, recycling plants and carbon registries — end to end, in real time.
           </p>
@@ -362,8 +354,8 @@ export default function LandingPage() {
         flexWrap: 'wrap', gap: '12px', maxWidth: '1200px', margin: '0 auto'
       }}>
         <GreenGoldLogo size={28} subtitle="" />
-        <span style={{ fontSize: '12px', color: '#D1D5DB' }}>
-          GreenGold OS · Rawalpindi &amp; Islamabad · IoT + MongoDB + React
+        <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+          GreenGold OS · Smart IoT Waste &amp; Carbon Recovery Ecosystem
         </span>
       </footer>
 
