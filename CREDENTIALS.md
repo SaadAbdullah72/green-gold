@@ -54,7 +54,19 @@
 | 3 | GreenTech Metal & Materials Recovery  | Zubair Qureshi                 | greentech@greengold.com     | plant123 | PLANT-103   | Metal            | 100 Tons  | Plot 18, Sector I-10/3, Islamabad           |
 
 
-## 6. CUSTOMER / CLIENT WASTE GENERATOR (Facility Bins & Pickup Requests)
+## 6. FIELD TECHNICIAN / TECHNICAL STAFF (Hardware Setup, Bin Calibration & Maintenance)
+## Dashboard: /technician
+
+| # | Full Name                     | Email                         | Password  | Employee ID | Role / Specialization    |
+|---|-------------------------------|-------------------------------|-----------|-------------|--------------------------|
+| 1 | Lead Installer & Technician   | installer@greengold.com       | tech123   | T-101       | Field Installation Lead  |
+| 2 | Permanent Tech Member         | permanent.tech@example.com    | tech123   | T-101       | Hardware & Telemetry Tech|
+| 3 | Tech Support (T-102)          | tech1@gmail.com               | tech123   | T-102       | Calibration & Repair     |
+| 4 | Ahmed Nawaz (T-104)           | ahmed@gmail.com               | tech123   | T-104       | Maintenance Tech         |
+| 5 | Mahnoor (T-107)               | mahnoor@gmail.com             | tech123   | T-107       | Sensor Diagnostics       |
+
+
+## 7. CUSTOMER / CLIENT WASTE GENERATOR (Facility Bins & Pickup Requests)
 ## Dashboard: /generator
 
 * **Registration**: Self-register anytime via the **"Sign Up"** tab on the Login Page with your Organization Name, Address, and Phone.
