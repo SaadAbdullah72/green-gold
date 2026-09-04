@@ -217,6 +217,45 @@ export const assignCollectorToPickup = async (req, res) => {
       }
     }
 
+    let finalLat = Number(lat);
+    let finalLng = Number(lng);
+    let finalSiteName = siteName || 'Assigned Pickup';
+    let finalAddress = address || 'Islamabad';
+    let finalTown = town || 'Islamabad';
+    let finalCity = city || 'Islamabad';
+
+    // If coordinates are default or missing, resolve from targetRequest or deployed site
+    if (!finalLat || !finalLng || (finalLat === 33.6844 && finalLng === 73.0479)) {
+      const targetReq = targetRequestId ? await ServiceRequest.findById(targetRequestId).catch(() => null) : null;
+      if (targetReq?.location?.coordinates && targetReq.location.coordinates.length === 2) {
+        finalLng = targetReq.location.coordinates[0];
+        finalLat = targetReq.location.coordinates[1];
+        finalSiteName = targetReq.organizationName || finalSiteName;
+        finalAddress = targetReq.address || finalAddress;
+        finalTown = targetReq.town || finalTown;
+        finalCity = targetReq.city || finalCity;
+      } else {
+        const targetBin = binId || pickupId;
+        const matchedSite = await ServiceRequest.findOne({
+          requestType: 'BIN_DEPLOYMENT',
+          $or: [
+            { deployedBinIds: targetBin },
+            { binPrefix: typeof targetBin === 'string' ? targetBin.slice(0, 6) : '' },
+            { organizationName: finalSiteName }
+          ]
+        }).lean().catch(() => null);
+
+        if (matchedSite?.location?.coordinates && matchedSite.location.coordinates.length === 2) {
+          finalLng = matchedSite.location.coordinates[0];
+          finalLat = matchedSite.location.coordinates[1];
+          finalSiteName = matchedSite.organizationName || finalSiteName;
+          finalAddress = matchedSite.address || finalAddress;
+          finalTown = matchedSite.town || finalTown;
+          finalCity = matchedSite.city || finalCity;
+        }
+      }
+    }
+
     const assignment = await CollectorAssignment.findOneAndUpdate(
       { pickupId, collectorId },
       {
@@ -224,16 +263,16 @@ export const assignCollectorToPickup = async (req, res) => {
         assignedBy: req.user?._id || null,
         pickupId,
         requestId: requestId || targetRequestId || null,
-        siteName: siteName || 'Assigned Pickup',
-        locationName: locationName || siteName || 'Management Assigned Route',
-        address: address || 'Islamabad',
-        town: town || 'F-7',
-        city: city || 'Islamabad',
-        lat: Number(lat) || 33.6844,
-        lng: Number(lng) || 73.0479,
-        fillLevel: Number(fillLevel) || 0,
-        timeFullMinutes: Number(timeFullMinutes) || 0,
-        urgency: urgency || 'Medium',
+        siteName: finalSiteName,
+        locationName: locationName || finalSiteName,
+        address: finalAddress,
+        town: finalTown,
+        city: finalCity,
+        lat: finalLat || 33.6844,
+        lng: finalLng || 73.0479,
+        fillLevel: Number(fillLevel) || 95,
+        timeFullMinutes: Number(timeFullMinutes) || 15,
+        urgency: urgency || 'High',
         binId: binId || pickupId,
         status: 'ASSIGNED'
       },
@@ -1007,6 +1046,8 @@ export const getManagementBootstrap = async (req, res) => {
       locationName: a.siteName,
       town: a.town,
       address: a.address,
+      lat: a.lat || 33.6844,
+      lng: a.lng || 73.0479,
       wasteType: a.wasteType,
       weightKg: a.estimatedWeightKg,
       notes: a.notes,
@@ -1028,6 +1069,10 @@ export const getManagementBootstrap = async (req, res) => {
       else if (r.status === 'ROUTED_FOR_COLLECTION') dynamicStatus = 'Assigned to Collector (Waiting for Response)';
       else if (r.status === 'WAITING_COLLECTION') dynamicStatus = 'Awaiting Partner';
 
+      const coords = r.location?.coordinates && r.location.coordinates.length === 2 
+        ? [r.location.coordinates[1], r.location.coordinates[0]] 
+        : [33.6844, 73.0479];
+
       return {
         id: r._id,
         _id: r._id,
@@ -1037,6 +1082,8 @@ export const getManagementBootstrap = async (req, res) => {
         locationName: r.siteName || r.organizationName,
         town: r.town,
         address: r.address,
+        lat: coords[0],
+        lng: coords[1],
         wasteType: r.wasteType,
         weightKg: r.weightKg || 0,
         notes: r.notes || r.description || '',
